@@ -1,5 +1,8 @@
 package view
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,11 +27,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -45,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import api.mangadex.model.response.Token
 import kotlinx.coroutines.launch
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.Roboto_Light
@@ -70,7 +77,8 @@ private fun background(maxWidth: Dp) = Brush.linearGradient(
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
-    vm: LoginViewModel = LoginViewModel.Factory.create()
+    vm: LoginViewModel = LoginViewModel.Factory.create(),
+    onSuccess: (Token) -> Unit
 ) {
     val state = vm.pagerState
     val scope = rememberCoroutineScope()
@@ -105,13 +113,16 @@ fun LoginScreen(
                     )
                     Spacer(modifier = Modifier.height(56.dp))
                     LoginBar(onClick = {
-                       scope.launch {
-                           state.animateScrollToPage(1)
-                       }
+                        scope.launch {
+                            state.animateScrollToPage(1)
+                        }
                     })
                 }
             }
-            1 -> PromptPage(onClick = {})
+            1 -> PromptPage(
+                vm = vm,
+                onClick = { vm.onTap(onSuccess) }
+            )
         }
     }
 }
@@ -163,7 +174,10 @@ private fun LoginBar (
 }
 
 @Composable
-private fun PromptPage(onClick: () -> Unit) {
+private fun PromptPage(
+    onClick: () -> Unit,
+    vm: LoginViewModel
+) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -181,45 +195,90 @@ private fun PromptPage(onClick: () -> Unit) {
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(32.dp))
-            MTextField("Username", "asd")
-            MTextField("Password", "asd", modifier = Modifier.padding(top = 8.dp))
-            MTextField("Client Id", "asd", modifier = Modifier.padding(top = 8.dp))
-            MTextField("Client Secret", "asd", modifier = Modifier.padding(top = 8.dp))
+            MTextField(
+                label = "Username",
+                value = vm.username.value,
+                onValueChange = { vm.setUsername(it) }
+            )
+            MTextField(
+                label = "Password",
+                value = vm.password.value,
+                isSensitive = true,
+                onValueChange = { vm.setPassword(it) },
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            MTextField(
+                label = "Client Id",
+                value = vm.clientId.value,
+                onValueChange = { vm.setClientId(it) },
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            MTextField(
+                label = "Client Secret",
+                value = vm.clientSecret.value,
+                isSensitive = true,
+                onValueChange = { vm.setClientSecret(it) },
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            if (vm.loading.value) CircularIndicator(
+                modifier = Modifier
+                    .padding(top = 40.dp)
+                    .align(Alignment.CenterHorizontally)
+            )
         }
-        Button(
-            onClick = onClick,
+        AnimatedVisibility(
+            vm.triggerMessage.value,
+            enter = slideInVertically { 40 },
+            exit = ExitTransition.None,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 24.dp)
+        ) {
+            MessageBar(vm.success.value)
+        }
+        AnimatedVisibility(
+            !vm.success.value,
+            exit = ExitTransition.None,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(end = 12.dp, bottom = 14.dp),
-            colors = ButtonDefaults.buttonColors(
-                // make a const
-                backgroundColor = Color(0xFF3881E5),
-                contentColor = Color.White
-            ),
-            shape = CircleShape
         ) {
-            Row(
-                modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Button(
+                onClick = onClick,
+                colors = ButtonDefaults.buttonColors(
+                    // make a const
+                    backgroundColor = Color(0xFF3881E5),
+                    contentColor = Color.White
+                ),
+                enabled = vm.enableTap.value,
+                shape = CircleShape
             ) {
-                Text("Login", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                Icon(
-                    Icons.AutoMirrored.Default.ArrowForward,
-                    contentDescription = "login",
-                    modifier = Modifier
-                        .size(14.dp)
-                        .offset(y = 1.dp)
-                )
+                Row(
+                    modifier = Modifier.padding(vertical = 6.dp, horizontal = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Login", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Icon(
+                        Icons.AutoMirrored.Default.ArrowForward,
+                        contentDescription = "login",
+                        modifier = Modifier
+                            .size(14.dp)
+                            .offset(y = 1.dp)
+                    )
+                }
             }
         }
     }
 }
 
+// TODO: add visual transformation on sensitive field
 @Composable
 private fun MTextField(
     label: String,
     value: String,
+    onValueChange: (String) -> Unit,
+    isSensitive: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -232,22 +291,71 @@ private fun MTextField(
         )
         BasicTextField(
             value,
-            onValueChange = {},
+            onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
                 .border(
-                    width = (1.2).dp,
+                    width = (1.6).dp,
                     brush = Brush.linearGradient(
                         colorStops = arrayOf(
                             0.3f to gradient2[0],
                             1f to gradient2[1]
                         )
                     ),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(15.dp)
                 )
                 .padding(16.dp),
             cursorBrush = SolidColor(Color.White),
-            textStyle = TextStyle(color = Color.White)
+            textStyle = TextStyle(color = Color.White),
+            singleLine = true
         )
+    }
+}
+
+@Composable
+private fun CircularIndicator(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color(255, 255, 255, 230))
+    ) {
+        CircularProgressIndicator(
+            modifier = Modifier
+                .padding(28.dp),
+            color = Color.Black,
+            strokeWidth = 8.dp
+        )
+    }
+}
+
+@Composable
+private fun MessageBar(
+    success: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .clip(CircleShape)
+            // make const
+            .background(if (success) Color(0xFF006400) else Color(0xFFbf0000))
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                if (success) "Logged in" else "Fail to login",
+                color = Color.White
+            )
+            Spacer(modifier = Modifier.width(1.dp))
+            Icon(
+                if (success) Icons.Filled.Check else Icons.Filled.Close,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(14.dp)
+            )
+        }
     }
 }
