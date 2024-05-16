@@ -12,9 +12,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import api.mangadex.model.request.TokenRequest
 import api.mangadex.model.response.Token
+import io.github.irgaly.kottage.put
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import util.KOTTAGE_EXPIRES_IN
 import kotlin.reflect.KClass
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 class LoginViewModel : ViewModel() {
     object Factory: ViewModelProvider.Factory {
@@ -29,6 +33,7 @@ class LoginViewModel : ViewModel() {
     }
 
     private val mangaDex = Libs.mangaDex
+    private val storage = Libs.kottageStorage
 
     @OptIn(ExperimentalFoundationApi::class)
     val pagerState: PagerState
@@ -88,11 +93,30 @@ class LoginViewModel : ViewModel() {
         syncEnableTap()
     }
 
+    suspend fun store(token: Token) {
+        storage.put<Int>(
+            KOTTAGE_EXPIRES_IN,
+            token.expiresIn,
+            expireTime = 20.0.toDuration(DurationUnit.MINUTES)
+        )
+        storage.put<String>(
+            "token",
+            token.accessToken,
+            expireTime = 20.0.toDuration(DurationUnit.MINUTES)
+        )
+        storage.put<String>(
+            "refresh",
+            token.refreshToken,
+            expireTime = 90.toDuration(DurationUnit.DAYS)
+        )
+    }
+
+    // TODO: change later
     fun onTap(onSuccess: (Token) -> Unit) {
         _loading.value = true
         _enableTap.value = false
         viewModelScope.launch {
-            val token = mangaDex.getToken(
+            val token = mangaDex.login(
                 TokenRequest(
                     username = username.value,
                     password = password.value,
@@ -105,6 +129,7 @@ class LoginViewModel : ViewModel() {
                 _message.value = "Logged in"
                 _success.value = true
                 _triggerMessage.value = true
+                store(token)
                 delay(3000)
                 _triggerMessage.value = false
                 onSuccess(token)
