@@ -24,7 +24,7 @@ class MangaDexImpl : MangaDex {
         }
     }
 
-    private val token = TokenHandlerImpl(client)
+    val token = TokenHandlerImpl(client)
 
     override suspend fun login(request: TokenRequest): Token? {
         return try {

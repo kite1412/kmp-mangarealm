@@ -12,13 +12,14 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import api.mangadex.model.request.TokenRequest
 import api.mangadex.model.response.Token
+import api.mangadex.service.TokenHandler
 import io.github.irgaly.kottage.put
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import util.KOTTAGE_EXPIRES_IN
+import util.KOTTAGE_REFRESH_TOKEN
+import util.KOTTAGE_TOKEN
 import kotlin.reflect.KClass
-import kotlin.time.DurationUnit
-import kotlin.time.toDuration
 
 class LoginViewModel : ViewModel() {
     object Factory: ViewModelProvider.Factory {
@@ -93,21 +94,19 @@ class LoginViewModel : ViewModel() {
         syncEnableTap()
     }
 
-    suspend fun store(token: Token) {
-        storage.put<Int>(
+    private suspend fun store(token: Token) {
+        val expiresIn = TokenHandler.expiration(token)
+        storage.put(
             KOTTAGE_EXPIRES_IN,
-            token.expiresIn,
-            expireTime = 20.0.toDuration(DurationUnit.MINUTES)
+            expiresIn
         )
         storage.put<String>(
-            "token",
-            token.accessToken,
-            expireTime = 20.0.toDuration(DurationUnit.MINUTES)
+            KOTTAGE_TOKEN,
+            token.accessToken
         )
         storage.put<String>(
-            "refresh",
-            token.refreshToken,
-            expireTime = 90.toDuration(DurationUnit.DAYS)
+            KOTTAGE_REFRESH_TOKEN,
+            token.refreshToken
         )
     }
 

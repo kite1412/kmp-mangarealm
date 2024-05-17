@@ -8,3 +8,5 @@ import io.github.irgaly.kottage.platform.KottageContext
 expect fun adjustStatusBar(color: Color)
 
 expect val kottageContext: KottageContext
+
+expect val databaseDir: String

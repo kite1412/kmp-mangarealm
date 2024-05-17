@@ -8,7 +8,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        lateinit var c: MainActivity
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        c = this
         super.onCreate(savedInstanceState)
         setContent {
             App()
