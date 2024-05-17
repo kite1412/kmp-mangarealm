@@ -11,3 +11,5 @@ actual fun adjustStatusBar(color: Color) {
 
 actual val kottageContext: KottageContext
     get() = KottageContext()
+actual val databaseDir: String
+    get() = TODO("Not yet implemented")

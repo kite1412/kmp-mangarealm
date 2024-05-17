@@ -7,6 +7,7 @@ import api.mangadex.model.response.Token
 import api.mangadex.model.response.attribute.ClientAttributes
 
 interface MangaDex {
+
     suspend fun login(request: TokenRequest): Token?
 
     suspend fun getClientSecret(id: String): ClientSecret?
