@@ -1,5 +1,6 @@
 package view
 
+import Assets
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.slideInVertically
@@ -25,10 +26,12 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -36,7 +39,11 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,14 +51,21 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.Token
+import assets.Eye
+import assets.Eyeshut
 import kotlinx.coroutines.launch
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.Roboto_Light
@@ -281,6 +295,9 @@ private fun MTextField(
     isSensitive: Boolean = false,
     modifier: Modifier = Modifier
 ) {
+    var hide by remember {
+        mutableStateOf(true)
+    }
     Column(modifier = modifier) {
         Text(
             label,
@@ -289,9 +306,7 @@ private fun MTextField(
             fontWeight = FontWeight.Medium,
             color = Color.White,
         )
-        BasicTextField(
-            value,
-            onValueChange = onValueChange,
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .border(
@@ -304,11 +319,36 @@ private fun MTextField(
                     ),
                     shape = RoundedCornerShape(15.dp)
                 )
-                .padding(16.dp),
-            cursorBrush = SolidColor(Color.White),
-            textStyle = TextStyle(color = Color.White),
-            singleLine = true
-        )
+        ) {
+            BasicTextField(
+                value,
+                onValueChange = onValueChange,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .weight(1f),
+                cursorBrush = SolidColor(Color.White),
+                textStyle = TextStyle(color = Color.White),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = if (isSensitive) KeyboardType.Password
+                        else KeyboardType.Text
+                ),
+                visualTransformation = if (isSensitive) if (hide) SensitiveFieldTransformation()
+                    else VisualTransformation.None else VisualTransformation.None
+            )
+            if (isSensitive) IconButton(onClick = {
+                hide = !hide
+            }) {
+                Icon(
+                    imageVector = if (hide) Assets.Eye else Assets.Eyeshut,
+                    contentDescription = if (hide) "show" else "hide",
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .size(20.dp),
+                    tint = Color.White,
+                )
+            }
+        }
     }
 }
 
@@ -357,5 +397,14 @@ private fun MessageBar(
                 modifier = Modifier.size(14.dp)
             )
         }
+    }
+}
+
+private class SensitiveFieldTransformation : VisualTransformation {
+    override fun filter(text: AnnotatedString): TransformedText {
+        return TransformedText(
+            text = AnnotatedString(text.map { '*' }.joinToString(separator = "")),
+            offsetMapping = OffsetMapping.Identity
+        )
     }
 }

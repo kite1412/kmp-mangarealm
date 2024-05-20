@@ -1,5 +1,14 @@
 import androidx.compose.ui.graphics.vector.ImageVector
-import assets.`Full-logo`
+import assets.Eye
+import assets.Eyeshut
+import assets.Logo
+import assets.Search
+import assets.`Book-open-outline`
+import assets.`Book-open-solid`
+import assets.`Book-outline`
+import assets.`Book-solid`
+import assets.`Shelf-outline`
+import assets.`Shelf-solid`
 import kotlin.collections.List as ____KtList
 
 public object Assets
@@ -11,6 +20,7 @@ public val Assets.AllIcons: ____KtList<ImageVector>
     if (__AllIcons != null) {
       return __AllIcons!!
     }
-    __AllIcons= listOf(`Full-logo`)
+    __AllIcons= listOf(`Book-open-outline`, `Book-open-solid`, `Book-outline`, `Book-solid`, Eye,
+        Eyeshut, Logo, Search, `Shelf-outline`, `Shelf-solid`)
     return __AllIcons!!
   }
