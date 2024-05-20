@@ -24,7 +24,9 @@ import androidx.compose.runtime.mutableStateOf
 import io.github.irgaly.kottage.getOrNull
 import kotlinx.coroutines.launch
 import shared.databaseDir
+import shared.adjustStatusBar
 import kotlinx.coroutines.delay
+import androidx.compose.material.MaterialTheme
 
 object Libs {
     val mangaDex: MangaDex = MangaDexImpl()
@@ -66,6 +68,7 @@ fun App() {
         if (isShowingSplash.value) {
             SplashScreen()
         } else {
+            adjustStatusBar(MaterialTheme.colors.onBackground)
             if (!isLoggedIn.value) {
                 LoginScreen(onSuccess = {
                     isLoggedIn.value = true

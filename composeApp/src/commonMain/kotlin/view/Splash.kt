@@ -69,8 +69,8 @@ fun Credit(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "Powered by",
-            fontWeight = FontWeight.ExtraLight,
+            "Credit to",
+            fontWeight = FontWeight.ExtraBold,
             color = Color.White,
             fontSize = 12.sp,
             fontFamily = FontFamily(Font(Res.font.Roboto_Thin))
