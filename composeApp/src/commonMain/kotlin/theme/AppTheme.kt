@@ -3,11 +3,11 @@ package theme
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Typography
 import androidx.compose.runtime.Composable
-import shared.adjustStatusBar
+import shared.adjustStatusBarColor
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
-    adjustStatusBar(backgroundGrad[0])
+    adjustStatusBarColor(backgroundGrad[0])
     MaterialTheme(
         colors = appColors,
         content = content,
