@@ -7,5 +7,5 @@ data class Relationship<T>(
     val id: String,
     val type: String,
     val related: String?,
-    val attributes: T
+    val attributes: T?
 )

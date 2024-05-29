@@ -5,8 +5,14 @@ import androidx.compose.ui.graphics.Color
 import io.github.irgaly.kottage.platform.KottageContext
 
 @Composable
-expect fun adjustStatusBar(color: Color)
+expect fun adjustStatusBarColor(color: Color)
 
 expect val kottageContext: KottageContext
 
 expect val databaseDir: String
+
+@Composable
+expect fun applyEdgeToEdge()
+
+@Composable
+expect fun adjustNavBarColor()

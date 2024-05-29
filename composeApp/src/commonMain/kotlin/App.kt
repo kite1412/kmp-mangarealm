@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import shared.kottageContext
 import theme.AppTheme
+import theme.gradient2
 import util.KOTTAGE_TOKEN
 import view.SplashScreen
 import view.LoginScreen
@@ -21,12 +22,27 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxSize
 import io.github.irgaly.kottage.getOrNull
 import kotlinx.coroutines.launch
 import shared.databaseDir
-import shared.adjustStatusBar
+import shared.adjustStatusBarColor
+import shared.applyEdgeToEdge
+import shared.adjustNavBarColor
 import kotlinx.coroutines.delay
 import androidx.compose.material.MaterialTheme
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.isSystemInDarkTheme
+
+data class ScreenSize(
+    val height: Dp,
+    val width: Dp
+)
+
+lateinit var screenSize: ScreenSize
 
 object Libs {
     val mangaDex: MangaDex = MangaDexImpl()
@@ -65,16 +81,20 @@ fun App() {
         isShowingSplash.value = false
     }
     AppTheme {
-        if (isShowingSplash.value) {
-            SplashScreen()
-        } else {
-            adjustStatusBar(MaterialTheme.colors.onBackground)
-            if (!isLoggedIn.value) {
-                LoginScreen(onSuccess = {
-                    isLoggedIn.value = true
-                })
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            screenSize = ScreenSize(height = this.maxHeight, width = this.maxWidth)
+            if (isShowingSplash.value) {
+                SplashScreen()
             } else {
-                MainScreen()
+                if (!isLoggedIn.value) {
+                    LoginScreen(onSuccess = {
+                        isLoggedIn.value = true
+                    })
+                } else {
+                    applyEdgeToEdge()
+                    adjustNavBarColor()
+                    MainScreen()
+                }
             }
         }
     }

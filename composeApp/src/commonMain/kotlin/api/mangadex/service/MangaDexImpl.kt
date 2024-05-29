@@ -5,6 +5,7 @@ import api.mangadex.model.response.ClientSecret
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.Token
 import api.mangadex.model.response.attribute.ClientAttributes
+import api.mangadex.model.response.attribute.MangaAttribute
 import api.mangadex.util.AUTH_ENDPOINT
 import api.mangadex.util.BASE_URL
 import io.ktor.client.HttpClient
@@ -68,5 +69,9 @@ class MangaDexImpl : MangaDex {
             }
             null
         }
+    }
+
+    override suspend fun getManga(queries: String): ListResponse<MangaAttribute, Unit>? {
+        TODO("Not yet implemented")
     }
 }
