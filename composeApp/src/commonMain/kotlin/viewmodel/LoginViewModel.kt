@@ -55,9 +55,6 @@ class LoginViewModel : ViewModel() {
     private var _loading = mutableStateOf(false)
     val loading = _loading
 
-    private var _message = mutableStateOf("")
-    val message = _loading
-
     private var _triggerMessage = mutableStateOf(false)
     val triggerMessage = _triggerMessage
 
@@ -110,7 +107,6 @@ class LoginViewModel : ViewModel() {
         )
     }
 
-    // TODO: change later
     fun onTap(onSuccess: (Token) -> Unit) {
         _loading.value = true
         _enableTap.value = false
@@ -125,7 +121,6 @@ class LoginViewModel : ViewModel() {
             )
             _loading.value = false
             if (token != null) {
-                _message.value = "Logged in"
                 _success.value = true
                 _triggerMessage.value = true
                 store(token)
@@ -133,7 +128,6 @@ class LoginViewModel : ViewModel() {
                 _triggerMessage.value = false
                 onSuccess(token)
             } else {
-                _message.value = "Fail to login"
                 _enableTap.value = true
                 _triggerMessage.value = true
                 delay(2000)

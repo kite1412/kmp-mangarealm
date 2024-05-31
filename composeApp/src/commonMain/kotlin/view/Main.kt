@@ -3,7 +3,6 @@ package view
 import Assets
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,17 +31,19 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Star
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +52,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import api.mangadex.model.response.Data
+import api.mangadex.model.response.attribute.MangaAttributes
 import assets.`Book-open-outline`
 import assets.Search
 import assets.`Shelf-outline`
@@ -58,11 +61,9 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import io.kamel.core.Resource
+import io.kamel.image.KamelImage
 import kotlinx.coroutines.delay
-import mangarealm.composeapp.generated.resources.Res
-import mangarealm.composeapp.generated.resources.one_piece_sample
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
 import screenSize
 import theme.gradient1
 import theme.primaryForThick
@@ -74,10 +75,16 @@ private val searchButtonBoxSize = 64.dp
 private val halfSearchButtonBoxSize = circleArea(searchButtonBoxSize.value) / 2
 private val latestBarHeight = (screenSize.height.value / 4).dp
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(
+    initialLatestUpdatesData: List<Data<MangaAttributes>>,
     vm: MainViewModel = MainViewModel()
 ) {
+    if (vm.executeOnce.value) {
+        vm.init()
+        vm.setExecuteOnce(false)
+    }
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -162,22 +169,28 @@ fun MainScreen(
         isFloatingActionButtonDocked = true
     ) {
         val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        LatestUpdatesBar(vm, latestBarHeight + statusBarPadding)
+        LatestUpdatesBar(
+            vm = vm,
+            data = initialLatestUpdatesData,
+            height = latestBarHeight + statusBarPadding
+        )
     }
 }
 
-@OptIn(ExperimentalResourceApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LatestUpdatesBar(
     vm: MainViewModel,
+    data: List<Data<MangaAttributes>>,
     height: Dp,
     modifier: Modifier = Modifier
 ) {
     val hazeState = remember { HazeState() }
     val pagerState = rememberPagerState { 10 }
-    LaunchedEffect(true) {
-        while (true) {
-            delay(4000)
+    var isOnManualSwipe by remember { mutableStateOf(false) }
+    LaunchedEffect(isOnManualSwipe) {
+        while (!isOnManualSwipe) {
+            delay(3500)
             if (pagerState.currentPage == pagerState.pageCount - 1) {
                 pagerState.animateScrollToPage(
                     0,
@@ -191,6 +204,13 @@ fun LatestUpdatesBar(
             }
         }
     }
+    LaunchedEffect(pagerState.settledPage) {
+        if (pagerState.isScrollInProgress) {
+            isOnManualSwipe = true
+            delay(500)
+        }
+        isOnManualSwipe = false
+    }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -198,12 +218,15 @@ fun LatestUpdatesBar(
             .clip(RoundedCornerShape(bottomEnd = 15.dp, bottomStart = 15.dp))
             .background(Color.Transparent)
     ) {
+        val res = vm.latestUpdatesCurrentResource
         Box(
             modifier = Modifier
+                .fillMaxWidth()
+                .height(height)
                 .haze(hazeState)
         ) {
-            Image(
-                painter = painterResource(Res.drawable.one_piece_sample),
+            if (res.value != null) KamelImage(
+                resource = res.value!!,
                 contentDescription = "one piece",
                 contentScale = ContentScale.FillWidth,
                 modifier = Modifier
@@ -233,18 +256,17 @@ fun LatestUpdatesBar(
             )
             Spacer(Modifier.height(16.dp))
             HorizontalPager(state = pagerState) {
-                for (i in 0..9) {
-                    BigDisplay(
-                        "One Piece",
-                        "N/A",
-                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea... ",
-                        height / 1.8f,
-                        100.dp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 8.dp)
-                    )
-                }
+                BigDisplay(
+                    res.value!!,
+                    vm.getTitle(data[it].attributes.title),
+                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea... ",
+                    height / 1.8f,
+                    // TODO adjust later
+                    100.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(end = 8.dp)
+                )
             }
         }
         IndicatorDots(
@@ -278,11 +300,10 @@ private fun IndicatorDots(
     }
 }
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
 private fun BigDisplay(
+    resource: Resource<Painter>,
     title: String,
-    rating: String,
     desc: String,
     imageHeight: Dp,
     imageWidth: Dp,
@@ -294,7 +315,7 @@ private fun BigDisplay(
         modifier = modifier
     ) {
         Column(
-            verticalArrangement = Arrangement.SpaceEvenly,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.End,
             modifier = Modifier
                 .padding(end = 4.dp)
@@ -303,24 +324,12 @@ private fun BigDisplay(
             Text(
                 title,
                 color = Color.White,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.End
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Rounded.Star,
-                    contentDescription = "rating",
-                    tint = Color.White,
-                    modifier = Modifier
-                        .size(18.dp)
-                )
-                Text(
-                    rating,
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
             Text(
                 desc,
                 color = Color.White,
@@ -332,10 +341,9 @@ private fun BigDisplay(
                 lineHeight = 8.sp
             )
         }
-        // TODO use browsable image later
-        Image(
-            painter = painterResource(Res.drawable.one_piece_sample),
-            contentDescription = "one piece",
+        KamelImage(
+            resource = resource,
+            contentDescription = title,
             contentScale = ContentScale.FillBounds,
             modifier = Modifier
                 .height(imageHeight)

@@ -16,7 +16,7 @@ public val Assets.Search: ImageVector
         if (_search != null) {
             return _search!!
         }
-        _search = Builder(name = "Search", defaultWidth = 64.0.dp, defaultHeight = 64.0.dp,
+        _search = Builder(name = "Search", defaultWidth = 24.0.dp, defaultHeight = 24.0.dp,
                 viewportWidth = 24.0f, viewportHeight = 24.0f).apply {
             path(fill = SolidColor(Color(0x00000000)), stroke = SolidColor(Color(0xFF000000)),
                     strokeLineWidth = 2.0f, strokeLineCap = Round, strokeLineJoin =
