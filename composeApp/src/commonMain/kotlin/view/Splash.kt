@@ -1,8 +1,5 @@
-@file:OptIn(ExperimentalResourceApi::class)
-
 package view
 
-import Assets
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -22,15 +19,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import assets.`Full-logo`
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.Roboto_Thin
+import mangarealm.composeapp.generated.resources.full_logo
 import mangarealm.composeapp.generated.resources.mangadex
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import theme.backgroundGrad
 
+@OptIn(ExperimentalResourceApi::class)
 @Composable
 fun SplashScreen() {
     Box(
@@ -46,7 +44,7 @@ fun SplashScreen() {
             ),
     ) {
         Image(
-            imageVector = Assets.`Full-logo`,
+            painter = painterResource(Res.drawable.full_logo),
             contentDescription = "Manga Realm",
             modifier = Modifier
                 .height(100.dp)

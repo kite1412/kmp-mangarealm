@@ -49,6 +49,10 @@ kotlin {
             implementation(libs.ktor.client.cio)
             implementation(libs.kottage)
             implementation(libs.haze)
+            implementation(libs.kamel.image)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test.v200)
         }
     }
 }

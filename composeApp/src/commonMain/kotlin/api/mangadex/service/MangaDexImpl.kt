@@ -1,13 +1,11 @@
 package api.mangadex.service
 
 import api.mangadex.model.request.TokenRequest
-import api.mangadex.model.response.ClientSecret
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.Token
-import api.mangadex.model.response.attribute.ClientAttributes
-import api.mangadex.model.response.attribute.MangaAttribute
+import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.util.AUTH_ENDPOINT
-import api.mangadex.util.BASE_URL
+import api.mangadex.util.MANGA_ENDPOINT
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -18,15 +16,14 @@ import io.ktor.http.parameters
 import io.ktor.serialization.kotlinx.json.json
 import util.Log
 
-class MangaDexImpl : MangaDex {
-    private val client = HttpClient(CIO) {
+class MangaDexImpl(
+    private val client: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
             json()
         }
-    }
-
-    val token = TokenHandlerImpl(client)
-
+    },
+    private val token: TokenHandler = TokenHandlerImpl(client)
+) : MangaDex {
     override suspend fun login(request: TokenRequest): Token? {
         return try {
             client.submitForm(
@@ -49,29 +46,14 @@ class MangaDexImpl : MangaDex {
         }
     }
 
-    override suspend fun getClientSecret(id: String): ClientSecret? {
+    override suspend fun getManga(queries: String): ListResponse<MangaAttributes>? {
         return try {
-            client.get("$BASE_URL/$id/secret").body<ClientSecret>()
+            client.get("$MANGA_ENDPOINT/$queries").body<ListResponse<MangaAttributes>>()
         } catch (e: Throwable) {
             e.cause?.message?.let {
                 Log.e(it)
             }
             null
         }
-    }
-
-    override suspend fun getClients(): ListResponse<ClientAttributes, Unit>? {
-        return try {
-            TODO()
-        } catch (e: Throwable) {
-            e.cause?.message?.let {
-                Log.e(it)
-            }
-            null
-        }
-    }
-
-    override suspend fun getManga(queries: String): ListResponse<MangaAttribute, Unit>? {
-        TODO("Not yet implemented")
     }
 }
