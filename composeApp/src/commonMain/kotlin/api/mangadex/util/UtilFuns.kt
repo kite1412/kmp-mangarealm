@@ -1,5 +1,9 @@
 package api.mangadex.util
 
+import androidx.compose.runtime.Composable
+import api.mangadex.model.response.Data
+import api.mangadex.model.response.attribute.MangaAttributes
+
 fun generateArrayQueryParam(name: String, values: List<Any>): String {
     if (values.isNotEmpty()) {
         var final = "?"
@@ -31,6 +35,23 @@ fun generateQuery(queryParams: Map<String, Any>, otherParams: String = ""): Stri
     return ""
 }
 
-fun coverImageUrl(mangaId: String, filename: String): String {
+fun getCoverUrl(mangaId: String, filename: String): String {
     return "${COVER_DISCOVERY_ENDPOINT}/$mangaId/$filename"
+}
+
+fun getCoverUrl(manga: Data<MangaAttributes>): String {
+    val id = manga.id
+    var filename = ""
+    for (r in manga.relationships) {
+        if (r.type == DataType.COVER_ART.name.lowercase()) {
+            filename = r.attributes!!.fileName!!
+            break
+        }
+    }
+    return getCoverUrl(id, filename)
+}
+
+@Composable
+fun browseImage(manga: Data<MangaAttributes>) {
+
 }

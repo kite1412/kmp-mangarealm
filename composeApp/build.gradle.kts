@@ -49,7 +49,7 @@ kotlin {
             implementation(libs.ktor.client.cio)
             implementation(libs.kottage)
             implementation(libs.haze)
-            implementation(libs.kamel.image)
+            implementation(libs.image.loader)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test.v200)
