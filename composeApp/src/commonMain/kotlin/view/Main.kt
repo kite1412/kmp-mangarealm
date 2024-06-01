@@ -43,7 +43,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -52,8 +51,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import api.mangadex.model.response.Data
-import api.mangadex.model.response.attribute.MangaAttributes
 import assets.`Book-open-outline`
 import assets.Search
 import assets.`Shelf-outline`
@@ -61,12 +58,11 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
-import io.kamel.core.Resource
-import io.kamel.image.KamelImage
 import kotlinx.coroutines.delay
 import screenSize
 import theme.gradient1
 import theme.primaryForThick
+import util.LATEST_UPDATE_SLIDE_TIME
 import util.circleArea
 import viewmodel.MainViewModel
 
@@ -75,16 +71,9 @@ private val searchButtonBoxSize = 64.dp
 private val halfSearchButtonBoxSize = circleArea(searchButtonBoxSize.value) / 2
 private val latestBarHeight = (screenSize.height.value / 4).dp
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MainScreen(
-    initialLatestUpdatesData: List<Data<MangaAttributes>>,
-    vm: MainViewModel = MainViewModel()
-) {
-    if (vm.executeOnce.value) {
-        vm.init()
-        vm.setExecuteOnce(false)
-    }
+fun MainScreen(vm: MainViewModel = MainViewModel()) {
+    vm.init()
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -171,7 +160,6 @@ fun MainScreen(
         val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         LatestUpdatesBar(
             vm = vm,
-            data = initialLatestUpdatesData,
             height = latestBarHeight + statusBarPadding
         )
     }
@@ -181,7 +169,6 @@ fun MainScreen(
 @Composable
 fun LatestUpdatesBar(
     vm: MainViewModel,
-    data: List<Data<MangaAttributes>>,
     height: Dp,
     modifier: Modifier = Modifier
 ) {
@@ -190,11 +177,12 @@ fun LatestUpdatesBar(
     var isOnManualSwipe by remember { mutableStateOf(false) }
     LaunchedEffect(isOnManualSwipe) {
         while (!isOnManualSwipe) {
-            delay(3500)
+            delay(vm.latestUpdateSlideTime.value.toLong())
+            vm.adjustLatestUpdatesSlideTime(LATEST_UPDATE_SLIDE_TIME)
             if (pagerState.currentPage == pagerState.pageCount - 1) {
                 pagerState.animateScrollToPage(
                     0,
-                    animationSpec = tween(1000)
+                    animationSpec = tween(200)
                 )
             } else {
                 pagerState.animateScrollToPage(
@@ -218,25 +206,37 @@ fun LatestUpdatesBar(
             .clip(RoundedCornerShape(bottomEnd = 15.dp, bottomStart = 15.dp))
             .background(Color.Transparent)
     ) {
-        val res = vm.latestUpdatesCurrentResource
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(height)
                 .haze(hazeState)
         ) {
-            if (res.value != null) KamelImage(
-                resource = res.value!!,
-                contentDescription = "one piece",
-                contentScale = ContentScale.FillWidth,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(height)
-                    .hazeChild(
-                        hazeState,
-                        style = HazeStyle(blurRadius = 8.dp)
-                    )
-            )
+            if (vm.initialLatestUpdates.isNotEmpty() &&
+                vm.latestUpdatesImages.isNotEmpty() &&
+                vm.latestUpdatesImages.size > pagerState.currentPage)
+                vm.latestUpdatesImages[pagerState.currentPage](
+                    ContentScale.FillWidth,
+                    Modifier
+                        .fillMaxWidth()
+                        .height(height)
+                        .hazeChild(
+                            hazeState,
+                            style = HazeStyle(blurRadius = 8.dp)
+                        )
+                )
+//                Image(
+//                    painter = vm.latestUpdatesPainter[pagerState.currentPage],
+//                    contentDescription = "one piece",
+//                    contentScale = ContentScale.FillWidth,
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .height(height)
+//                        .hazeChild(
+//                            hazeState,
+//                            style = HazeStyle(blurRadius = 8.dp)
+//                        )
+//                )
         }
         Column(
             modifier = Modifier
@@ -256,17 +256,21 @@ fun LatestUpdatesBar(
             )
             Spacer(Modifier.height(16.dp))
             HorizontalPager(state = pagerState) {
-                BigDisplay(
-                    res.value!!,
-                    vm.getTitle(data[it].attributes.title),
-                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea... ",
-                    height / 1.8f,
-                    // TODO adjust later
-                    100.dp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(end = 8.dp)
-                )
+                if (vm.initialLatestUpdates.isNotEmpty() &&
+                    vm.latestUpdatesImages.isNotEmpty() &&
+                    vm.latestUpdatesImages.size > it)
+                    BigDisplay(
+                        title = vm.getTitle(vm.initialLatestUpdates[it].attributes.title),
+                        desc = vm.getDesc(vm.initialLatestUpdates[it].attributes.description),
+                        imageHeight = height / 1.8f,
+                        // TODO adjust later
+                        imageWidth = 100.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 8.dp)
+                    ) { contentScale, modifier ->
+                        vm.latestUpdatesImages[it](contentScale, modifier)
+                    }
             }
         }
         IndicatorDots(
@@ -302,24 +306,24 @@ private fun IndicatorDots(
 
 @Composable
 private fun BigDisplay(
-    resource: Resource<Painter>,
     title: String,
     desc: String,
     imageHeight: Dp,
     imageWidth: Dp,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    image: @Composable (ContentScale, Modifier) -> Unit
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.End,
-        modifier = modifier
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.End,
             modifier = Modifier
-                .padding(end = 4.dp)
-                .width(screenSize.width / 1.5f)
+                .padding(end = 8.dp)
+                .width(screenSize.width / 1.7f)
         ) {
             Text(
                 title,
@@ -328,7 +332,8 @@ private fun BigDisplay(
                 overflow = TextOverflow.Ellipsis,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.End
+                textAlign = TextAlign.End,
+                lineHeight = 16.sp
             )
             Text(
                 desc,
@@ -338,14 +343,12 @@ private fun BigDisplay(
                 textAlign = TextAlign.End,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
-                lineHeight = 8.sp
+                lineHeight = 10.sp
             )
         }
-        KamelImage(
-            resource = resource,
-            contentDescription = title,
-            contentScale = ContentScale.FillBounds,
-            modifier = Modifier
+        image(
+            ContentScale.FillBounds,
+            Modifier
                 .height(imageHeight)
                 .width(imageWidth)
                 .clip(RoundedCornerShape(5.dp))

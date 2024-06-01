@@ -1,34 +1,97 @@
 package viewmodel
 
+import Libs
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.ViewModel
-import api.mangadex.util.coverImageUrl
-import io.kamel.core.Resource
-import io.kamel.image.asyncPainterResource
+import api.mangadex.model.response.Data
+import api.mangadex.model.response.attribute.MangaAttributes
+import api.mangadex.service.MangaDex
+import api.mangadex.util.generateArrayQueryParam
+import api.mangadex.util.getCoverUrl
+import com.seiko.imageloader.model.ImageAction
+import com.seiko.imageloader.rememberImageSuccessPainter
+import com.seiko.imageloader.ui.AutoSizeBox
+import util.LATEST_UPDATE_SLIDE_TIME
+import util.SPLASH_TIME
 
-class MainViewModel : ViewModel() {
-    private var _latestUpdatesCurrentResource: MutableState<Resource<Painter>?> = mutableStateOf(null)
-    val latestUpdatesCurrentResource = _latestUpdatesCurrentResource
+class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel() {
+    private var executeOnce = mutableStateOf(true)
 
-    private var _executeOnce = mutableStateOf(true)
-    val executeOnce = _executeOnce
+    private var _latestUpdateSlideTime = mutableStateOf(SPLASH_TIME + LATEST_UPDATE_SLIDE_TIME)
+    val latestUpdateSlideTime = _latestUpdateSlideTime
+
+    val initialLatestUpdates = mutableStateListOf<Data<MangaAttributes>>()
+
+    val latestUpdatesPainter = mutableStateListOf<Painter>()
+
+    val latestUpdatesImages = mutableStateListOf<@Composable (ContentScale, Modifier) -> Unit>()
+
+    private suspend fun initLatestUpdates() {
+        initialLatestUpdates.addAll(mangaDex.getManga(generateArrayQueryParam(
+            name = "includes[]",
+            values = listOf("cover_art")
+        ))?.data ?: listOf())
+    }
+
+    @Composable
+    private fun initLatestUpdatesPainter() {
+        initialLatestUpdates.forEach { data ->
+            latestUpdatesImages.add { cs, m ->
+                AutoSizeBox(getCoverUrl(data)) {action ->
+                    when (action) {
+                        is ImageAction.Success -> {
+                            Image(
+                                rememberImageSuccessPainter(action),
+                                "cover art",
+                                contentScale = cs,
+                                modifier = m
+                            )
+                        }
+                        is ImageAction.Loading -> Box(Modifier.fillMaxSize()) {
+                            CircularProgressIndicator(Modifier.align(Alignment.Center))
+                        }
+                        else -> Text("Fail to load image", color = Color.White)
+                    }
+                }
+            }
+        }
+    }
 
     @Composable
     fun init() {
-        _latestUpdatesCurrentResource.value = asyncPainterResource(data = coverImageUrl(
-            mangaId = "05bd710c-d94a-45eb-be99-2109d58f1006",
-            filename = "bc22bc4a-5d83-40f8-85bd-45b7ecb08d83.jpg"
-        ))
+        LaunchedEffect(true) {
+            initLatestUpdates()
+        }
+        if (initialLatestUpdates.isNotEmpty() && executeOnce.value) {
+            initLatestUpdatesPainter()
+            executeOnce.value = false
+        }
     }
 
-    fun setExecuteOnce(new: Boolean) {
-        _executeOnce.value = new
+    fun adjustLatestUpdatesSlideTime(new: Int) {
+        if (_latestUpdateSlideTime.value != new) {
+            _latestUpdateSlideTime.value = LATEST_UPDATE_SLIDE_TIME
+        }
     }
 
     fun getTitle(title: Map<String, String>): String {
-        return title["en"] ?: return title["ja"]!!
+        return title["en"] ?: return title["ja"] ?: ""
+    }
+
+    fun getDesc(desc: Map<String, String>): String {
+        return desc["en"] ?: desc["id"] ?: desc["ja"] ?: ""
     }
 }

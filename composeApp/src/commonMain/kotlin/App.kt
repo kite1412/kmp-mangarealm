@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.isSystemInDarkTheme
-import Initializer
 import viewmodel.MainViewModel
 import androidx.compose.runtime.State
 import androidx.compose.runtime.MutableState
@@ -73,51 +72,33 @@ private suspend fun isLoggedIn(): Boolean {
 @Composable
 @Preview
 fun App() {
-    lateinit var initializer: Initializer
     val isLoggedIn = remember {
         mutableStateOf(false)
     }
     val isShowingSplash = remember {
         mutableStateOf(true)
     }
-    var initialLatestUpdatesData: MutableState<List<Data<MangaAttributes>>> = androidx.compose.runtime.remember {
-        androidx.compose.runtime.mutableStateOf(listOf())
-    }
     LaunchedEffect(true) {
         isLoggedIn.value = isLoggedIn()
-        if (isLoggedIn.value) {
-            initializer = Initializer()
-            initialLatestUpdatesData.value = initializer.getInitialLatestUpdates()
-        }
-        delay(2000)
+        delay(util.SPLASH_TIME.toLong())
         isShowingSplash.value = false
     }
     AppTheme {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             screenSize = ScreenSize(height = this.maxHeight, width = this.maxWidth)
-            if (isShowingSplash.value) {
-                SplashScreen()
+            if (!isLoggedIn.value) {
+                LoginScreen(onSuccess = {
+                    isLoggedIn.value = true
+                })
             } else {
-                if (!isLoggedIn.value) {
-                    LoginScreen(onSuccess = {
-                        isLoggedIn.value = true
-                    })
-                } else {
+                if (!isShowingSplash.value) {
                     applyEdgeToEdge()
                     adjustNavBarColor()
-                    if (initialLatestUpdatesData.value.isEmpty()) {
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            androidx.compose.material.Text(
-                                "Loading...",
-                                modifier = Modifier.align(androidx.compose.ui.Alignment.Companion.Center)
-                            )
-                        }
-                    } else {
-                        MainScreen(initialLatestUpdatesData = initialLatestUpdatesData.value)
-                    }
                 }
+                view.MainScreen()
+            }
+            if (isShowingSplash.value) {
+                SplashScreen()
             }
         }
     }
