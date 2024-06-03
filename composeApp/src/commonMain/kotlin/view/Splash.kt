@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,7 +27,6 @@ import mangarealm.composeapp.generated.resources.mangadex
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
-import theme.backgroundGrad
 
 @OptIn(ExperimentalResourceApi::class)
 @Composable
@@ -37,8 +37,8 @@ fun SplashScreen() {
             .background(
                 brush = Brush.linearGradient(
                     colorStops = arrayOf(
-                        0.25f to backgroundGrad[0],
-                        1f to backgroundGrad[1],
+                        0.5f to MaterialTheme.colors.onBackground,
+                        1f to MaterialTheme.colors.background,
                     )
                 )
             ),

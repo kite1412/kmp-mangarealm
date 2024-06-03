@@ -26,9 +26,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import io.github.irgaly.kottage.getOrNull
 import kotlinx.coroutines.launch
 import shared.databaseDir
-import shared.adjustStatusBarColor
 import shared.applyEdgeToEdge
 import shared.adjustNavBarColor
+import shared.adjustStatusBarColor
 import kotlinx.coroutines.delay
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.unit.Dp
@@ -86,15 +86,14 @@ fun App() {
     AppTheme {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             screenSize = ScreenSize(height = this.maxHeight, width = this.maxWidth)
+            if (!isShowingSplash.value) {
+                adjustStatusBarColor(MaterialTheme.colors.background)
+            }
             if (!isLoggedIn.value) {
                 LoginScreen(onSuccess = {
                     isLoggedIn.value = true
                 })
             } else {
-                if (!isShowingSplash.value) {
-                    applyEdgeToEdge()
-                    adjustNavBarColor()
-                }
                 view.MainScreen()
             }
             if (isShowingSplash.value) {
