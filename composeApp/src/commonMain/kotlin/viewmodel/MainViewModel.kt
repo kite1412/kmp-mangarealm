@@ -13,7 +13,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.ViewModel
 import api.mangadex.model.response.Data
@@ -33,11 +32,16 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
     private var _latestUpdateSlideTime = mutableStateOf(SPLASH_TIME + LATEST_UPDATE_SLIDE_TIME)
     val latestUpdateSlideTime = _latestUpdateSlideTime
 
+    private var _currentPage = mutableStateOf(Page.MAIN)
+    val currentPage = _currentPage
+
     val initialLatestUpdates = mutableStateListOf<Data<MangaAttributes>>()
 
-    val latestUpdatesPainter = mutableStateListOf<Painter>()
-
     val latestUpdatesImages = mutableStateListOf<@Composable (ContentScale, Modifier) -> Unit>()
+
+    fun setPage(page: Page) {
+        _currentPage.value = page
+    }
 
     private suspend fun initLatestUpdates() {
         initialLatestUpdates.addAll(mangaDex.getManga(generateArrayQueryParam(
@@ -94,4 +98,8 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
     fun getDesc(desc: Map<String, String>): String {
         return desc["en"] ?: desc["id"] ?: desc["ja"] ?: ""
     }
+}
+
+enum class Page {
+    MAIN, FEED, DISCOVERY, USER_LIST
 }

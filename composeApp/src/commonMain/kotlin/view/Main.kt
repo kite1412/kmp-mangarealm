@@ -16,17 +16,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.BottomAppBar
-import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.FabPosition
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
@@ -40,36 +38,35 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import assets.`Book-open-outline`
+import androidx.compose.ui.unit.times
+import assets.`Book-close`
+import assets.Clipboard
+import assets.Home
+import assets.Person
 import assets.Search
-import assets.`Shelf-outline`
+import assets.`Text-align-right`
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
 import screenSize
-import theme.gradient1
-import theme.primaryForThick
+import theme.selectedButton
+import theme.unselectedButton
 import util.LATEST_UPDATE_SLIDE_TIME
-import util.circleArea
 import viewmodel.MainViewModel
+import viewmodel.Page
 
-private val navButtonSize = 32.dp
-private val searchButtonBoxSize = 64.dp
-private val halfSearchButtonBoxSize = circleArea(searchButtonBoxSize.value) / 2
-private val latestBarHeight = (screenSize.height.value / 4).dp
+private val latestBarHeight = (screenSize.height.value / 4.2).dp
 
 @Composable
 fun MainScreen(vm: MainViewModel = MainViewModel()) {
@@ -78,89 +75,90 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
         modifier = Modifier
             .fillMaxSize()
             .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
-        bottomBar = {
-            BottomAppBar(
-                modifier = Modifier.clip(
-                    RoundedCornerShape(
-                        topStart = 15.dp,
-                        topEnd = 15.dp,
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
+                item {
+                    Header(
+                        "kite1412",
+                        modifier = Modifier.padding(top = 24.dp,)
                     )
-                ),
-                backgroundColor = MaterialTheme.colors.onBackground,
-                cutoutShape = CircleShape
-            ) {
-                BottomNavigationItem(
-                    selected = true,
-                    onClick = {},
-                    icon = {
-                        Icon(
-                            imageVector = Assets.`Book-open-outline`,
-                            contentDescription = "read",
-                            modifier = Modifier.size(navButtonSize),
-                            tint = MaterialTheme.colors.primary
-                        )
-                    },
-                    label = {
+                }
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 32.dp)
+                    ) {
                         Text(
-                            "Read",
-                            color = MaterialTheme.colors.primary
+                            "Latest Updates",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.Black,
+                            modifier = Modifier.padding(start = 10.dp)
+                        )
+                        LatestUpdatesBar(
+                            vm = vm,
+                            height = latestBarHeight,
                         )
                     }
-                )
-                BottomNavigationItem(
-                    selected = false,
-                    onClick = {},
-                    icon = {
-                        Icon(
-                            imageVector = Assets.`Shelf-outline`,
-                            contentDescription = "my list",
-                            modifier = Modifier.size(navButtonSize),
-                            tint = MaterialTheme.colors.primaryForThick
-                        )
-                    },
-                    label = {
-                        Text(
-                            "My List",
-                            color = MaterialTheme.colors.primary
-                        )
-                    },
-                    alwaysShowLabel = false
-                )
+                }
             }
-        },
-        floatingActionButton = {
+            BottomAppBar(
+                page = vm.currentPage.value,
+                onPageChange = {
+                    vm.currentPage.value = it
+                },
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
+    }
+}
+
+@Composable
+private fun Header(
+    username: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Box {
             Box(
                 modifier = Modifier
+                    .size(52.dp)
                     .clip(CircleShape)
-                    .size(searchButtonBoxSize)
-                    .background(brush = Brush.linearGradient(
-                        colors = listOf(
-                            gradient1[0],
-                            gradient1[1],
-                        ),
-                        start = Offset(x = 0f, y = halfSearchButtonBoxSize),
-                        end = Offset(x = halfSearchButtonBoxSize, y = halfSearchButtonBoxSize)
-                    ))
-                    .clickable {  }
+                    .background(Color.White)
             ) {
                 Icon(
-                    Assets.Search,
-                    contentDescription = null,
+                    Assets.Person,
+                    contentDescription = "person icon",
+                    tint = Color.Black,
                     modifier = Modifier
+                        .size(32.dp)
                         .align(Alignment.Center)
-                        .size(56.dp)
-                        .padding(4.dp),
-                    tint = MaterialTheme.colors.onBackground,
                 )
             }
-        },
-        floatingActionButtonPosition = FabPosition.Center,
-        isFloatingActionButtonDocked = true
-    ) {
-        val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        LatestUpdatesBar(
-            vm = vm,
-            height = latestBarHeight + statusBarPadding
+        }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            username,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 16.sp,
+            color = Color.Black,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Spacer(Modifier.weight(1f))
+        Icon(
+            imageVector = Assets.`Text-align-right`,
+            contentDescription = "custom list",
+            tint = Color.Black,
+            modifier = Modifier
+                .size(32.dp)
         )
     }
 }
@@ -182,7 +180,7 @@ fun LatestUpdatesBar(
             if (pagerState.currentPage == pagerState.pageCount - 1) {
                 pagerState.animateScrollToPage(
                     0,
-                    animationSpec = tween(200)
+                    animationSpec = tween(500)
                 )
             } else {
                 pagerState.animateScrollToPage(
@@ -203,73 +201,48 @@ fun LatestUpdatesBar(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .clip(RoundedCornerShape(bottomEnd = 15.dp, bottomStart = 15.dp))
+            .clip(RoundedCornerShape(15.dp))
             .background(Color.Transparent)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(height)
-                .haze(hazeState)
-        ) {
-            if (vm.initialLatestUpdates.isNotEmpty() &&
-                vm.latestUpdatesImages.isNotEmpty() &&
-                vm.latestUpdatesImages.size > pagerState.currentPage)
-                vm.latestUpdatesImages[pagerState.currentPage](
-                    ContentScale.FillWidth,
-                    Modifier
-                        .fillMaxWidth()
-                        .height(height)
-                        .hazeChild(
-                            hazeState,
-                            style = HazeStyle(blurRadius = 8.dp)
-                        )
-                )
-//                Image(
-//                    painter = vm.latestUpdatesPainter[pagerState.currentPage],
-//                    contentDescription = "one piece",
-//                    contentScale = ContentScale.FillWidth,
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .height(height)
-//                        .hazeChild(
-//                            hazeState,
-//                            style = HazeStyle(blurRadius = 8.dp)
-//                        )
-//                )
-        }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-                    start = 8.dp,
-                    end = 8.dp,
-                )
-        ) {
-            Text(
-                "Latest Updates",
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                color = Color.White,
-                fontStyle = FontStyle.Italic,
-            )
-            Spacer(Modifier.height(16.dp))
+        Column(modifier = Modifier.fillMaxSize()) {
+            val imageHeight = height / 1.5f
             HorizontalPager(state = pagerState) {
                 if (vm.initialLatestUpdates.isNotEmpty() &&
                     vm.latestUpdatesImages.isNotEmpty() &&
                     vm.latestUpdatesImages.size > it)
-                    BigDisplay(
-                        title = vm.getTitle(vm.initialLatestUpdates[it].attributes.title),
-                        desc = vm.getDesc(vm.initialLatestUpdates[it].attributes.description),
-                        imageHeight = height / 1.8f,
-                        // TODO adjust later
-                        imageWidth = 100.dp,
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(end = 8.dp)
-                    ) { contentScale, modifier ->
-                        vm.latestUpdatesImages[it](contentScale, modifier)
+                            .padding(horizontal = 4.dp)
+                            .clip(RoundedCornerShape(15.dp))
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .haze(hazeState)
+                        ) {
+                            vm.latestUpdatesImages[it](
+                                ContentScale.FillWidth,
+                                Modifier
+                                    .fillMaxSize()
+                                    .hazeChild(
+                                        hazeState,
+                                        style = HazeStyle(blurRadius = 8.dp)
+                                    )
+                            )
+                        }
+                        BigDisplay(
+                            title = vm.getTitle(vm.initialLatestUpdates[it].attributes.title),
+                            desc = vm.getDesc(vm.initialLatestUpdates[it].attributes.description),
+                            imageHeight = imageHeight,
+                            imageWidth = ((2f / 3f) * imageHeight),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    top = 16.dp,
+                                    end = 12.dp
+                                )
+                        ) { contentScale, modifier ->
+                            vm.latestUpdatesImages[it](contentScale, modifier)
+                        }
                     }
             }
         }
@@ -354,4 +327,72 @@ private fun BigDisplay(
                 .clip(RoundedCornerShape(5.dp))
         )
     }
+}
+
+@Composable
+private fun BottomAppBar(
+    page: Page,
+    onPageChange: (Page) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(62.dp)
+            .padding(horizontal = 8.dp)
+            .offset(y = (-8).dp)
+            .clip(RoundedCornerShape(15.dp))
+            .background(MaterialTheme.colors.onBackground),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        BottomAppBarIcon(
+            page = Page.MAIN,
+            imageVector = Assets.Home,
+            contentDescription = "main page",
+            selected = page == Page.MAIN,
+            onClick = onPageChange
+        )
+        BottomAppBarIcon(
+            page = Page.FEED,
+            imageVector = Assets.Clipboard,
+            contentDescription = "feed page",
+            selected = page == Page.FEED,
+            onClick = onPageChange
+        )
+        BottomAppBarIcon(
+            page = Page.DISCOVERY,
+            imageVector = Assets.Search,
+            contentDescription = "discovery page",
+            selected = page == Page.DISCOVERY,
+            onClick = onPageChange
+        )
+        BottomAppBarIcon(
+            page = Page.USER_LIST,
+            imageVector = Assets.`Book-close`,
+            contentDescription = "your list page",
+            selected = page == Page.USER_LIST,
+            onClick = onPageChange
+        )
+    }
+}
+
+@Composable
+fun BottomAppBarIcon(
+    page: Page,
+    imageVector: ImageVector,
+    contentDescription: String,
+    selected: Boolean,
+    onClick: (Page) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Icon(
+        imageVector = imageVector,
+        contentDescription = contentDescription,
+        tint = if (selected) MaterialTheme.colors.selectedButton
+            else MaterialTheme.colors.unselectedButton,
+        modifier = modifier
+            .size(32.dp)
+            .clickable{ onClick(page) }
+    )
 }

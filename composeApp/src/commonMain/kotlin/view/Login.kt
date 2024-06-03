@@ -32,6 +32,7 @@ import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -73,15 +74,15 @@ import mangarealm.composeapp.generated.resources.mangadex
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
-import theme.backgroundGrad
 import theme.gradient1
 import theme.gradient2
 import viewmodel.LoginViewModel
 
+@Composable
 private fun background(maxWidth: Dp) = Brush.linearGradient(
     colorStops = arrayOf(
-        0f to backgroundGrad[0],
-        0.65f to backgroundGrad[1]
+        0f to MaterialTheme.colors.background,
+        0.40f to MaterialTheme.colors.onBackground
     ),
     start = Offset(maxWidth.value / 2, 0.0f),
     end = Offset(maxWidth.value / 2, Float.POSITIVE_INFINITY)
@@ -286,7 +287,6 @@ private fun PromptPage(
     }
 }
 
-// TODO: add visual transformation on sensitive field
 @Composable
 private fun MTextField(
     label: String,
