@@ -13,7 +13,14 @@ interface TokenHandler {
             val payload = Base64.decode(splitted[1]).decodeToString()
             return payload.substringBefore(',').substringAfter(':').toInt()
         }
+
+        @OptIn(ExperimentalEncodingApi::class)
+        fun expiration(token: String): Int {
+            val splitted = token.split(".")
+            val payload = Base64.decode(splitted[1]).decodeToString()
+            return payload.substringBefore(',').substringAfter(':').toInt()
+        }
     }
 
-    suspend fun invoke(): Boolean
+    suspend operator fun invoke(): String?
 }

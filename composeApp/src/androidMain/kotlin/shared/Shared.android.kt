@@ -48,3 +48,6 @@ actual fun adjustNavBarColor() {
         }
     }
 }
+
+actual val currentTimeMillis: Long
+    get() = System.currentTimeMillis()

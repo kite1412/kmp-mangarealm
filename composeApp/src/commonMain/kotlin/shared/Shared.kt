@@ -16,3 +16,5 @@ expect fun applyEdgeToEdge()
 
 @Composable
 expect fun adjustNavBarColor()
+
+expect val currentTimeMillis: Long

@@ -75,6 +75,11 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
     }
 
     @Composable
+    private fun initContinueReading() {
+
+    }
+
+    @Composable
     fun init() {
         LaunchedEffect(true) {
             initLatestUpdates()
