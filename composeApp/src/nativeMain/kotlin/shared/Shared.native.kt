@@ -21,3 +21,6 @@ actual fun applyEdgeToEdge() {
 @Composable
 actual fun adjustNavBarColor() {
 }
+
+actual val currentTimeMillis: Long
+    get() = TODO("Not yet implemented")

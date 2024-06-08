@@ -3,6 +3,7 @@ package view
 import Assets
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,7 +21,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -49,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
 import assets.`Book-close`
+import assets.`Chevron-right-bold`
 import assets.Clipboard
 import assets.Home
 import assets.Person
@@ -59,6 +64,10 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
+import mangarealm.composeapp.generated.resources.Res
+import mangarealm.composeapp.generated.resources.one_piece_sample
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import org.jetbrains.compose.resources.painterResource
 import screenSize
 import theme.selectedButton
 import theme.unselectedButton
@@ -95,7 +104,6 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
                             "Latest Updates",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color.Black,
                             modifier = Modifier.padding(start = 10.dp)
                         )
                         LatestUpdatesBar(
@@ -103,6 +111,9 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
                             height = latestBarHeight,
                         )
                     }
+                }
+                item {
+                    ContinueReading(modifier = Modifier.padding(top = 24.dp))
                 }
             }
             BottomAppBar(
@@ -148,7 +159,6 @@ private fun Header(
             username,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 16.sp,
-            color = Color.Black,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -395,4 +405,83 @@ fun BottomAppBarIcon(
             .size(32.dp)
             .clickable{ onClick(page) }
     )
+}
+
+@Composable
+private fun SmallDisplay(
+    image: @Composable (ContentScale, Modifier) -> Unit,
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier) {
+        image(
+            ContentScale.FillBounds,
+            Modifier
+                .width(64.dp)
+                .height(96.dp)
+                .clip(RoundedCornerShape(5.dp))
+        )
+        Spacer(Modifier.width(4.dp))
+        Column(modifier = Modifier.padding(top = 12.dp)) {
+            Text(
+                title,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalResourceApi::class)
+@Composable
+private fun ContinueReading(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            // TODO change later
+            .wrapContentSize()
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+           Text(
+               "Continue Reading",
+               fontSize = 16.sp,
+               fontWeight = FontWeight.SemiBold,
+           )
+           Icon(
+               imageVector = Assets.`Chevron-right-bold`,
+               contentDescription = null,
+               tint = Color.Black,
+               modifier = Modifier
+                   .height(16.dp)
+                   .offset(y = 1.dp)
+           )
+        }
+        Spacer(Modifier.height(12.dp))
+        LazyHorizontalGrid(
+            rows = GridCells.Fixed(2),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.height(latestBarHeight).padding(start = 4.dp)
+        ) {
+            items(count = 4) {
+                SmallDisplay(
+                    image = { cs, m ->
+                        Image(
+                            painterResource(Res.drawable.one_piece_sample),
+                            contentDescription = null,
+                            contentScale = cs,
+                            modifier = m
+                        )
+                    },
+                    title = "One Piece",
+                    modifier = Modifier.width(screenSize.width / 2)
+                )
+            }
+        }
+    }
 }

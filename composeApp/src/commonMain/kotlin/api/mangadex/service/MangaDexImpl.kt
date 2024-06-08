@@ -2,16 +2,19 @@ package api.mangadex.service
 
 import api.mangadex.model.request.TokenRequest
 import api.mangadex.model.response.ListResponse
+import api.mangadex.model.response.MangaStatus
 import api.mangadex.model.response.Token
 import api.mangadex.model.response.attribute.MangaAttributes
-import api.mangadex.util.AUTH_ENDPOINT
-import api.mangadex.util.MANGA_ENDPOINT
+import api.mangadex.util.ApiConstant
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
+import io.ktor.client.request.header
+import io.ktor.client.request.url
 import io.ktor.http.parameters
 import io.ktor.serialization.kotlinx.json.json
 import util.Log
@@ -27,7 +30,7 @@ class MangaDexImpl(
     override suspend fun login(request: TokenRequest): Token? {
         return try {
             client.submitForm(
-                url = AUTH_ENDPOINT,
+                url = ApiConstant.AUTH_ENDPOINT,
                 formParameters = parameters {
                     append("grant_type", request.grantType)
                     append("username", request.username)
@@ -39,7 +42,7 @@ class MangaDexImpl(
                 Log.d("success retrieving token")
             }
         } catch (err: Throwable) {
-            err.cause?.message?.let {
+            err.message?.let {
                 Log.e(it)
             }
             null
@@ -48,9 +51,31 @@ class MangaDexImpl(
 
     override suspend fun getManga(queries: String): ListResponse<MangaAttributes>? {
         return try {
-            client.get("$MANGA_ENDPOINT/$queries").body<ListResponse<MangaAttributes>>()
+            client.get("${ApiConstant.MANGA_ENDPOINT}/$queries").body<ListResponse<MangaAttributes>>()
         } catch (e: Throwable) {
-            e.cause?.message?.let {
+            e.message?.let {
+                Log.e(it)
+            }
+            null
+        }
+    }
+
+    private suspend fun HttpRequestBuilder.authHeader() {
+        header("Authorization", "Bearer ${token()}")
+    }
+
+    override suspend fun getMangaByStatus(status: String): MangaStatus? {
+        return try {
+            var q = ""
+            if (status.isNotEmpty()) {
+                q = "?status=$status"
+            }
+            client.get {
+                url("${ApiConstant.MANGA_STATUS}$q")
+                authHeader()
+            }.body<MangaStatus>()
+        } catch (e: Exception) {
+            e.message?.let {
                 Log.e(it)
             }
             null

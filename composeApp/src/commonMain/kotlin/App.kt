@@ -14,7 +14,6 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import shared.kottageContext
 import theme.AppTheme
 import theme.gradient2
-import util.KOTTAGE_TOKEN
 import view.SplashScreen
 import view.LoginScreen
 import view.MainScreen
@@ -40,6 +39,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.MutableState
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.attribute.MangaAttributes
+import util.KottageConst
 
 data class ScreenSize(
     val height: Dp,
@@ -63,7 +63,7 @@ object Libs {
 }
 
 private suspend fun isLoggedIn(): Boolean {
-    Libs.kottageStorage.getOrNull<String>(KOTTAGE_TOKEN)?.let {
+    Libs.kottageStorage.getOrNull<String>(util.KottageConst.TOKEN)?.let {
         return true
     }
     return false

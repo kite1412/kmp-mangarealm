@@ -36,7 +36,7 @@ fun generateQuery(queryParams: Map<String, Any>, otherParams: String = ""): Stri
 }
 
 fun getCoverUrl(mangaId: String, filename: String): String {
-    return "${COVER_DISCOVERY_ENDPOINT}/$mangaId/$filename"
+    return "${ApiConstant.COVER_DISCOVERY_ENDPOINT}/$mangaId/$filename"
 }
 
 fun getCoverUrl(manga: Data<MangaAttributes>): String {
