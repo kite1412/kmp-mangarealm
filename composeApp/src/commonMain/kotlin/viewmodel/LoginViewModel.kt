@@ -12,7 +12,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import api.mangadex.model.request.TokenRequest
 import api.mangadex.model.response.Token
-import api.mangadex.service.TokenHandler
 import io.github.irgaly.kottage.put
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -90,19 +89,9 @@ class LoginViewModel : ViewModel() {
     }
 
     private suspend fun store(token: Token) {
-        val expiresIn = TokenHandler.expiration(token)
-        val refreshExpiresIn = TokenHandler.expiration(token.refreshToken)
-        storage.put(
-            KottageConst.EXPIRES_IN,
-            expiresIn
-        )
         storage.put<String>(
             KottageConst.TOKEN,
             token.accessToken
-        )
-        storage.put<Int>(
-            KottageConst.REFRESH_EXPIRES_IN,
-            refreshExpiresIn
         )
         storage.put<String>(
             KottageConst.REFRESH_TOKEN,

@@ -1,45 +1,29 @@
 
-import androidx.compose.runtime.Composable
-import api.mangadex.service.MangaDex
-import api.mangadex.service.MangaDexImpl
-import api.mangadex.service.TokenHandler
-import api.mangadex.service.TokenHandlerImpl
-import io.github.irgaly.kottage.Kottage
-import io.github.irgaly.kottage.KottageEnvironment
-import io.github.irgaly.kottage.get
-import io.github.irgaly.kottage.platform.KottageContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import org.jetbrains.compose.ui.tooling.preview.Preview
-import shared.kottageContext
-import theme.AppTheme
-import theme.gradient2
-import view.SplashScreen
-import view.LoginScreen
-import view.MainScreen
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import io.github.irgaly.kottage.getOrNull
-import kotlinx.coroutines.launch
-import shared.databaseDir
-import shared.applyEdgeToEdge
-import shared.adjustNavBarColor
-import shared.adjustStatusBarColor
-import kotlinx.coroutines.delay
 import androidx.compose.material.MaterialTheme
-import androidx.compose.ui.unit.Dp
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.isSystemInDarkTheme
-import viewmodel.MainViewModel
-import androidx.compose.runtime.State
-import androidx.compose.runtime.MutableState
-import api.mangadex.model.response.Data
-import api.mangadex.model.response.attribute.MangaAttributes
-import util.KottageConst
+import androidx.compose.ui.unit.Dp
+import api.mangadex.service.MangaDex
+import api.mangadex.service.MangaDexImpl
+import io.github.irgaly.kottage.Kottage
+import io.github.irgaly.kottage.KottageEnvironment
+import io.github.irgaly.kottage.getOrNull
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import shared.adjustStatusBarColor
+import shared.databaseDir
+import shared.kottageContext
+import theme.AppTheme
+import view.LoginScreen
+import view.MainScreen
+import view.SplashScreen
 
 data class ScreenSize(
     val height: Dp,
@@ -49,7 +33,6 @@ data class ScreenSize(
 lateinit var screenSize: ScreenSize
 
 object Libs {
-    val mangaDex: MangaDex = MangaDexImpl()
     private val kottage: Kottage = Kottage(
         name = "kottage",
         directoryPath = databaseDir,
@@ -60,6 +43,7 @@ object Libs {
     )
     val kottageStorage = kottage.storage("default")
     val kottageCache = kottage.cache("default")
+    val mangaDex: MangaDex = MangaDexImpl()
 }
 
 private suspend fun isLoggedIn(): Boolean {
@@ -94,7 +78,7 @@ fun App() {
                     isLoggedIn.value = true
                 })
             } else {
-                view.MainScreen()
+                MainScreen()
             }
             if (isShowingSplash.value) {
                 SplashScreen()

@@ -2,8 +2,6 @@ package util
 
 // Kottage's keys
 object KottageConst {
-    const val EXPIRES_IN = "token:expiresIn"
-    const val REFRESH_EXPIRES_IN = "token:refreshExpiresIn"
     const val TOKEN = "token:accessToken"
     const val REFRESH_TOKEN = "token:refreshToken"
     const val CLIENT_ID = "api:clientId"

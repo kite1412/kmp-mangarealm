@@ -1,5 +1,7 @@
 package api.mangadex.util
 
-enum class DataType {
-    MANGA, COVER_ART, AUTHOR
+object DataType {
+    const val MANGA = "manga"
+    const val COVER_ART = "cover_art"
+    const val AUTHOR = "author"
 }
