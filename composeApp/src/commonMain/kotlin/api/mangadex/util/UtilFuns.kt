@@ -1,6 +1,5 @@
 package api.mangadex.util
 
-import androidx.compose.runtime.Composable
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.attribute.MangaAttributes
 
@@ -43,15 +42,10 @@ fun getCoverUrl(manga: Data<MangaAttributes>): String {
     val id = manga.id
     var filename = ""
     for (r in manga.relationships) {
-        if (r.type == DataType.COVER_ART.name.lowercase()) {
+        if (r.type == DataType.COVER_ART) {
             filename = r.attributes!!.fileName!!
             break
         }
     }
     return getCoverUrl(id, filename)
-}
-
-@Composable
-fun browseImage(manga: Data<MangaAttributes>) {
-
 }

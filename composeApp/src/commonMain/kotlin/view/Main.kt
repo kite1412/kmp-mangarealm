@@ -3,25 +3,22 @@ package view
 import Assets
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
@@ -42,9 +39,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,10 +63,6 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
-import mangarealm.composeapp.generated.resources.Res
-import mangarealm.composeapp.generated.resources.one_piece_sample
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
 import screenSize
 import theme.selectedButton
 import theme.unselectedButton
@@ -75,7 +70,12 @@ import util.LATEST_UPDATE_SLIDE_TIME
 import viewmodel.MainViewModel
 import viewmodel.Page
 
+private const val imageRatio = 2f / 3f
 private val latestBarHeight = (screenSize.height.value / 4.2).dp
+private val bottomBarHeight = 62.dp
+private val bottomBarTotalHeight = bottomBarHeight + 8.dp
+private val smallDisplayHeight = latestBarHeight / 2
+private val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp
 
 @Composable
 fun MainScreen(vm: MainViewModel = MainViewModel()) {
@@ -83,12 +83,14 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .padding(bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()),
     ) {
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
-            LazyColumn(modifier = Modifier.padding(horizontal = 16.dp)) {
+            LazyColumn(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
                 item {
                     Header(
                         "kite1412",
@@ -98,7 +100,7 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
                 item {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 32.dp)
+                        modifier = Modifier.padding(top = 8.dp)
                     ) {
                         Text(
                             "Latest Updates",
@@ -113,7 +115,27 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
                     }
                 }
                 item {
-                    ContinueReading(modifier = Modifier.padding(top = 24.dp))
+                    ContinueReading(vm = vm)
+                }
+                item {
+                    MangaGenre(
+                        label = "Rom-Coms",
+                        backgroundGradient = Pair(Color(0xFFFC00C4), Color(0xFFC232C5)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints.copy(
+                                    maxWidth = constraints.maxWidth + 16.dp.roundToPx() * 2
+                                ))
+                                layout(placeable.width, placeable.height) {
+                                    placeable.place(0, 0)
+                                }
+                            }
+                    )
+                }
+                // to prevent contents being obstructed by bottom bar.
+                item {
+                    Spacer(modifier = Modifier.height(bottomBarTotalHeight - 16.dp))
                 }
             }
             BottomAppBar(
@@ -217,9 +239,9 @@ fun LatestUpdatesBar(
         Column(modifier = Modifier.fillMaxSize()) {
             val imageHeight = height / 1.5f
             HorizontalPager(state = pagerState) {
-                if (vm.initialLatestUpdates.isNotEmpty() &&
-                    vm.latestUpdatesImages.isNotEmpty() &&
-                    vm.latestUpdatesImages.size > it)
+                if (vm.initialLatestUpdatesData.isNotEmpty() &&
+                    vm.latestUpdatesCovers.isNotEmpty() &&
+                    vm.latestUpdatesCovers.size > it)
                     Box(
                         modifier = Modifier
                             .padding(horizontal = 4.dp)
@@ -229,7 +251,7 @@ fun LatestUpdatesBar(
                             modifier = Modifier
                                 .haze(hazeState)
                         ) {
-                            vm.latestUpdatesImages[it](
+                            vm.latestUpdatesCovers[it](
                                 ContentScale.FillWidth,
                                 Modifier
                                     .fillMaxSize()
@@ -239,9 +261,9 @@ fun LatestUpdatesBar(
                                     )
                             )
                         }
-                        BigDisplay(
-                            title = vm.getTitle(vm.initialLatestUpdates[it].attributes.title),
-                            desc = vm.getDesc(vm.initialLatestUpdates[it].attributes.description),
+                        LatestUpdateDisplay(
+                            title = vm.getTitle(vm.initialLatestUpdatesData[it].attributes.title),
+                            desc = vm.getDesc(vm.initialLatestUpdatesData[it].attributes.description),
                             imageHeight = imageHeight,
                             imageWidth = ((2f / 3f) * imageHeight),
                             modifier = Modifier
@@ -251,7 +273,7 @@ fun LatestUpdatesBar(
                                     end = 12.dp
                                 )
                         ) { contentScale, modifier ->
-                            vm.latestUpdatesImages[it](contentScale, modifier)
+                            vm.latestUpdatesCovers[it](contentScale, modifier)
                         }
                     }
             }
@@ -288,7 +310,7 @@ private fun IndicatorDots(
 }
 
 @Composable
-private fun BigDisplay(
+private fun LatestUpdateDisplay(
     title: String,
     desc: String,
     imageHeight: Dp,
@@ -348,7 +370,7 @@ private fun BottomAppBar(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(62.dp)
+            .height(bottomBarHeight)
             .padding(horizontal = 8.dp)
             .offset(y = (-8).dp)
             .clip(RoundedCornerShape(15.dp))
@@ -408,6 +430,53 @@ fun BottomAppBarIcon(
 }
 
 @Composable
+private fun ContinueReading(
+    vm: MainViewModel,
+    modifier: Modifier = Modifier
+) {
+    if (vm.continueReadingData.isNotEmpty()) Column(modifier = modifier) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                "Continue Reading",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Icon(
+                imageVector = Assets.`Chevron-right-bold`,
+                contentDescription = null,
+                tint = Color.Black,
+                modifier = Modifier
+                    .height(16.dp)
+                    .offset(y = 1.dp)
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        LazyHorizontalGrid(
+            rows = GridCells.Fixed(if (vm.continueReadingData.size > 1) 2 else 1),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .height(if (vm.continueReadingData.size > 1) latestBarHeight else smallDisplayHeight)
+                .padding(start = 4.dp)
+        ) {
+            items(count = vm.continueReadingCovers.size) {
+                SmallDisplay(
+                    image = { cs, m ->
+                        vm.continueReadingCovers[it](cs, m)
+                    },
+                    title = vm.getTitle(vm.continueReadingData[it].attributes.title),
+                    modifier = Modifier.width(screenSize.width / 2)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun SmallDisplay(
     image: @Composable (ContentScale, Modifier) -> Unit,
     title: String,
@@ -417,15 +486,15 @@ private fun SmallDisplay(
         image(
             ContentScale.FillBounds,
             Modifier
-                .width(64.dp)
-                .height(96.dp)
+                .width(smallDisplayWidth)
+                .height(smallDisplayHeight)
                 .clip(RoundedCornerShape(5.dp))
         )
-        Spacer(Modifier.width(4.dp))
+        Spacer(Modifier.width(6.dp))
         Column(modifier = Modifier.padding(top = 12.dp)) {
             Text(
                 title,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -434,53 +503,52 @@ private fun SmallDisplay(
     }
 }
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
-private fun ContinueReading(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            // TODO change later
-            .wrapContentSize()
+private fun MangaGenre (
+    label: String,
+    backgroundGradient: Pair<Color, Color>,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier
+        .fillMaxWidth()
+        .wrapContentHeight()
+        .background(brush = Brush.linearGradient(colors = listOf(
+            backgroundGradient.first,
+            backgroundGradient.second
+        )))
+        .padding(top = 16.dp, start = 16.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-           Text(
-               "Continue Reading",
-               fontSize = 16.sp,
-               fontWeight = FontWeight.SemiBold,
-           )
-           Icon(
-               imageVector = Assets.`Chevron-right-bold`,
-               contentDescription = null,
-               tint = Color.Black,
-               modifier = Modifier
-                   .height(16.dp)
-                   .offset(y = 1.dp)
-           )
-        }
-        Spacer(Modifier.height(12.dp))
-        LazyHorizontalGrid(
-            rows = GridCells.Fixed(2),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.height(latestBarHeight).padding(start = 4.dp)
         ) {
-            items(count = 4) {
-                SmallDisplay(
-                    image = { cs, m ->
-                        Image(
-                            painterResource(Res.drawable.one_piece_sample),
-                            contentDescription = null,
-                            contentScale = cs,
-                            modifier = m
-                        )
-                    },
-                    title = "One Piece",
-                    modifier = Modifier.width(screenSize.width / 2)
-                )
+            Text(
+                label,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            GenreDisplay()
+        }
+    }
+}
+
+@Composable
+private fun GenreDisplay(
+    modifier: Modifier = Modifier
+) {
+    val width = (screenSize.width / 1.7.dp).dp
+    BoxWithConstraints(
+        modifier = modifier
+            .width(width)
+            .height(width + 20.dp)
+    ) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .width(this@BoxWithConstraints.maxWidth / 2)
+                    .background(Color.White)
+            ) {
+
             }
         }
     }

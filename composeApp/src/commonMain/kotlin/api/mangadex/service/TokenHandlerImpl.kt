@@ -41,37 +41,29 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
     }
 
     private suspend fun saveTokenToLocal(token: Token) {
-        val expiresIn = TokenHandler.expiration(token)
-        val refreshExpiresIn = storage.get<Int>(KottageConst.REFRESH_EXPIRES_IN)
+        val refresh = storage.get<String>(KottageConst.REFRESH_TOKEN)
+        val refreshExpiresIn = TokenHandler.expiration(refresh)
         storage.put<String>(
             KottageConst.TOKEN,
             token.accessToken
-        )
-        storage.put<Int>(
-            KottageConst.EXPIRES_IN,
-            expiresIn
         )
         if (refreshExpiresIn < (currentTimeMillis + 30.days.inWholeMilliseconds)) {
             storage.put<String>(
                 KottageConst.REFRESH_TOKEN,
                 token.refreshToken
             )
-            storage.put<Int>(
-                KottageConst.REFRESH_EXPIRES_IN,
-                TokenHandler.expiration(token.refreshToken)
-            )
         }
     }
 
-    // return null only if token is not exist in local storage (the least probability to happen)
+    // return null only if token is not exist in local storage (the least possibility to happen)
     // or unable to refresh the token (problems either with connection or server).
     override suspend fun invoke(): String? {
         val token = storage.getOrNull<String>(KottageConst.TOKEN)
         if (token != null) {
             try {
-                val expiredIn = storage.get<Int>(KottageConst.EXPIRES_IN)
+                val expiresIn = TokenHandler.expiration(token)
                 val currentMillis = currentTimeMillis
-                if (expiredIn < currentMillis) {
+                if (expiresIn > currentMillis) {
                     return token
                 }
                 val refresh = refreshToken(RefreshTokenRequest(storage))
