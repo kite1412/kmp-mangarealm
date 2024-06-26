@@ -55,6 +55,16 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
         }
     }
 
+    private fun adjustLength(length: Int, number: Long): Long {
+        var s = number.toString()
+        if (s.length > length) {
+            s = s.removeRange(length until s.length)
+        } else if (s.length < length) {
+            s = s.padEnd(length, '0')
+        }
+        return s.toLong()
+    }
+
     // return null only if token is not exist in local storage (the least possibility to happen)
     // or unable to refresh the token (problems either with connection or server).
     override suspend fun invoke(): String? {
@@ -62,7 +72,7 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
         if (token != null) {
             try {
                 val expiresIn = TokenHandler.expiration(token)
-                val currentMillis = currentTimeMillis
+                val currentMillis = adjustLength(expiresIn.toString().length, currentTimeMillis)
                 if (expiresIn > currentMillis) {
                     return token
                 }

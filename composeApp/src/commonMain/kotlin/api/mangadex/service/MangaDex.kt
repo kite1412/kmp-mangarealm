@@ -5,6 +5,7 @@ import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.MangaStatus
 import api.mangadex.model.response.Token
 import api.mangadex.model.response.attribute.MangaAttributes
+import api.mangadex.model.response.attribute.TagAttributes
 import api.mangadex.util.Status
 
 interface MangaDex {
@@ -13,4 +14,6 @@ interface MangaDex {
     suspend fun getManga(queries: String = ""): ListResponse<MangaAttributes>?
 
     suspend fun getMangaByStatus(status: String = Status.ALL): MangaStatus?
+
+    suspend fun getTags(): ListResponse<TagAttributes>?
 }

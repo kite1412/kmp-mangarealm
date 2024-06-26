@@ -43,9 +43,30 @@ fun getCoverUrl(manga: Data<MangaAttributes>): String {
     var filename = ""
     for (r in manga.relationships) {
         if (r.type == DataType.COVER_ART) {
-            filename = r.attributes!!.fileName!!
+            r.attributes!!.fileName!!.let {
+                filename = it
+            }
             break
         }
     }
     return getCoverUrl(id, filename)
+}
+
+fun getTitle(title: Map<String, String>): String {
+    return title["en"] ?: return title["ja"] ?: ""
+}
+
+fun getDesc(desc: Map<String, String>): String {
+    return desc["en"] ?: desc["id"] ?: desc["ja"] ?: ""
+}
+
+fun getTags(manga: Data<MangaAttributes>): String {
+    var s = ""
+    manga.attributes.tags.forEachIndexed { i, t ->
+        s += "${t.attributes.name["en"]}"
+        if (i < (manga.attributes.tags.size - 1)) {
+            s += ", "
+        }
+    }
+    return s
 }

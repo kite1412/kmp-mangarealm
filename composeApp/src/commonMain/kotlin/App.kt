@@ -24,6 +24,7 @@ import theme.AppTheme
 import view.LoginScreen
 import view.MainScreen
 import view.SplashScreen
+import viewmodel.MainViewModel
 
 data class ScreenSize(
     val height: Dp,
@@ -62,6 +63,13 @@ fun App() {
     val isShowingSplash = remember {
         mutableStateOf(true)
     }
+    val mainViewModel = remember { MainViewModel() }
+    // init for utilities that are not bound by whether is logged in or not
+    LaunchedEffect(true) {
+        Initializer()(postTagSetup = {
+            mainViewModel.fetchMangaByTags(it)
+        })
+    }
     LaunchedEffect(true) {
         isLoggedIn.value = isLoggedIn()
         delay(util.SPLASH_TIME.toLong())
@@ -78,7 +86,7 @@ fun App() {
                     isLoggedIn.value = true
                 })
             } else {
-                MainScreen()
+                MainScreen(vm = mainViewModel)
             }
             if (isShowingSplash.value) {
                 SplashScreen()
