@@ -1,8 +1,11 @@
 package view
 
 import Assets
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,14 +21,15 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
@@ -44,13 +48,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.times
+import api.mangadex.model.response.Data
+import api.mangadex.model.response.attribute.MangaAttributes
+import api.mangadex.util.getCoverUrl
+import api.mangadex.util.getDesc
+import api.mangadex.util.getTags
+import api.mangadex.util.getTitle
 import assets.`Book-close`
 import assets.`Chevron-right-bold`
 import assets.Clipboard
@@ -58,6 +68,9 @@ import assets.Home
 import assets.Person
 import assets.Search
 import assets.`Text-align-right`
+import com.seiko.imageloader.model.ImageAction
+import com.seiko.imageloader.rememberImageSuccessPainter
+import com.seiko.imageloader.ui.AutoSizeBox
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
@@ -71,11 +84,13 @@ import viewmodel.MainViewModel
 import viewmodel.Page
 
 private const val imageRatio = 2f / 3f
+private const val genreDisplayImageRatio = 2f / 3f
 private val latestBarHeight = (screenSize.height.value / 4.2).dp
 private val bottomBarHeight = 62.dp
 private val bottomBarTotalHeight = bottomBarHeight + 8.dp
 private val smallDisplayHeight = latestBarHeight / 2
 private val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp
+private val genreDisplayWidth = (screenSize.width / 1.3.dp).dp
 
 @Composable
 fun MainScreen(vm: MainViewModel = MainViewModel()) {
@@ -94,7 +109,7 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
                 item {
                     Header(
                         "kite1412",
-                        modifier = Modifier.padding(top = 24.dp,)
+                        modifier = Modifier.padding(top = 24.dp)
                     )
                 }
                 item {
@@ -118,9 +133,13 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
                     ContinueReading(vm = vm)
                 }
                 item {
-                    MangaGenre(
+                    MangaTags(
+                        vm = vm,
                         label = "Rom-Coms",
-                        backgroundGradient = Pair(Color(0xFFFC00C4), Color(0xFFC232C5)),
+                        backgroundGradient = Brush.linearGradient(colors = listOf(
+                            Color(0xFFFC00C4),
+                            Color(0xFFC232C5)
+                        )),
                         modifier = Modifier
                             .fillMaxWidth()
                             .layout { measurable, constraints ->
@@ -131,6 +150,7 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
                                     placeable.place(0, 0)
                                 }
                             }
+                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
                     )
                 }
                 // to prevent contents being obstructed by bottom bar.
@@ -262,10 +282,10 @@ fun LatestUpdatesBar(
                             )
                         }
                         LatestUpdateDisplay(
-                            title = vm.getTitle(vm.initialLatestUpdatesData[it].attributes.title),
-                            desc = vm.getDesc(vm.initialLatestUpdatesData[it].attributes.description),
+                            title = getTitle(vm.initialLatestUpdatesData[it].attributes.title),
+                            desc = getDesc(vm.initialLatestUpdatesData[it].attributes.description),
                             imageHeight = imageHeight,
-                            imageWidth = ((2f / 3f) * imageHeight),
+                            imageWidth = (imageHeight * imageRatio),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(
@@ -292,16 +312,18 @@ fun LatestUpdatesBar(
 private fun IndicatorDots(
     n: Int,
     selected: Int = 1,
+    dotSize: Dp = 10.dp,
+    spacing: Dp = 2.dp,
     modifier: Modifier = Modifier
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
+        horizontalArrangement = Arrangement.spacedBy(spacing)
     ) {
         for (i in 1..n) {
             Box(
                 modifier = Modifier
-                    .size(10.dp)
+                    .size(dotSize)
                     .clip(CircleShape)
                     .background(color = if (i == selected) Color.White else Color.Gray)
             )
@@ -468,7 +490,7 @@ private fun ContinueReading(
                     image = { cs, m ->
                         vm.continueReadingCovers[it](cs, m)
                     },
-                    title = vm.getTitle(vm.continueReadingData[it].attributes.title),
+                    title = getTitle(vm.continueReadingData[it].attributes.title),
                     modifier = Modifier.width(screenSize.width / 2)
                 )
             }
@@ -503,52 +525,155 @@ private fun SmallDisplay(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun MangaGenre (
+private fun MangaTags (
+    vm: MainViewModel,
     label: String,
-    backgroundGradient: Pair<Color, Color>,
+    backgroundGradient: Brush,
     modifier: Modifier = Modifier
 ) {
+    val pagerState = rememberPagerState { 10 }
+    var labelHeight by remember { mutableStateOf(0) }
     Box(modifier = modifier
         .fillMaxWidth()
-        .wrapContentHeight()
-        .background(brush = Brush.linearGradient(colors = listOf(
-            backgroundGradient.first,
-            backgroundGradient.second
-        )))
+        .height(labelHeight.dp + (genreDisplayWidth * genreDisplayImageRatio))
+        .background(brush = backgroundGradient)
         .padding(top = 16.dp, start = 16.dp)
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                label,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            GenreDisplay()
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 10.dp)
+            ) {
+                Text(
+                    label,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier.onGloballyPositioned {
+                        labelHeight = it.size.height
+                    }
+                )
+                IndicatorDots(
+                    n = pagerState.pageCount,
+                    selected = (pagerState.currentPage + 1),
+                    dotSize = 6.dp,
+                    spacing = 1.dp
+                )
+            }
+            if (vm.romcomManga.isNotEmpty()) HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .padding(bottom = 16.dp),
+                pageSize = PageSize.Fixed(genreDisplayWidth),
+                pageSpacing = 16.dp,
+                verticalAlignment = Alignment.Bottom
+            ) {
+                TagsDisplay(
+                    manga = vm.romcomManga[it],
+                    contentWidth = genreDisplayWidth,
+                    isSelected = it == pagerState.currentPage,
+                    modifier = Modifier.offset(x = if (pagerState.currentPage == 9)
+                        -((screenSize.width - genreDisplayWidth) - 16.dp)
+                    else 0.dp)
+                )
+            } else Box(modifier = Modifier.fillMaxSize()) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
         }
     }
 }
 
 @Composable
-private fun GenreDisplay(
+private fun TagsDisplay(
+    manga: Data<MangaAttributes>,
+    contentWidth: Dp,
+    isSelected: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val width = (screenSize.width / 1.7.dp).dp
+    val notSelectedWidth = contentWidth - (contentWidth / 10)
+    val width by animateDpAsState(targetValue = if (isSelected) contentWidth else notSelectedWidth)
+    val height by animateDpAsState(targetValue = if (isSelected) contentWidth * genreDisplayImageRatio else notSelectedWidth * genreDisplayImageRatio)
+    val obstructColor by animateColorAsState(if (!isSelected) Color.Black else Color.Transparent)
     BoxWithConstraints(
         modifier = modifier
             .width(width)
-            .height(width + 20.dp)
+            .height(height)
     ) {
-        Row(modifier = Modifier.fillMaxSize()) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
             Box(
                 modifier = Modifier
-                    .width(this@BoxWithConstraints.maxWidth / 2)
+                    .width(width / 2.3f)
+                    .height(height)
+                    .clip(RoundedCornerShape(5.dp))
                     .background(Color.White)
             ) {
-
+               AutoSizeBox(
+                   url = getCoverUrl(manga),
+                   modifier = Modifier.fillMaxSize()
+               ) {
+                   when (it) {
+                       is ImageAction.Loading -> {
+                           CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                       }
+                       is ImageAction.Success -> {
+                           Image(
+                               painter = rememberImageSuccessPainter(it),
+                               contentDescription = "cover art",
+                               modifier = Modifier.fillMaxSize(),
+                               contentScale = ContentScale.FillBounds
+                           )
+                       }
+                       else -> {
+                           Text("Can't load image", fontSize = 10.sp)
+                       }
+                   }
+               }
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(brush = Brush.linearGradient(listOf(
+                            obstructColor, Color.Transparent
+                        )))
+                ) {}
+            }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 8.dp)
+            ) {
+                Text(
+                    getTitle(manga.attributes.title),
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 2,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    fontSize = 14.sp
+                )
+                Text(
+                    getTags(manga),
+                    maxLines = 2,
+                    overflow = TextOverflow.Clip,
+                    color = Color.White,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    getDesc(manga.attributes.description),
+                    maxLines = 5,
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.White,
+                    fontSize = 10.sp
+                )
             }
         }
     }

@@ -31,12 +31,13 @@ import com.seiko.imageloader.ui.AutoSizeBox
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import org.jetbrains.compose.resources.ExperimentalResourceApi
+import util.COMEDY_TAG
 import util.LATEST_UPDATE_SLIDE_TIME
+import util.ROMANCE_TAG
 import util.SPLASH_TIME
 
 class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel() {
-    private var executeOnce = mutableStateOf(true)
-
     private var _latestUpdateSlideTime = mutableStateOf(SPLASH_TIME + LATEST_UPDATE_SLIDE_TIME)
     val latestUpdateSlideTime = _latestUpdateSlideTime
 
@@ -45,6 +46,8 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
 
     val initialLatestUpdatesData = mutableStateListOf<Data<MangaAttributes>>()
     val continueReadingData = mutableStateListOf<Data<MangaAttributes>>()
+
+    val romcomManga = mutableStateListOf<Data<MangaAttributes>>()
 
     val latestUpdatesCovers = mutableStateListOf<@Composable (
         ContentScale,
@@ -67,6 +70,7 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
         ))?.data ?: listOf())
     }
 
+    @OptIn(ExperimentalResourceApi::class)
     private fun initLatestUpdatesPainter() {
         initialLatestUpdatesData.forEach { data ->
             latestUpdatesCovers.add { cs, m ->
@@ -93,6 +97,7 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
         }
     }
 
+    @OptIn(ExperimentalResourceApi::class)
     private suspend fun initContinueReading() {
         val res = mangaDex.getMangaByStatus(Status.READING)
         if (res?.statuses != null) {
@@ -139,6 +144,23 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
         }
     }
 
+    suspend fun fetchMangaByTags(tags: Map<String, String>) {
+        val tagsParam = generateArrayQueryParam(
+            name = "includedTags[]",
+            values = listOf(tags[ROMANCE_TAG]!!, tags[COMEDY_TAG]!!)
+        )
+        val queries = generateQuery(
+            queryParams = mapOf("includes[]" to "cover_art"),
+            otherParams = tagsParam
+        )
+        val res = mangaDex.getManga(queries)
+        if (res != null) {
+            if (res.data.isNotEmpty()) {
+                romcomManga.addAll(res.data)
+            }
+        }
+    }
+
     @Composable
     fun init() {
         LaunchedEffect(true) {
@@ -154,14 +176,6 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
         if (_latestUpdateSlideTime.value != new) {
             _latestUpdateSlideTime.value = LATEST_UPDATE_SLIDE_TIME
         }
-    }
-
-    fun getTitle(title: Map<String, String>): String {
-        return title["en"] ?: return title["ja"] ?: ""
-    }
-
-    fun getDesc(desc: Map<String, String>): String {
-        return desc["en"] ?: desc["id"] ?: desc["ja"] ?: ""
     }
 }
 

@@ -5,7 +5,7 @@ import api.mangadex.model.response.Tag
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class DynamicAttribute(
+data class DynamicAttributes(
     // general
     val description: Description? = null,
     val version: Int? = null,

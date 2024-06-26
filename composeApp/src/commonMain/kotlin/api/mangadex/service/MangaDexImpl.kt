@@ -5,6 +5,7 @@ import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.MangaStatus
 import api.mangadex.model.response.Token
 import api.mangadex.model.response.attribute.MangaAttributes
+import api.mangadex.model.response.attribute.TagAttributes
 import api.mangadex.util.ApiConstant
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -39,7 +40,7 @@ class MangaDexImpl(
                     append("client_secret", request.clientSecret)
                 }
             ).body<Token>().also {
-                Log.d("success retrieving token")
+                Log.d("POST (login) success retrieving token")
             }
         } catch (err: Throwable) {
             err.message?.let {
@@ -51,7 +52,11 @@ class MangaDexImpl(
 
     override suspend fun getManga(queries: String): ListResponse<MangaAttributes>? {
         return try {
-            client.get("${ApiConstant.MANGA_ENDPOINT}/$queries").body<ListResponse<MangaAttributes>>()
+            client.get("${ApiConstant.MANGA_ENDPOINT}/$queries")
+                .body<ListResponse<MangaAttributes>>()
+                .also {
+                    Log.d("GET (getManga) list length: ${it.data.size}")
+                }
         } catch (e: Throwable) {
             e.message?.let {
                 Log.e(it)
@@ -73,7 +78,26 @@ class MangaDexImpl(
             client.get {
                 url("${ApiConstant.MANGA_STATUS}$q")
                 authHeader()
-            }.body<MangaStatus>()
+            }
+                .body<MangaStatus>()
+                .also {
+                    Log.d("GET (getMangaByStatus) status length: ${it.statuses.size} ")
+                }
+        } catch (e: Exception) {
+            e.message?.let {
+                Log.e(it)
+            }
+            null
+        }
+    }
+
+    override suspend fun getTags(): ListResponse<TagAttributes>? {
+        return try {
+            client.get("${ApiConstant.MANGA_ENDPOINT}/tag")
+                .body<ListResponse<TagAttributes>>()
+                .also {
+                    Log.d("GET (getTags) tags length: ${it.data.size}")
+                }
         } catch (e: Exception) {
             e.message?.let {
                 Log.e(it)
