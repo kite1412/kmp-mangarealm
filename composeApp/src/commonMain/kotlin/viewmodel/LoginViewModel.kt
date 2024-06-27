@@ -89,22 +89,11 @@ class LoginViewModel : ViewModel() {
     }
 
     private suspend fun store(token: Token) {
-        storage.put<String>(
-            KottageConst.TOKEN,
-            token.accessToken
-        )
-        storage.put<String>(
-            KottageConst.REFRESH_TOKEN,
-            token.refreshToken
-        )
-        storage.put<String>(
-            KottageConst.CLIENT_ID,
-            _clientId.value
-        )
-        storage.put<String>(
-            KottageConst.CLIENT_SECRET,
-            _clientSecret.value
-        )
+        storage.put(KottageConst.USERNAME, _username.value)
+        storage.put(KottageConst.TOKEN, token.accessToken)
+        storage.put(KottageConst.REFRESH_TOKEN, token.refreshToken)
+        storage.put(KottageConst.CLIENT_ID, _clientId.value)
+        storage.put<String>(KottageConst.CLIENT_SECRET, _clientSecret.value)
     }
 
     fun onTap(onSuccess: (Token) -> Unit) {

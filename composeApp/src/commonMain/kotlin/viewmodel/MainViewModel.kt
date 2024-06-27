@@ -22,6 +22,7 @@ import api.mangadex.model.response.Data
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.Status
+import api.mangadex.util.constructQuery
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
 import api.mangadex.util.getCoverUrl
@@ -31,23 +32,31 @@ import com.seiko.imageloader.ui.AutoSizeBox
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
-import org.jetbrains.compose.resources.ExperimentalResourceApi
+import io.github.irgaly.kottage.KottageStorage
+import io.github.irgaly.kottage.get
+import util.ADVENTURE_TAG
 import util.COMEDY_TAG
-import util.LATEST_UPDATE_SLIDE_TIME
+import util.KottageConst
+import util.MYSTERY_TAG
+import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
-import util.SPLASH_TIME
 
-class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel() {
-    private var _latestUpdateSlideTime = mutableStateOf(SPLASH_TIME + LATEST_UPDATE_SLIDE_TIME)
-    val latestUpdateSlideTime = _latestUpdateSlideTime
-
+class MainViewModel(
+    private val mangaDex: MangaDex = Libs.mangaDex,
+    private val kottageStorage: KottageStorage = Libs.kottageStorage
+) : ViewModel() {
     private var _currentPage = mutableStateOf(Page.MAIN)
     val currentPage = _currentPage
 
     val initialLatestUpdatesData = mutableStateListOf<Data<MangaAttributes>>()
     val continueReadingData = mutableStateListOf<Data<MangaAttributes>>()
 
+    private var _username = mutableStateOf("")
+    val username = _username
+
     val romcomManga = mutableStateListOf<Data<MangaAttributes>>()
+    val advComManga = mutableStateListOf<Data<MangaAttributes>>()
+    val psyMysManga = mutableStateListOf<Data<MangaAttributes>>()
 
     val latestUpdatesCovers = mutableStateListOf<@Composable (
         ContentScale,
@@ -63,6 +72,11 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
         _currentPage.value = page
     }
 
+    suspend fun updateUsername() {
+        val username = kottageStorage.get<String>(KottageConst.USERNAME)
+        _username.value = username
+    }
+
     private suspend fun initLatestUpdates() {
         initialLatestUpdatesData.addAll(mangaDex.getManga(generateArrayQueryParam(
             name = "includes[]",
@@ -70,7 +84,6 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
         ))?.data ?: listOf())
     }
 
-    @OptIn(ExperimentalResourceApi::class)
     private fun initLatestUpdatesPainter() {
         initialLatestUpdatesData.forEach { data ->
             latestUpdatesCovers.add { cs, m ->
@@ -97,7 +110,6 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
         }
     }
 
-    @OptIn(ExperimentalResourceApi::class)
     private suspend fun initContinueReading() {
         val res = mangaDex.getMangaByStatus(Status.READING)
         if (res?.statuses != null) {
@@ -144,21 +156,54 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
         }
     }
 
-    suspend fun fetchMangaByTags(tags: Map<String, String>) {
+    private suspend fun fetchByTags(
+        tags: List<String>,
+        onSuccess: (List<Data<MangaAttributes>>) -> Unit,
+        excludedTags: List<String> = listOf()
+    ) {
         val tagsParam = generateArrayQueryParam(
             name = "includedTags[]",
-            values = listOf(tags[ROMANCE_TAG]!!, tags[COMEDY_TAG]!!)
+            values = tags
         )
-        val queries = generateQuery(
+        val excludedTagsParam = generateArrayQueryParam(
+            name = "excludedTags[]",
+            values = excludedTags
+        )
+        val temp = generateQuery(
             queryParams = mapOf("includes[]" to "cover_art"),
             otherParams = tagsParam
         )
+        val queries = constructQuery(excludedTagsParam, temp)
         val res = mangaDex.getManga(queries)
         if (res != null) {
             if (res.data.isNotEmpty()) {
-                romcomManga.addAll(res.data)
+                onSuccess(res.data)
             }
         }
+    }
+
+    suspend fun fetchMangaByTags(tags: Map<String, String>) {
+        fetchByTags(
+            tags = listOf(tags[ROMANCE_TAG]!!, tags[COMEDY_TAG]!!),
+            onSuccess = {
+                romcomManga.addAll(it)
+            },
+            excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!)
+        )
+        fetchByTags(
+            tags = listOf(tags[ADVENTURE_TAG]!!, tags[COMEDY_TAG]!!),
+            onSuccess = {
+                advComManga.addAll(it)
+            },
+            excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!)
+        )
+        fetchByTags(
+            tags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!),
+            onSuccess = {
+                psyMysManga.addAll(it)
+            },
+            excludedTags = listOf(tags[COMEDY_TAG]!!)
+        )
     }
 
     @Composable
@@ -169,12 +214,6 @@ class MainViewModel(private val mangaDex: MangaDex = Libs.mangaDex) : ViewModel(
                 initLatestUpdatesPainter()
             }
             initContinueReading()
-        }
-    }
-
-    fun adjustLatestUpdatesSlideTime(new: Int) {
-        if (_latestUpdateSlideTime.value != new) {
-            _latestUpdateSlideTime.value = LATEST_UPDATE_SLIDE_TIME
         }
     }
 }

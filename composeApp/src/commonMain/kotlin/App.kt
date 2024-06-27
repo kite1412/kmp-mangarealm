@@ -70,10 +70,17 @@ fun App() {
             mainViewModel.fetchMangaByTags(it)
         })
     }
+    // check for log in info
     LaunchedEffect(true) {
         isLoggedIn.value = isLoggedIn()
         delay(util.SPLASH_TIME.toLong())
         isShowingSplash.value = false
+    }
+    // perform actions after logged in
+    LaunchedEffect(isLoggedIn.value) {
+        if (isLoggedIn.value) {
+            mainViewModel.updateUsername()
+        }
     }
     AppTheme {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
