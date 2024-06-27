@@ -1,11 +1,13 @@
 package api.mangadex.service
 
 import api.mangadex.model.request.TokenRequest
+import api.mangadex.model.response.EntityResponse
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.MangaStatus
 import api.mangadex.model.response.Token
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.model.response.attribute.TagAttributes
+import api.mangadex.model.response.attribute.UserAttributes
 import api.mangadex.util.ApiConstant
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -98,6 +100,19 @@ class MangaDexImpl(
                 .also {
                     Log.d("GET (getTags) tags length: ${it.data.size}")
                 }
+        } catch (e: Exception) {
+            e.message?.let {
+                Log.e(it)
+            }
+            null
+        }
+    }
+
+    override suspend fun getLoggedInUser(): EntityResponse<UserAttributes>? {
+        return try {
+            client.get("${ApiConstant.BASE_URL}/user/me") {
+                authHeader()
+            }.body<EntityResponse<UserAttributes>>()
         } catch (e: Exception) {
             e.message?.let {
                 Log.e(it)

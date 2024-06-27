@@ -34,6 +34,21 @@ fun generateQuery(queryParams: Map<String, Any>, otherParams: String = ""): Stri
     return ""
 }
 
+fun constructQuery(vararg queries: String): String {
+    var s = "?"
+    queries.forEachIndexed { i, q ->
+        var temp = q
+        if (temp.startsWith("?")) {
+            temp = trimStart(temp)
+        }
+        s += temp
+        if (i < queries.size) {
+            s += "&"
+        }
+    }
+    return s
+}
+
 fun getCoverUrl(mangaId: String, filename: String): String {
     return "${ApiConstant.COVER_DISCOVERY_ENDPOINT}/$mangaId/$filename"
 }
@@ -53,7 +68,7 @@ fun getCoverUrl(manga: Data<MangaAttributes>): String {
 }
 
 fun getTitle(title: Map<String, String>): String {
-    return title["en"] ?: return title["ja"] ?: ""
+    return title["en"] ?: title["ja"] ?: title["ja-ro"] ?: ""
 }
 
 fun getDesc(desc: Map<String, String>): String {

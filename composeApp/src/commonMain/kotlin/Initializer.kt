@@ -12,6 +12,8 @@ import util.ADVENTURE_TAG
 import util.COMEDY_TAG
 import util.KottageConst
 import util.Log
+import util.MYSTERY_TAG
+import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
 
 class Initializer(
@@ -64,13 +66,25 @@ class Initializer(
             val res = filterTags(name = ADVENTURE_TAG, kl = tags)
             if (res != null) kottage.put(KottageConst.ADVENTURE_TAG_ID, res)
         }
+        if (!kottage.exists(KottageConst.PSYCHOLOGICAL_TAG_ID)) {
+            val res = filterTags(name = PSYCHOLOGICAL_TAG, kl = tags)
+            if (res != null) kottage.put(KottageConst.PSYCHOLOGICAL_TAG_ID, res)
+        }
+        if (!kottage.exists(KottageConst.MYSTERY_TAG_ID)) {
+            val res = filterTags(name = MYSTERY_TAG, kl = tags)
+            if (res != null) kottage.put(KottageConst.MYSTERY_TAG_ID, res)
+        }
         val romId = kottage.get<String>(KottageConst.ROMANCE_TAG_ID)
         val comId = kottage.get<String>(KottageConst.COMEDY_TAG_ID)
         val advId = kottage.get<String>(KottageConst.ADVENTURE_TAG_ID)
+        val psyId = kottage.get<String>(KottageConst.PSYCHOLOGICAL_TAG_ID)
+        val mysId = kottage.get<String>(KottageConst.MYSTERY_TAG_ID)
         mandatoryTags.putAll(mapOf(
             ROMANCE_TAG to romId,
             COMEDY_TAG to comId,
             ADVENTURE_TAG to advId,
+            PSYCHOLOGICAL_TAG to psyId,
+            MYSTERY_TAG to mysId,
         ))
         postSetup(mandatoryTags)
     }

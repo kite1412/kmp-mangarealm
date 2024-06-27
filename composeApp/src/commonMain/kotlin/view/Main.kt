@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,6 +50,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -62,7 +64,7 @@ import api.mangadex.util.getDesc
 import api.mangadex.util.getTags
 import api.mangadex.util.getTitle
 import assets.`Book-close`
-import assets.`Chevron-right-bold`
+import assets.`Chevron-right`
 import assets.Clipboard
 import assets.Home
 import assets.Person
@@ -84,17 +86,29 @@ import viewmodel.MainViewModel
 import viewmodel.Page
 
 private const val imageRatio = 2f / 3f
-private const val genreDisplayImageRatio = 2f / 3f
 private val latestBarHeight = (screenSize.height.value / 4.2).dp
 private val bottomBarHeight = 62.dp
 private val bottomBarTotalHeight = bottomBarHeight + 8.dp
 private val smallDisplayHeight = latestBarHeight / 2
 private val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp
-private val genreDisplayWidth = (screenSize.width / 1.3.dp).dp
+private val tagsDisplayWidth = (screenSize.width / 1.3.dp).dp
+private val mangaTagsModifier = Modifier.fillMaxWidth()
+    .layout { measurable, constraints ->
+        val placeable = measurable.measure(constraints.copy(
+            maxWidth = constraints.maxWidth + 4.dp.roundToPx() * 2
+        ))
+        layout(placeable.width, placeable.height) {
+            placeable.place(0, 0)
+        }
+    }
+    .clip(RoundedCornerShape(8.dp))
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(vm: MainViewModel = MainViewModel()) {
     vm.init()
+    val latestUpdatesPagerState = rememberPagerState { 10 }
+    autoSlideLatestUpdates(latestUpdatesPagerState)
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
@@ -108,7 +122,7 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
             ) {
                 item {
                     Header(
-                        "kite1412",
+                        username = vm.username.value,
                         modifier = Modifier.padding(top = 24.dp)
                     )
                 }
@@ -126,6 +140,7 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
                         LatestUpdatesBar(
                             vm = vm,
                             height = latestBarHeight,
+                            pagerState = latestUpdatesPagerState
                         )
                     }
                 }
@@ -133,25 +148,44 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
                     ContinueReading(vm = vm)
                 }
                 item {
-                    MangaTags(
-                        vm = vm,
-                        label = "Rom-Coms",
-                        backgroundGradient = Brush.linearGradient(colors = listOf(
-                            Color(0xFFFC00C4),
-                            Color(0xFFC232C5)
-                        )),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .layout { measurable, constraints ->
-                                val placeable = measurable.measure(constraints.copy(
-                                    maxWidth = constraints.maxWidth + 16.dp.roundToPx() * 2
-                                ))
-                                layout(placeable.width, placeable.height) {
-                                    placeable.place(0, 0)
-                                }
-                            }
-                            .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text(
+                            "Suggestions",
+                            fontSize = 24.sp,
+                            fontStyle = FontStyle.Italic,
+                            fontWeight = FontWeight.Bold
+                        )
+                        MangaTags(
+                            mangaList = vm.romcomManga,
+                            label = "Rom-Com",
+                            backgroundGradient = Brush.linearGradient(colors = listOf(
+                                Color(0xFFADD8E6),
+                                Color(0xFFFFB6C1)
+                            )),
+                            modifier = mangaTagsModifier
+                        )
+                        MangaTags(
+                            mangaList = vm.advComManga,
+                            label = "Adventure-Comedy",
+                            backgroundGradient = Brush.linearGradient(colors = listOf(
+                                Color(0xFFFFA07A),
+                                Color(0xFFFFC48C)
+                            )),
+                            modifier = mangaTagsModifier
+                        )
+                        MangaTags(
+                            mangaList = vm.psyMysManga,
+                            label = "Psychological-Mystery",
+                            backgroundGradient = Brush.linearGradient(colors = listOf(
+                                Color(0xFF191970),
+                                Color(0xFF2F4F4F)
+                            )),
+                            unselectedDotColor = Color(0xFF949494),
+                            modifier = mangaTagsModifier
+                        )
+                    }
                 }
                 // to prevent contents being obstructed by bottom bar.
                 item {
@@ -165,6 +199,30 @@ fun MainScreen(vm: MainViewModel = MainViewModel()) {
                 },
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun autoSlideLatestUpdates(
+    pagerState: PagerState,
+    modifier: Modifier = Modifier
+) {
+    LaunchedEffect(pagerState.settledPage) {
+        while (true) {
+            delay(LATEST_UPDATE_SLIDE_TIME.toLong())
+            if (pagerState.currentPage == pagerState.pageCount - 1) {
+                pagerState.animateScrollToPage(
+                    0,
+                    animationSpec = tween(500)
+                )
+            } else {
+                pagerState.animateScrollToPage(
+                    pagerState.currentPage + 1,
+                    animationSpec = tween(1000)
+                )
+            }
         }
     }
 }
@@ -220,35 +278,11 @@ private fun Header(
 fun LatestUpdatesBar(
     vm: MainViewModel,
     height: Dp,
+    pagerState: PagerState,
     modifier: Modifier = Modifier
 ) {
     val hazeState = remember { HazeState() }
-    val pagerState = rememberPagerState { 10 }
-    var isOnManualSwipe by remember { mutableStateOf(false) }
-    LaunchedEffect(isOnManualSwipe) {
-        while (!isOnManualSwipe) {
-            delay(vm.latestUpdateSlideTime.value.toLong())
-            vm.adjustLatestUpdatesSlideTime(LATEST_UPDATE_SLIDE_TIME)
-            if (pagerState.currentPage == pagerState.pageCount - 1) {
-                pagerState.animateScrollToPage(
-                    0,
-                    animationSpec = tween(500)
-                )
-            } else {
-                pagerState.animateScrollToPage(
-                    pagerState.currentPage + 1,
-                    animationSpec = tween(1000)
-                )
-            }
-        }
-    }
-    LaunchedEffect(pagerState.settledPage) {
-        if (pagerState.isScrollInProgress) {
-            isOnManualSwipe = true
-            delay(500)
-        }
-        isOnManualSwipe = false
-    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -277,7 +311,10 @@ fun LatestUpdatesBar(
                                     .fillMaxSize()
                                     .hazeChild(
                                         hazeState,
-                                        style = HazeStyle(blurRadius = 8.dp)
+                                        style = HazeStyle(
+                                            blurRadius = 8.dp,
+                                            tint = Color.LightGray.copy(alpha = 0.4f)
+                                        )
                                     )
                             )
                         }
@@ -314,6 +351,8 @@ private fun IndicatorDots(
     selected: Int = 1,
     dotSize: Dp = 10.dp,
     spacing: Dp = 2.dp,
+    selectedColor: Color = Color.White,
+    unselectedColor: Color = Color.Gray,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -325,7 +364,7 @@ private fun IndicatorDots(
                 modifier = Modifier
                     .size(dotSize)
                     .clip(CircleShape)
-                    .background(color = if (i == selected) Color.White else Color.Gray)
+                    .background(color = if (i == selected) selectedColor else unselectedColor)
             )
         }
     }
@@ -358,14 +397,14 @@ private fun LatestUpdateDisplay(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.ExtraBold,
                 textAlign = TextAlign.End,
                 lineHeight = 16.sp
             )
             Text(
                 desc,
                 color = Color.White,
-                fontSize = 10.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.End,
                 maxLines = 4,
@@ -468,7 +507,7 @@ private fun ContinueReading(
                 fontWeight = FontWeight.SemiBold,
             )
             Icon(
-                imageVector = Assets.`Chevron-right-bold`,
+                imageVector = Assets.`Chevron-right`,
                 contentDescription = null,
                 tint = Color.Black,
                 modifier = Modifier
@@ -517,7 +556,7 @@ private fun SmallDisplay(
             Text(
                 title,
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -528,16 +567,17 @@ private fun SmallDisplay(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MangaTags (
-    vm: MainViewModel,
+    mangaList: List<Data<MangaAttributes>>,
     label: String,
     backgroundGradient: Brush,
+    unselectedDotColor: Color = Color(0xFFDEDEDE),
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState { 10 }
     var labelHeight by remember { mutableStateOf(0) }
     Box(modifier = modifier
         .fillMaxWidth()
-        .height(labelHeight.dp + (genreDisplayWidth * genreDisplayImageRatio))
+        .height(labelHeight.dp + (tagsDisplayWidth * imageRatio))
         .background(brush = backgroundGradient)
         .padding(top = 16.dp, start = 16.dp)
     ) {
@@ -564,23 +604,28 @@ private fun MangaTags (
                     n = pagerState.pageCount,
                     selected = (pagerState.currentPage + 1),
                     dotSize = 6.dp,
-                    spacing = 1.dp
+                    spacing = 1.dp,
+                    unselectedColor = unselectedDotColor
                 )
             }
-            if (vm.romcomManga.isNotEmpty()) HorizontalPager(
+            if (mangaList.isNotEmpty()) HorizontalPager(
                 state = pagerState,
                 modifier = Modifier
                     .padding(bottom = 16.dp),
-                pageSize = PageSize.Fixed(genreDisplayWidth),
+                pageSize = PageSize.Fixed(tagsDisplayWidth),
                 pageSpacing = 16.dp,
                 verticalAlignment = Alignment.Bottom
             ) {
                 TagsDisplay(
-                    manga = vm.romcomManga[it],
-                    contentWidth = genreDisplayWidth,
+                    manga = mangaList[it],
+                    contentWidth = tagsDisplayWidth,
                     isSelected = it == pagerState.currentPage,
                     modifier = Modifier.offset(x = if (pagerState.currentPage == 9)
-                        -((screenSize.width - genreDisplayWidth) - 16.dp)
+                        -((screenSize.width - tagsDisplayWidth)
+                                - 16.dp // page spacing
+                                - 8.dp // additional width (right and left)
+                                - 16.dp // parent padding
+                        )
                     else 0.dp)
                 )
             } else Box(modifier = Modifier.fillMaxSize()) {
@@ -599,7 +644,7 @@ private fun TagsDisplay(
 ) {
     val notSelectedWidth = contentWidth - (contentWidth / 10)
     val width by animateDpAsState(targetValue = if (isSelected) contentWidth else notSelectedWidth)
-    val height by animateDpAsState(targetValue = if (isSelected) contentWidth * genreDisplayImageRatio else notSelectedWidth * genreDisplayImageRatio)
+    val height by animateDpAsState(targetValue = if (isSelected) contentWidth * imageRatio else notSelectedWidth * imageRatio)
     val obstructColor by animateColorAsState(if (!isSelected) Color.Black else Color.Transparent)
     BoxWithConstraints(
         modifier = modifier
@@ -657,19 +702,19 @@ private fun TagsDisplay(
                     maxLines = 2,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
-                    fontSize = 14.sp
+                    fontSize = 16.sp
                 )
                 Text(
                     getTags(manga),
                     maxLines = 2,
-                    overflow = TextOverflow.Clip,
+                    overflow = TextOverflow.Ellipsis,
                     color = Color.White,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     getDesc(manga.attributes.description),
-                    maxLines = 5,
+                    maxLines = 6,
                     overflow = TextOverflow.Ellipsis,
                     color = Color.White,
                     fontSize = 10.sp
