@@ -1,5 +1,7 @@
 package util
 
+import androidx.compose.ui.graphics.Color
+
 // Kottage's keys
 object KottageConst {
     const val TOKEN = "token:accessToken"
@@ -24,3 +26,5 @@ const val COMEDY_TAG = "Comedy"
 const val ADVENTURE_TAG = "Adventure"
 const val PSYCHOLOGICAL_TAG = "Psychological"
 const val MYSTERY_TAG = "Mystery"
+
+val BLUR_TINT = Color.LightGray.copy(alpha = 0.4f)

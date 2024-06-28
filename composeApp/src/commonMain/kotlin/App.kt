@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import api.mangadex.service.MangaDex
 import api.mangadex.service.MangaDexImpl
+import cafe.adriel.voyager.navigator.Navigator
 import io.github.irgaly.kottage.Kottage
 import io.github.irgaly.kottage.KottageEnvironment
 import io.github.irgaly.kottage.getOrNull
@@ -46,6 +47,7 @@ object Libs {
     val kottageCache = kottage.cache("default")
     val mangaDex: MangaDex = MangaDexImpl()
 }
+
 
 private suspend fun isLoggedIn(): Boolean {
     Libs.kottageStorage.getOrNull<String>(util.KottageConst.TOKEN)?.let {
@@ -93,7 +95,7 @@ fun App() {
                     isLoggedIn.value = true
                 })
             } else {
-                MainScreen(vm = mainViewModel)
+                Navigator(MainScreen(vm = mainViewModel))
             }
             if (isShowingSplash.value) {
                 SplashScreen()

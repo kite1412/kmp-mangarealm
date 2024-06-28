@@ -22,6 +22,8 @@ ktor = "2.3.11"
 lifecycleViewmodelKtx = "2.8.0-rc01"
 napier = "2.7.1"
 firebaseFirestoreKtx = "25.0.0"
+navigationCompose = "2.7.0-alpha07"
+voyagerNavigator = "1.1.0-beta02"
 
 [libraries]
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelKtx" }
@@ -48,6 +50,7 @@ ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 napier = { module = "io.github.aakira:napier", version.ref = "napier" }
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
+voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyagerNavigator" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
