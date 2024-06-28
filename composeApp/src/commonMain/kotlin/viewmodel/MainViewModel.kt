@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -48,6 +49,8 @@ class MainViewModel(
     private var _currentPage = mutableStateOf(Page.MAIN)
     val currentPage = _currentPage
 
+    private var executeOnce = false
+
     val initialLatestUpdatesData = mutableStateListOf<Data<MangaAttributes>>()
     val continueReadingData = mutableStateListOf<Data<MangaAttributes>>()
 
@@ -62,6 +65,8 @@ class MainViewModel(
         ContentScale,
         Modifier
     ) -> Unit>()
+
+    val latestUpdatesPainterSB = mutableStateListOf<Painter?>()
 
     val continueReadingCovers = mutableStateListOf<@Composable (
         ContentScale,
@@ -84,7 +89,7 @@ class MainViewModel(
         ))?.data ?: listOf())
     }
 
-    private fun initLatestUpdatesPainter() {
+    private fun initLatestUpdatesCovers() {
         initialLatestUpdatesData.forEach { data ->
             latestUpdatesCovers.add { cs, m ->
                 AutoSizeBox(getCoverUrl(data)) {action ->
@@ -105,6 +110,23 @@ class MainViewModel(
                         }
                         else -> Text("Fail to load image", color = Color.White)
                     }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun initLatestUpdatesPainterSB() {
+        for (i in 0 until 10) {
+            latestUpdatesPainterSB.add(null)
+        }
+        initialLatestUpdatesData.forEachIndexed { i, d ->
+            AutoSizeBox(getCoverUrl(d)) {action ->
+                when (action) {
+                    is ImageAction.Success -> {
+                        latestUpdatesPainterSB[i] = rememberImageSuccessPainter(action)
+                    }
+                    else -> Unit
                 }
             }
         }
@@ -208,12 +230,16 @@ class MainViewModel(
 
     @Composable
     fun init() {
-        LaunchedEffect(true) {
-            initLatestUpdates()
-            if (initialLatestUpdatesData.isNotEmpty()) {
-                initLatestUpdatesPainter()
+        if (!executeOnce) {
+            LaunchedEffect(true) {
+                initLatestUpdates()
+                if (initialLatestUpdatesData.isNotEmpty()) {
+                    initLatestUpdatesCovers()
+                }
+                initContinueReading()
             }
-            initContinueReading()
+            initLatestUpdatesPainterSB()
+            executeOnce = true
         }
     }
 }

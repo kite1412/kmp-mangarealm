@@ -50,6 +50,7 @@ kotlin {
             implementation(libs.kottage)
             implementation(libs.haze)
             implementation(libs.image.loader)
+            implementation(libs.voyager.navigator)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test.v200)
