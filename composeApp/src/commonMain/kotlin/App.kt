@@ -72,7 +72,8 @@ fun App() {
             mainViewModel.fetchMangaByTags(it)
         })
     }
-    // check for log in info
+    mainViewModel.initMangaTagsPainter()
+    // check for login info
     LaunchedEffect(true) {
         isLoggedIn.value = isLoggedIn()
         delay(util.SPLASH_TIME.toLong())

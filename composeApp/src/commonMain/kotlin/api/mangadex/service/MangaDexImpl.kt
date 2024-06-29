@@ -57,7 +57,7 @@ class MangaDexImpl(
             client.get("${ApiConstant.MANGA_ENDPOINT}/$queries")
                 .body<ListResponse<MangaAttributes>>()
                 .also {
-                    Log.d("GET (getManga) list length: ${it.data.size}")
+                    Log.d("GET (getManga$queries) list length: ${it.data.size}")
                 }
         } catch (e: Throwable) {
             e.message?.let {
@@ -83,7 +83,7 @@ class MangaDexImpl(
             }
                 .body<MangaStatus>()
                 .also {
-                    Log.d("GET (getMangaByStatus) status length: ${it.statuses.size} ")
+                    Log.d("GET (getMangaByStatus$q) status length: ${it.statuses.size} ")
                 }
         } catch (e: Exception) {
             e.message?.let {

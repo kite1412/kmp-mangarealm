@@ -5,7 +5,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,9 +37,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -83,12 +80,12 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
+import model.Manga
 import screenSize
 import theme.selectedButton
 import theme.unselectedButton
 import util.BLUR_TINT
 import util.LATEST_UPDATE_SLIDE_TIME
-import viewmodel.DetailViewModel
 import viewmodel.MainViewModel
 import viewmodel.Page
 
@@ -118,8 +115,11 @@ class MainScreen(
     override fun Content() {
         vm.init()
         val nav = LocalNavigator.currentOrThrow
-        val latestUpdatesPagerState = rememberPagerState { 10 }
-        autoSlideLatestUpdates(latestUpdatesPagerState)
+        val latestUpdatesPagerState = rememberPagerState(initialPageOffsetFraction = 0f) { vm.sessionSize }
+        autoSlideLatestUpdates(
+            autoSlide = vm.enableAutoSlide.value,
+            pagerState = latestUpdatesPagerState
+        )
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -156,7 +156,7 @@ class MainScreen(
                         }
                     }
                     item {
-                        ContinueReading(vm = vm)
+                        ContinueReading(vm = vm, nav = nav)
                     }
                     item {
                         Column(
@@ -169,9 +169,11 @@ class MainScreen(
                                 fontWeight = FontWeight.Bold
                             )
                             MangaTags(
-                                mangaList = vm.romcomManga,
+                                mangaList = vm.romComManga,
+                                painters = vm.romComPainter,
                                 label = "Rom-Com",
                                 nav = nav,
+                                vm = vm,
                                 backgroundGradient = Brush.linearGradient(colors = listOf(
                                     Color(0xFFADD8E6),
                                     Color(0xFFFFB6C1)
@@ -180,8 +182,10 @@ class MainScreen(
                             )
                             MangaTags(
                                 mangaList = vm.advComManga,
+                                painters = vm.advComPainter,
                                 label = "Adventure-Comedy",
                                 nav = nav,
+                                vm = vm,
                                 backgroundGradient = Brush.linearGradient(colors = listOf(
                                     Color(0xFFFFA07A),
                                     Color(0xFFFFC48C)
@@ -190,8 +194,10 @@ class MainScreen(
                             )
                             MangaTags(
                                 mangaList = vm.psyMysManga,
+                                painters = vm.psyMysPainter,
                                 label = "Psychological-Mystery",
                                 nav = nav,
+                                vm = vm,
                                 backgroundGradient = Brush.linearGradient(colors = listOf(
                                     Color(0xFF191970),
                                     Color(0xFF2F4F4F)
@@ -220,11 +226,12 @@ class MainScreen(
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun autoSlideLatestUpdates(
+        autoSlide: Boolean,
         pagerState: PagerState,
         modifier: Modifier = Modifier
     ) {
-        LaunchedEffect(pagerState.settledPage) {
-            while (true) {
+        LaunchedEffect(pagerState.settledPage, autoSlide) {
+            while (autoSlide) {
                 delay(LATEST_UPDATE_SLIDE_TIME.toLong())
                 if (pagerState.currentPage == pagerState.pageCount - 1) {
                     pagerState.animateScrollToPage(
@@ -299,7 +306,7 @@ class MainScreen(
         modifier: Modifier = Modifier
     ) {
         val hazeState = remember { HazeState() }
-        Box(
+        if (vm.latestUpdatesData.isNotEmpty() && vm.latestUpdatesPainter.isNotEmpty()) Box(
             modifier = modifier
                 .fillMaxWidth()
                 .height(height)
@@ -309,17 +316,19 @@ class MainScreen(
             Column(modifier = Modifier.fillMaxSize()) {
                 val imageHeight = height / 1.5f
                 HorizontalPager(state = pagerState) {
-                    val painter = vm.latestUpdatesPainterSB[it]
-                    if (vm.initialLatestUpdatesData.isNotEmpty() &&
-                        vm.latestUpdatesPainterSB.isNotEmpty()) {
+                    if (vm.latestUpdatesData.isNotEmpty() &&
+                        vm.latestUpdatesPainter.isNotEmpty()) {
+                        val painter = vm.latestUpdatesPainter[it]
+                        val data = vm.latestUpdatesData[it]
                         Box(
                             modifier = Modifier
                                 .padding(horizontal = 4.dp)
                                 .clip(RoundedCornerShape(15.dp))
                                 .clickable {
-                                    if (painter != null) {
-                                        nav.push(DetailScreen(vm = DetailViewModel(painter = painter)))
-                                    }
+                                    vm.navigateToDetail(
+                                        nav = nav,
+                                        manga = Manga.populateDetail(painter, data)
+                                    )
                                 }
                         ) {
                             Box(
@@ -338,12 +347,12 @@ class MainScreen(
                                                 tint = BLUR_TINT
                                             )
                                         )
-                                )
+                                ) {}
                             }
                             LatestUpdateDisplay(
                                 painter = painter,
-                                title = getTitle(vm.initialLatestUpdatesData[it].attributes.title),
-                                desc = getDesc(vm.initialLatestUpdatesData[it].attributes.description),
+                                title = getTitle(data.attributes.title),
+                                desc = getDesc(data.attributes.description),
                                 imageHeight = imageHeight,
                                 imageWidth = (imageHeight * imageRatio),
                                 modifier = Modifier
@@ -355,79 +364,6 @@ class MainScreen(
                             )
                         }
                     }
-                }
-            }
-            IndicatorDots(
-                n = pagerState.pageCount,
-                selected = pagerState.currentPage + 1,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 8.dp)
-            )
-        }
-    }
-
-    @OptIn(ExperimentalFoundationApi::class)
-    @Composable
-    @Deprecated(message = "delete later")
-    fun LatestUpdatesBar2(
-        vm: MainViewModel,
-        height: Dp,
-        pagerState: PagerState,
-        modifier: Modifier = Modifier
-    ) {
-        val hazeState = remember { HazeState() }
-
-        Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(height)
-                .clip(RoundedCornerShape(15.dp))
-                .background(Color.Transparent)
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                val imageHeight = height / 1.5f
-                HorizontalPager(state = pagerState) {
-                    if (vm.initialLatestUpdatesData.isNotEmpty() &&
-                        vm.latestUpdatesCovers.isNotEmpty() &&
-                        vm.latestUpdatesCovers.size > it)
-                        Box(
-                            modifier = Modifier
-                                .padding(horizontal = 4.dp)
-                                .clip(RoundedCornerShape(15.dp))
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .haze(hazeState)
-                            ) {
-                                vm.latestUpdatesCovers[it](
-                                    ContentScale.FillWidth,
-                                    Modifier
-                                        .fillMaxSize()
-                                        .hazeChild(
-                                            hazeState,
-                                            style = HazeStyle(
-                                                blurRadius = 8.dp,
-                                                tint = BLUR_TINT
-                                            )
-                                        )
-                                )
-                            }
-                            LatestUpdateDisplay2(
-                                title = getTitle(vm.initialLatestUpdatesData[it].attributes.title),
-                                desc = getDesc(vm.initialLatestUpdatesData[it].attributes.description),
-                                imageHeight = imageHeight,
-                                imageWidth = (imageHeight * imageRatio),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(
-                                        top = 16.dp,
-                                        end = 12.dp
-                                    )
-                            ) { contentScale, modifier ->
-                                vm.latestUpdatesCovers[it](contentScale, modifier)
-                            }
-                        }
                 }
             }
             IndicatorDots(
@@ -519,59 +455,6 @@ class MainScreen(
     }
 
     @Composable
-    @Deprecated(message = "delete later")
-    private fun LatestUpdateDisplay2(
-        title: String,
-        desc: String,
-        imageHeight: Dp,
-        imageWidth: Dp,
-        modifier: Modifier = Modifier,
-        image: @Composable (ContentScale, Modifier) -> Unit
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End,
-            modifier = modifier.fillMaxWidth()
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.End,
-                modifier = Modifier
-                    .padding(end = 8.dp)
-                    .width(screenSize.width / 1.7f)
-            ) {
-                Text(
-                    title,
-                    color = Color.White,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.End,
-                    lineHeight = 16.sp
-                )
-                Text(
-                    desc,
-                    color = Color.White,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.End,
-                    maxLines = 4,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 10.sp
-                )
-            }
-            image(
-                ContentScale.FillBounds,
-                Modifier
-                    .height(imageHeight)
-                    .width(imageWidth)
-                    .clip(RoundedCornerShape(5.dp))
-            )
-        }
-    }
-
-    @Composable
     private fun BottomAppBar(
         page: Page,
         onPageChange: (Page) -> Unit,
@@ -642,9 +525,10 @@ class MainScreen(
     @Composable
     private fun ContinueReading(
         vm: MainViewModel,
+        nav: Navigator,
         modifier: Modifier = Modifier
     ) {
-        if (vm.continueReadingData.isNotEmpty()) Column(modifier = modifier) {
+        if (vm.continueReadingData.isNotEmpty() && vm.continueReadingPainter.isNotEmpty()) Column(modifier = modifier) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -673,14 +557,14 @@ class MainScreen(
                     .height(if (vm.continueReadingData.size > 1) latestBarHeight else smallDisplayHeight)
                     .padding(start = 4.dp)
             ) {
-                items(count = vm.continueReadingCovers.size) {
+                items(count = vm.continueReadingData.size) {
+                    val painter = vm.continueReadingPainter[it]
+                    val data = vm.continueReadingData[it]
                     SmallDisplay(
-                        image = { cs, m ->
-                            vm.continueReadingCovers[it](cs, m)
-                        },
-                        title = getTitle(vm.continueReadingData[it].attributes.title),
+                        painter = painter,
+                        title = getTitle(data.attributes.title),
                         modifier = Modifier.width(screenSize.width / 2)
-                    )
+                    ) { vm.navigateToDetail(nav, Manga.populateDetail(painter, data)) }
                 }
             }
         }
@@ -688,28 +572,29 @@ class MainScreen(
 
     @Composable
     private fun SmallDisplay(
-        image: @Composable (ContentScale, Modifier) -> Unit,
+        painter: Painter?,
         title: String,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        onClick: () -> Unit
     ) {
-        Row(modifier = modifier) {
-            image(
-                ContentScale.FillBounds,
-                Modifier
+        Row(modifier = modifier.clickable(onClick = onClick)) {
+            BrowseImageNullable(
+                painter = painter,
+                contentScale = ContentScale.FillBounds,
+                modifier = Modifier
                     .width(smallDisplayWidth)
                     .height(smallDisplayHeight)
                     .clip(RoundedCornerShape(5.dp))
             )
             Spacer(Modifier.width(6.dp))
-            Column(modifier = Modifier.padding(top = 12.dp)) {
-                Text(
-                    title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+            Text(
+                title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 12.dp)
+            )
         }
     }
 
@@ -717,17 +602,19 @@ class MainScreen(
     @Composable
     private fun MangaTags (
         mangaList: List<Data<MangaAttributes>>,
+        painters: List<Painter?>,
         label: String,
         nav: Navigator,
         backgroundGradient: Brush,
+        vm: MainViewModel,
         unselectedDotColor: Color = Color(0xFFDEDEDE),
         modifier: Modifier = Modifier
     ) {
-        val pagerState = rememberPagerState { 10 }
-        var labelHeight by remember { mutableStateOf(0) }
+        val pagerState = rememberPagerState { mangaList.size }
+        val labelHeight  = vm.mangaTagsLabelHeight.value.dp
         Box(modifier = modifier
             .fillMaxWidth()
-            .height(labelHeight.dp + (tagsDisplayWidth * imageRatio))
+            .height(labelHeight + (tagsDisplayWidth * imageRatio))
             .background(brush = backgroundGradient)
             .padding(top = 16.dp, start = 16.dp)
         ) {
@@ -747,7 +634,7 @@ class MainScreen(
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         modifier = Modifier.onGloballyPositioned {
-                            labelHeight = it.size.height
+                            vm.mangaTagsLabelHeight.value = it.size.height
                         }
                     )
                     IndicatorDots(
@@ -758,7 +645,7 @@ class MainScreen(
                         unselectedColor = unselectedDotColor
                     )
                 }
-                if (mangaList.isNotEmpty()) HorizontalPager(
+                if (mangaList.isNotEmpty() && painters.isNotEmpty()) HorizontalPager(
                     state = pagerState,
                     modifier = Modifier
                         .padding(bottom = 16.dp),
@@ -768,17 +655,18 @@ class MainScreen(
                 ) {
                     TagsDisplay(
                         manga = mangaList[it],
+                        painter = painters[it],
                         contentWidth = tagsDisplayWidth,
                         isSelected = it == pagerState.currentPage,
-                        onClick = {
-                            nav.push(DetailScreen())
+                        onClick = { p ->
+                            vm.navigateToDetail(nav, Manga.populateDetail(p, mangaList[it]))
                         },
                         modifier = Modifier.offset(x = if (pagerState.currentPage == 9)
                             -((screenSize.width - tagsDisplayWidth)
                                     - 16.dp // page spacing
                                     - 8.dp // additional width (right and left)
                                     - 16.dp // parent padding
-                                    )
+                             )
                         else 0.dp)
                     )
                 } else Box(modifier = Modifier.fillMaxSize()) {
@@ -789,11 +677,12 @@ class MainScreen(
     }
 
     @Composable
-    private fun TagsDisplay(
+    @Deprecated(message = "delete later")
+    private fun TagsDisplay2(
         manga: Data<MangaAttributes>,
         contentWidth: Dp,
         isSelected: Boolean,
-        onClick: () -> Unit,
+        onClick: (Painter?) -> Unit,
         modifier: Modifier = Modifier
     ) {
         val notSelectedWidth = contentWidth - (contentWidth / 10)
@@ -802,11 +691,14 @@ class MainScreen(
         val height by animateDpAsState(targetValue = if (isSelected) (imageWidth * 3) / 2
         else (imageWidth * 3) / 2)
         val obstructColor by animateColorAsState(if (!isSelected) Color.Black else Color.Transparent)
+        var painter: Painter? = null
         BoxWithConstraints(
             modifier = modifier
                 .width(width)
                 .height(height)
-                .clickable(onClick = onClick)
+                .clickable {
+                    onClick(painter)
+                }
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -829,18 +721,101 @@ class MainScreen(
                                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                             }
                             is ImageAction.Success -> {
-                                Image(
-                                    painter = rememberImageSuccessPainter(it),
+                                painter = rememberImageSuccessPainter(it)
+                                BrowseImageNullable(
+                                    painter = painter,
                                     contentDescription = "cover art",
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.FillBounds
                                 )
+
                             }
                             else -> {
                                 Text("Can't load image", fontSize = 10.sp)
                             }
                         }
                     }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(brush = Brush.linearGradient(listOf(
+                                obstructColor, Color.Transparent
+                            )))
+                    ) {}
+                }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Text(
+                        getTitle(manga.attributes.title),
+                        overflow = TextOverflow.Ellipsis,
+                        maxLines = 2,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        getTags(manga),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color.White,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        getDesc(manga.attributes.description),
+                        maxLines = 6,
+                        overflow = TextOverflow.Ellipsis,
+                        color = Color.White,
+                        fontSize = 10.sp
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun TagsDisplay(
+        manga: Data<MangaAttributes>,
+        painter: Painter?,
+        contentWidth: Dp,
+        isSelected: Boolean,
+        onClick: (Painter?) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        val notSelectedWidth = contentWidth - (contentWidth / 10)
+        val width by animateDpAsState(targetValue = if (isSelected) contentWidth else notSelectedWidth)
+        val imageWidth = width / 2.3f
+        val height by animateDpAsState(targetValue = if (isSelected) (imageWidth * 3) / 2
+        else (imageWidth * 3) / 2)
+        val obstructColor by animateColorAsState(if (!isSelected) Color.Black else Color.Transparent)
+        BoxWithConstraints(
+            modifier = modifier
+                .width(width)
+                .height(height)
+                .clickable {
+                    onClick(painter)
+                }
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(imageWidth)
+                        .height(height)
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(Color.White)
+                ) {
+                    BrowseImageNullable(
+                        painter = painter,
+                        contentDescription = "cover art",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.FillBounds
+                    )
                     Box(
                         modifier = Modifier
                             .fillMaxSize()

@@ -74,11 +74,13 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
                 val expiresIn = TokenHandler.expiration(token)
                 val currentMillis = adjustLength(expiresIn.toString().length, currentTimeMillis)
                 if (expiresIn > currentMillis) {
+                    Log.d("(token) using current token")
                     return token
                 }
                 val refresh = refreshToken(RefreshTokenRequest(storage))
                 if (refresh != null) {
                     saveTokenToLocal(refresh)
+                    Log.d("(token) token refreshed")
                     return refresh.accessToken
                 }
                 return null

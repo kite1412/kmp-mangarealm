@@ -1,5 +1,6 @@
 package view
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,24 +18,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import api.mangadex.util.getTags
+import api.mangadex.util.getTitle
 import cafe.adriel.voyager.core.screen.Screen
-import com.seiko.imageloader.rememberImagePainter
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import model.Manga
 import screenSize
 import util.BLUR_TINT
 import viewmodel.DetailViewModel
 
 class DetailScreen(
-    private val vm: DetailViewModel = DetailViewModel()
+    private val vm: DetailViewModel
 ) : Screen {
     @Composable
     override fun Content() {
@@ -43,11 +45,7 @@ class DetailScreen(
         ) {
             LazyColumn {
                 item {
-                    // TODO change later
-                    val painter = rememberImagePainter(
-                        url = "https://uploads.mangadex.org/covers/1563cd49-ee38-4a46-a4f0-429dc07cd4a1/70dccc37-1a76-451e-a511-906e0e92380e.jpg"
-                    )
-                    CoverArtDisplay(painter = vm.painter ?: painter)
+                    CoverArtDisplay(vm.manga)
                 }
             }
         }
@@ -55,7 +53,7 @@ class DetailScreen(
 
     @Composable
     private fun CoverArtDisplay(
-        painter: Painter,
+        manga: Manga,
         modifier: Modifier = Modifier
     ) {
         val hazeState = remember { HazeState() }
@@ -69,8 +67,8 @@ class DetailScreen(
                 .fillMaxWidth()
         ) {
             Box(modifier = Modifier.haze(hazeState)) {
-                BrowseImage(
-                    painter = painter,
+                BrowseImageNullable(
+                    painter = manga.painter,
                     contentScale = ContentScale.FillWidth,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -82,22 +80,31 @@ class DetailScreen(
                 )
             }
             Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier
                     .height(backgroundHeight)
                     .width(screenSize.width - (coverArtWidth + 16.dp))
-                    .padding(top = 8.dp, start = 12.dp)
+                    .padding(top = 16.dp, start = 12.dp, end = 4.dp)
             ) {
                 Text(
-                    "One Pieceeeeeeee eeeeeeeeee eeeeeeee",
+                    getTitle(manga.data.attributes.title),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    fontSize = 24.sp,
+                    fontSize = 28.sp,
                     color = Color.White,
                     fontWeight = FontWeight.Bold
                 )
+                Text(
+                    getTags(manga.data),
+                    maxLines = 2,
+                    fontSize = 10.sp,
+                    overflow = TextOverflow.Ellipsis,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
-            BrowseImage(
-                painter = painter,
+            BrowseImageNullable(
+                painter = manga.painter,
                 contentScale = ContentScale.FillBounds,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
