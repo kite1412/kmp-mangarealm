@@ -1,24 +1,13 @@
 package viewmodel
 
 import Libs
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.CircularProgressIndicator
-import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
@@ -27,20 +16,21 @@ import api.mangadex.util.constructQuery
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
 import api.mangadex.util.getCoverUrl
+import cafe.adriel.voyager.navigator.Navigator
 import com.seiko.imageloader.model.ImageAction
 import com.seiko.imageloader.rememberImageSuccessPainter
 import com.seiko.imageloader.ui.AutoSizeBox
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.haze
-import dev.chrisbanes.haze.hazeChild
 import io.github.irgaly.kottage.KottageStorage
 import io.github.irgaly.kottage.get
+import kotlinx.coroutines.launch
+import model.Manga
 import util.ADVENTURE_TAG
 import util.COMEDY_TAG
 import util.KottageConst
 import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
+import view.DetailScreen
 
 class MainViewModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
@@ -49,29 +39,43 @@ class MainViewModel(
     private var _currentPage = mutableStateOf(Page.MAIN)
     val currentPage = _currentPage
 
-    private var executeOnce = false
+    var mangaTagsLabelHeight = mutableStateOf(0)
 
-    val initialLatestUpdatesData = mutableStateListOf<Data<MangaAttributes>>()
+    private var initLatestUpdatesPainter = false
+    private var initContinueReadingPainter = false
+
+    private var isLatestUpdatesPainterComplete = mutableStateOf(false)
+    private var isContinueReadingPainterComplete = mutableStateOf(false)
+
+    val enableAutoSlide = derivedStateOf {
+        latestUpdatesData.isNotEmpty() && latestUpdatesPainter.isNotEmpty() && latestUpdatesPainter[0] != null
+    }
+
+    val sessionSize = 10
+
+    val latestUpdatesData = mutableStateListOf<Data<MangaAttributes>>()
     val continueReadingData = mutableStateListOf<Data<MangaAttributes>>()
 
     private var _username = mutableStateOf("")
     val username = _username
 
-    val romcomManga = mutableStateListOf<Data<MangaAttributes>>()
+    val romComManga = mutableStateListOf<Data<MangaAttributes>>()
     val advComManga = mutableStateListOf<Data<MangaAttributes>>()
     val psyMysManga = mutableStateListOf<Data<MangaAttributes>>()
 
-    val latestUpdatesCovers = mutableStateListOf<@Composable (
-        ContentScale,
-        Modifier
-    ) -> Unit>()
+    private var isRomComDataComplete = mutableStateOf(false)
+    private var isAdvComDataComplete = mutableStateOf(false)
+    private var isPsyMysDataComplete = mutableStateOf(false)
+    private var isRomComComplete = false
+    private var isAdvComComplete = false
+    private var isPsyMysComplete = false
 
-    val latestUpdatesPainterSB = mutableStateListOf<Painter?>()
+    val latestUpdatesPainter = mutableStateListOf<Painter?>()
+    val continueReadingPainter = mutableStateListOf<Painter?>()
 
-    val continueReadingCovers = mutableStateListOf<@Composable (
-        ContentScale,
-        Modifier
-    ) -> Unit>()
+    val romComPainter = mutableStateListOf<Painter?>()
+    val advComPainter = mutableStateListOf<Painter?>()
+    val psyMysPainter = mutableStateListOf<Painter?>()
 
     fun setPage(page: Page) {
         _currentPage.value = page
@@ -82,49 +86,37 @@ class MainViewModel(
         _username.value = username
     }
 
-    private suspend fun initLatestUpdates() {
-        initialLatestUpdatesData.addAll(mangaDex.getManga(generateArrayQueryParam(
-            name = "includes[]",
-            values = listOf("cover_art")
-        ))?.data ?: listOf())
+    @Composable
+    fun init() {
+        initLatestUpdates()
+        initContinueReading()
     }
 
-    private fun initLatestUpdatesCovers() {
-        initialLatestUpdatesData.forEach { data ->
-            latestUpdatesCovers.add { cs, m ->
-                AutoSizeBox(getCoverUrl(data)) {action ->
-                    when (action) {
-                        is ImageAction.Success -> {
-                            Image(
-                                rememberImageSuccessPainter(action),
-                                "cover art",
-                                contentScale = cs,
-                                modifier = m
-                            )
-                        }
-                        is ImageAction.Loading -> {
-                            val state = remember { HazeState() }
-                            Box(Modifier.fillMaxSize().haze(state)) {
-                                Box(Modifier.fillMaxSize().hazeChild(state))
-                            }
-                        }
-                        else -> Text("Fail to load image", color = Color.White)
-                    }
-                }
+    private fun initLatestUpdatesData() {
+        viewModelScope.launch {
+            if (latestUpdatesData.isEmpty()) {
+                val includes = generateArrayQueryParam(
+                    name = "includes[]",
+                    values = listOf("cover_art")
+                )
+                val queries = generateQuery(mapOf("limit" to sessionSize), includes)
+                latestUpdatesData.addAll(mangaDex.getManga(queries)?.data ?: listOf())
             }
         }
     }
 
     @Composable
-    private fun initLatestUpdatesPainterSB() {
-        for (i in 0 until 10) {
-            latestUpdatesPainterSB.add(null)
+    private fun initLatestUpdates() {
+        initLatestUpdatesData()
+        if (latestUpdatesData.isNotEmpty() && !initLatestUpdatesPainter) {
+            for (i in 0 until latestUpdatesData.size) latestUpdatesPainter.add(null)
+            initLatestUpdatesPainter = true
         }
-        initialLatestUpdatesData.forEachIndexed { i, d ->
+        for ((i, d) in latestUpdatesData.withIndex()) {
             AutoSizeBox(getCoverUrl(d)) {action ->
                 when (action) {
                     is ImageAction.Success -> {
-                        latestUpdatesPainterSB[i] = rememberImageSuccessPainter(action)
+                        latestUpdatesPainter[i] = rememberImageSuccessPainter(action)
                     }
                     else -> Unit
                 }
@@ -132,49 +124,45 @@ class MainViewModel(
         }
     }
 
-    private suspend fun initContinueReading() {
-        val res = mangaDex.getMangaByStatus(Status.READING)
-        if (res?.statuses != null) {
-            if (res.statuses.isNotEmpty()) {
-                val temp = mutableListOf<String>()
-                res.statuses.forEach { manga ->
-                    temp.add(manga.key)
-                }
-                val mangaIds = generateArrayQueryParam(
-                    name = "ids[]",
-                    values = temp
-                )
-                val queries = generateQuery(mapOf(Pair("includes[]", "cover_art")), mangaIds)
-                val mangaList = mangaDex.getManga(queries)
-                mangaList?.data?.let { continueReadingData.addAll(it) }
-                mangaList?.data?.forEach { manga ->
-                    continueReadingCovers.add { cs, m ->
-                        AutoSizeBox(getCoverUrl(manga)) { action ->
-                            when (action) {
-                                is ImageAction.Success -> {
-                                    Image(
-                                        rememberImageSuccessPainter(action),
-                                        "cover art",
-                                        contentScale = cs,
-                                        modifier = m
-                                    )
-                                }
-                                is ImageAction.Loading -> {
-                                    Box(modifier = m) {
-                                        CircularProgressIndicator(
-                                            strokeWidth = 2.dp,
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .size(14.dp)
-                                        )
-                                    }
-                                }
-                                else -> Text("No Image")
-                            }
+    private fun initContinueReadingData() {
+        viewModelScope.launch {
+            if (continueReadingData.isEmpty()) {
+                val res = mangaDex.getMangaByStatus(Status.READING)
+                if (res?.statuses != null) {
+                    if (res.statuses.isNotEmpty()) {
+                        val temp = mutableListOf<String>()
+                        res.statuses.forEach { manga ->
+                            temp.add(manga.key)
                         }
+                        val mangaIds = generateArrayQueryParam(
+                            name = "ids[]",
+                            values = temp
+                        )
+                        val queries = generateQuery(mapOf(Pair("includes[]", "cover_art")), mangaIds)
+                        val mangaList = mangaDex.getManga(queries)
+                        mangaList?.data?.let { continueReadingData.addAll(it) }
                     }
                 }
-            } else return
+            }
+        }
+    }
+
+    @Composable
+    fun initContinueReading() {
+        initContinueReadingData()
+        if (continueReadingData.isNotEmpty() && !initContinueReadingPainter) {
+            for (i in 0 until continueReadingData.size) continueReadingPainter.add(null)
+            initContinueReadingPainter = true
+        }
+        for ((i, d) in continueReadingData.withIndex()) {
+            AutoSizeBox(getCoverUrl(d)) {action ->
+                when (action) {
+                    is ImageAction.Success -> {
+                        continueReadingPainter[i] = rememberImageSuccessPainter(action)
+                    }
+                    else -> Unit
+                }
+            }
         }
     }
 
@@ -191,9 +179,13 @@ class MainViewModel(
             name = "excludedTags[]",
             values = excludedTags
         )
-        val temp = generateQuery(
+        val includes = generateQuery(
             queryParams = mapOf("includes[]" to "cover_art"),
             otherParams = tagsParam
+        )
+        val temp = generateQuery(
+            queryParams = mapOf("limit" to sessionSize),
+            otherParams = includes
         )
         val queries = constructQuery(excludedTagsParam, temp)
         val res = mangaDex.getManga(queries)
@@ -208,7 +200,8 @@ class MainViewModel(
         fetchByTags(
             tags = listOf(tags[ROMANCE_TAG]!!, tags[COMEDY_TAG]!!),
             onSuccess = {
-                romcomManga.addAll(it)
+                romComManga.addAll(it)
+                isRomComDataComplete.value = true
             },
             excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!)
         )
@@ -216,6 +209,7 @@ class MainViewModel(
             tags = listOf(tags[ADVENTURE_TAG]!!, tags[COMEDY_TAG]!!),
             onSuccess = {
                 advComManga.addAll(it)
+                isAdvComDataComplete.value = true
             },
             excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!)
         )
@@ -223,24 +217,75 @@ class MainViewModel(
             tags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!),
             onSuccess = {
                 psyMysManga.addAll(it)
+                isPsyMysDataComplete.value = true
             },
             excludedTags = listOf(tags[COMEDY_TAG]!!)
         )
     }
 
     @Composable
-    fun init() {
-        if (!executeOnce) {
-            LaunchedEffect(true) {
-                initLatestUpdates()
-                if (initialLatestUpdatesData.isNotEmpty()) {
-                    initLatestUpdatesCovers()
+    private fun initRomCom() {
+        if (isRomComDataComplete.value && !isRomComComplete) {
+            for (i in 0 until romComManga.size) romComPainter.add(null)
+            romComManga.forEachIndexed { i, d ->
+                AutoSizeBox(getCoverUrl(d)) {action ->
+                    when (action) {
+                        is ImageAction.Success -> {
+                            romComPainter[i] = rememberImageSuccessPainter(action)
+                        }
+                        else -> Unit
+                    }
                 }
-                initContinueReading()
             }
-            initLatestUpdatesPainterSB()
-            executeOnce = true
+            isRomComComplete = true
         }
+    }
+
+    @Composable
+    private fun initAdvCom() {
+        if (isAdvComDataComplete.value && !isAdvComComplete) {
+            for (i in 0 until advComManga.size) advComPainter.add(null)
+            advComManga.forEachIndexed { i, d ->
+                AutoSizeBox(getCoverUrl(d)) {action ->
+                    when (action) {
+                        is ImageAction.Success -> {
+                            advComPainter[i] = rememberImageSuccessPainter(action)
+                        }
+                        else -> Unit
+                    }
+                }
+            }
+            isAdvComComplete = true
+        }
+    }
+
+    @Composable
+    private fun initPsyMys() {
+        if (isPsyMysDataComplete.value && !isPsyMysComplete) {
+            for (i in 0 until psyMysManga.size) psyMysPainter.add(null)
+            psyMysManga.forEachIndexed { i, d ->
+                AutoSizeBox(getCoverUrl(d)) {action ->
+                    when (action) {
+                        is ImageAction.Success -> {
+                            psyMysPainter[i] = rememberImageSuccessPainter(action)
+                        }
+                        else -> Unit
+                    }
+                }
+            }
+            isPsyMysComplete = true
+        }
+    }
+
+    @Composable
+    fun initMangaTagsPainter() {
+        initRomCom()
+        initAdvCom()
+        initPsyMys()
+    }
+
+    fun navigateToDetail(nav: Navigator, manga: Manga) {
+        if (manga.painter != null) nav.push(DetailScreen(vm = DetailViewModel(manga)))
     }
 }
 
