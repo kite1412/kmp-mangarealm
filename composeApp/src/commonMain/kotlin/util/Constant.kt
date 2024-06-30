@@ -7,6 +7,7 @@ object KottageConst {
     const val TOKEN = "token:accessToken"
     const val USERNAME = "profile:username"
     const val REFRESH_TOKEN = "token:refreshToken"
+    const val RESERVE_REFRESH_TOKEN = "token:resRefreshToken"
     const val CLIENT_ID = "api:clientId"
     const val CLIENT_SECRET = "api:clientSecret"
     const val ROMANCE_TAG_ID = "tags:rom"
@@ -14,7 +15,6 @@ object KottageConst {
     const val ADVENTURE_TAG_ID = "tags:adv"
     const val PSYCHOLOGICAL_TAG_ID = "tags:psy"
     const val MYSTERY_TAG_ID = "tags:mys"
-
     const val TAGS_LIST = "api:tags"
 }
 

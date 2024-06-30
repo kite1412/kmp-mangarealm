@@ -24,3 +24,7 @@ actual fun adjustNavBarColor() {
 
 actual val currentTimeMillis: Long
     get() = TODO("Not yet implemented")
+
+@Composable
+actual fun disableEdgeToEdge() {
+}

@@ -46,7 +46,7 @@ class MangaDexImpl(
             }
         } catch (err: Throwable) {
             err.message?.let {
-                Log.e(it)
+                Log.e("(login) $it")
             }
             null
         }
@@ -61,7 +61,7 @@ class MangaDexImpl(
                 }
         } catch (e: Throwable) {
             e.message?.let {
-                Log.e(it)
+                Log.e("(getManga) $it")
             }
             null
         }
@@ -87,7 +87,7 @@ class MangaDexImpl(
                 }
         } catch (e: Exception) {
             e.message?.let {
-                Log.e(it)
+                Log.e("(getMangaByStatus) $it")
             }
             null
         }
@@ -102,7 +102,7 @@ class MangaDexImpl(
                 }
         } catch (e: Exception) {
             e.message?.let {
-                Log.e(it)
+                Log.e("(getTags) $it")
             }
             null
         }
@@ -115,7 +115,7 @@ class MangaDexImpl(
             }.body<EntityResponse<UserAttributes>>()
         } catch (e: Exception) {
             e.message?.let {
-                Log.e(it)
+                Log.e("(getLoggedInUser) $it")
             }
             null
         }

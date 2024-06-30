@@ -4,6 +4,7 @@ import Libs
 import api.mangadex.model.request.RefreshTokenRequest
 import api.mangadex.model.response.Token
 import api.mangadex.util.ApiConstant
+import error.UnableRefreshTokenException
 import io.github.irgaly.kottage.get
 import io.github.irgaly.kottage.getOrNull
 import io.github.irgaly.kottage.put
@@ -21,7 +22,8 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
 
     private suspend fun refreshToken(request: RefreshTokenRequest): Token? {
         return try {
-            client.submitForm(
+            var useReserve = false
+            var res = client.submitForm(
                 url = ApiConstant.AUTH_ENDPOINT,
                 formParameters = parameters {
                     append("grant_type", request.grantType)
@@ -29,30 +31,44 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
                     append("client_id", request.clientId)
                     append("client_secret", request.clientSecret)
                 }
-            ).body<Token>().also {
-                Log.d("success refreshing token")
+            ).body<Token>()
+            // TODO handle if reserved refresh token also not works, typically prompting user to re-login
+            if (res.error != null) {
+                Log.w("(refreshToken) ${res.error}")
+                useReserve = true
+                res = client.submitForm(
+                    url = ApiConstant.AUTH_ENDPOINT,
+                    formParameters = parameters {
+                        append("grant_type", request.grantType)
+                        append("refresh_token", request.reserveRefreshToken)
+                        append("client_id", request.clientId)
+                        append("client_secret", request.clientSecret)
+                    }
+                ).body<Token>()
+            }
+            if (res.error != null) throw UnableRefreshTokenException()
+            res.also {
+                saveTokenToLocal(it, request.refreshToken)
+                Log.d("(refreshToken) success refreshing token")
+                if (useReserve) {
+                    storage.put(KottageConst.REFRESH_TOKEN, request.reserveRefreshToken)
+                }
             }
         } catch (err: Throwable) {
             err.cause?.message?.let {
-                Log.e(it)
+                Log.e("(refreshToken) $it")
             }
             null
         }
     }
 
-    private suspend fun saveTokenToLocal(token: Token) {
-        val refresh = storage.get<String>(KottageConst.REFRESH_TOKEN)
+    private suspend fun saveTokenToLocal(token: Token, refreshToken: String? = null) {
+        val refresh = refreshToken ?: storage.get<String>(KottageConst.REFRESH_TOKEN)
         val refreshExpiresIn = TokenHandler.expiration(refresh)
-        storage.put<String>(
-            KottageConst.TOKEN,
-            token.accessToken
-        )
-        if (refreshExpiresIn < (currentTimeMillis + 30.days.inWholeMilliseconds)) {
-            storage.put<String>(
-                KottageConst.REFRESH_TOKEN,
-                token.refreshToken
-            )
-        }
+        storage.put(KottageConst.TOKEN, token.accessToken)
+        storage.put(KottageConst.RESERVE_REFRESH_TOKEN, token.refreshToken)
+        if (refreshExpiresIn < (currentTimeMillis + 30.days.inWholeMilliseconds))
+            storage.put<String>(KottageConst.REFRESH_TOKEN, token.refreshToken)
     }
 
     private fun adjustLength(length: Int, number: Long): Long {
@@ -77,14 +93,11 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
                     Log.d("(token) using current token")
                     return token
                 }
-                val refresh = refreshToken(RefreshTokenRequest(storage))
-                if (refresh != null) {
-                    saveTokenToLocal(refresh)
-                    Log.d("(token) token refreshed")
-                    return refresh.accessToken
-                }
-                return null
+                return refreshToken(RefreshTokenRequest(storage))?.accessToken
             } catch (e: Throwable) {
+                e.message?.let {
+                    Log.e("(token) $it")
+                }
                 return null
             }
         }

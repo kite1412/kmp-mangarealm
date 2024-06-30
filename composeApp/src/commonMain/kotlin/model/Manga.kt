@@ -5,7 +5,7 @@ import api.mangadex.model.response.Data
 import api.mangadex.model.response.attribute.MangaAttributes
 
 data class Manga(
-    val painter: Painter?,
+    val coverArt: Painter?,
     val data: Data<MangaAttributes>
 ) {
     companion object {

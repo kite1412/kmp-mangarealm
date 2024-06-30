@@ -44,14 +44,13 @@ class MainViewModel(
     private var initLatestUpdatesPainter = false
     private var initContinueReadingPainter = false
 
-    private var isLatestUpdatesPainterComplete = mutableStateOf(false)
-    private var isContinueReadingPainterComplete = mutableStateOf(false)
-
     val enableAutoSlide = derivedStateOf {
         latestUpdatesData.isNotEmpty() && latestUpdatesPainter.isNotEmpty() && latestUpdatesPainter[0] != null
     }
 
+    var disableEdgeToEdge = mutableStateOf(false)
     val sessionSize = 10
+    var latestUpdatesBarPage = 0
 
     val latestUpdatesData = mutableStateListOf<Data<MangaAttributes>>()
     val continueReadingData = mutableStateListOf<Data<MangaAttributes>>()
@@ -63,9 +62,6 @@ class MainViewModel(
     val advComManga = mutableStateListOf<Data<MangaAttributes>>()
     val psyMysManga = mutableStateListOf<Data<MangaAttributes>>()
 
-    private var isRomComDataComplete = mutableStateOf(false)
-    private var isAdvComDataComplete = mutableStateOf(false)
-    private var isPsyMysDataComplete = mutableStateOf(false)
     private var isRomComComplete = false
     private var isAdvComComplete = false
     private var isPsyMysComplete = false
@@ -79,6 +75,10 @@ class MainViewModel(
 
     fun setPage(page: Page) {
         _currentPage.value = page
+    }
+
+    fun disableEdgeToEdge() {
+        disableEdgeToEdge.value = true
     }
 
     suspend fun updateUsername() {
@@ -199,33 +199,24 @@ class MainViewModel(
     suspend fun fetchMangaByTags(tags: Map<String, String>) {
         fetchByTags(
             tags = listOf(tags[ROMANCE_TAG]!!, tags[COMEDY_TAG]!!),
-            onSuccess = {
-                romComManga.addAll(it)
-                isRomComDataComplete.value = true
-            },
+            onSuccess = romComManga::addAll,
             excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!)
         )
         fetchByTags(
             tags = listOf(tags[ADVENTURE_TAG]!!, tags[COMEDY_TAG]!!),
-            onSuccess = {
-                advComManga.addAll(it)
-                isAdvComDataComplete.value = true
-            },
-            excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!)
+            onSuccess = advComManga::addAll,
+            excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!, tags[ROMANCE_TAG]!!)
         )
         fetchByTags(
             tags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!),
-            onSuccess = {
-                psyMysManga.addAll(it)
-                isPsyMysDataComplete.value = true
-            },
+            onSuccess = psyMysManga::addAll,
             excludedTags = listOf(tags[COMEDY_TAG]!!)
         )
     }
 
     @Composable
     private fun initRomCom() {
-        if (isRomComDataComplete.value && !isRomComComplete) {
+        if (romComManga.isNotEmpty() && !isRomComComplete) {
             for (i in 0 until romComManga.size) romComPainter.add(null)
             romComManga.forEachIndexed { i, d ->
                 AutoSizeBox(getCoverUrl(d)) {action ->
@@ -243,7 +234,7 @@ class MainViewModel(
 
     @Composable
     private fun initAdvCom() {
-        if (isAdvComDataComplete.value && !isAdvComComplete) {
+        if (advComManga.isNotEmpty() && !isAdvComComplete) {
             for (i in 0 until advComManga.size) advComPainter.add(null)
             advComManga.forEachIndexed { i, d ->
                 AutoSizeBox(getCoverUrl(d)) {action ->
@@ -261,7 +252,7 @@ class MainViewModel(
 
     @Composable
     private fun initPsyMys() {
-        if (isPsyMysDataComplete.value && !isPsyMysComplete) {
+        if (psyMysManga.isNotEmpty() && !isPsyMysComplete) {
             for (i in 0 until psyMysManga.size) psyMysPainter.add(null)
             psyMysManga.forEachIndexed { i, d ->
                 AutoSizeBox(getCoverUrl(d)) {action ->
@@ -285,7 +276,7 @@ class MainViewModel(
     }
 
     fun navigateToDetail(nav: Navigator, manga: Manga) {
-        if (manga.painter != null) nav.push(DetailScreen(vm = DetailViewModel(manga)))
+        if (manga.coverArt != null) nav.push(DetailScreen(vm = DetailViewModel(manga)))
     }
 }
 
