@@ -57,7 +57,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.attribute.MangaAttributes
-import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTags
 import api.mangadex.util.getTitle
@@ -72,9 +71,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import com.seiko.imageloader.model.ImageAction
-import com.seiko.imageloader.rememberImageSuccessPainter
-import com.seiko.imageloader.ui.AutoSizeBox
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
@@ -86,6 +82,7 @@ import theme.selectedButton
 import theme.unselectedButton
 import util.BLUR_TINT
 import util.LATEST_UPDATE_SLIDE_TIME
+import util.undoEdgeToEdge
 import viewmodel.MainViewModel
 import viewmodel.Page
 
@@ -115,14 +112,10 @@ class MainScreen(
     override fun Content() {
         vm.init()
         val nav = LocalNavigator.currentOrThrow
-        val latestUpdatesPagerState = rememberPagerState(initialPageOffsetFraction = 0f) { vm.sessionSize }
-        autoSlideLatestUpdates(
-            autoSlide = vm.enableAutoSlide.value,
-            pagerState = latestUpdatesPagerState
-        )
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) {
+            if (vm.disableEdgeToEdge.value) undoEdgeToEdge()
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -150,8 +143,7 @@ class MainScreen(
                             LatestUpdatesBar(
                                 vm = vm,
                                 height = latestBarHeight,
-                                nav = nav,
-                                pagerState = latestUpdatesPagerState
+                                nav = nav
                             )
                         }
                     }
@@ -302,18 +294,25 @@ class MainScreen(
         vm: MainViewModel,
         height: Dp,
         nav: Navigator,
-        pagerState: PagerState,
+        pagerState: PagerState = rememberPagerState(initialPage = vm.latestUpdatesBarPage) { vm.sessionSize },
         modifier: Modifier = Modifier
     ) {
+        LaunchedEffect(pagerState.currentPage) {
+            vm.latestUpdatesBarPage = pagerState.currentPage
+        }
+        autoSlideLatestUpdates(
+            autoSlide = vm.enableAutoSlide.value,
+            pagerState = pagerState
+        )
         val hazeState = remember { HazeState() }
-        if (vm.latestUpdatesData.isNotEmpty() && vm.latestUpdatesPainter.isNotEmpty()) Box(
+        Box(
             modifier = modifier
                 .fillMaxWidth()
                 .height(height)
                 .clip(RoundedCornerShape(15.dp))
                 .background(Color.Transparent)
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            if (vm.latestUpdatesData.isNotEmpty() && vm.latestUpdatesPainter.isNotEmpty()) Column(modifier = Modifier.fillMaxSize()) {
                 val imageHeight = height / 1.5f
                 HorizontalPager(state = pagerState) {
                     if (vm.latestUpdatesData.isNotEmpty() &&
@@ -365,7 +364,12 @@ class MainScreen(
                         }
                     }
                 }
-            }
+            } else Box(
+                modifier = Modifier.fillMaxSize()
+                    .padding(horizontal = 4.dp)
+                    .clip(RoundedCornerShape(15.dp))
+                    .background(Color.White.copy(alpha = 0.4f))
+            )
             IndicatorDots(
                 n = pagerState.pageCount,
                 selected = pagerState.currentPage + 1,
@@ -671,105 +675,6 @@ class MainScreen(
                     )
                 } else Box(modifier = Modifier.fillMaxSize()) {
                     CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-            }
-        }
-    }
-
-    @Composable
-    @Deprecated(message = "delete later")
-    private fun TagsDisplay2(
-        manga: Data<MangaAttributes>,
-        contentWidth: Dp,
-        isSelected: Boolean,
-        onClick: (Painter?) -> Unit,
-        modifier: Modifier = Modifier
-    ) {
-        val notSelectedWidth = contentWidth - (contentWidth / 10)
-        val width by animateDpAsState(targetValue = if (isSelected) contentWidth else notSelectedWidth)
-        val imageWidth = width / 2.3f
-        val height by animateDpAsState(targetValue = if (isSelected) (imageWidth * 3) / 2
-        else (imageWidth * 3) / 2)
-        val obstructColor by animateColorAsState(if (!isSelected) Color.Black else Color.Transparent)
-        var painter: Painter? = null
-        BoxWithConstraints(
-            modifier = modifier
-                .width(width)
-                .height(height)
-                .clickable {
-                    onClick(painter)
-                }
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .width(imageWidth)
-                        .height(height)
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(Color.White)
-                ) {
-                    AutoSizeBox(
-                        url = getCoverUrl(manga),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        when (it) {
-                            is ImageAction.Loading -> {
-                                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                            }
-                            is ImageAction.Success -> {
-                                painter = rememberImageSuccessPainter(it)
-                                BrowseImageNullable(
-                                    painter = painter,
-                                    contentDescription = "cover art",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.FillBounds
-                                )
-
-                            }
-                            else -> {
-                                Text("Can't load image", fontSize = 10.sp)
-                            }
-                        }
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(brush = Brush.linearGradient(listOf(
-                                obstructColor, Color.Transparent
-                            )))
-                    ) {}
-                }
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Text(
-                        getTitle(manga.attributes.title),
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = 2,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        fontSize = 16.sp
-                    )
-                    Text(
-                        getTags(manga),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = Color.White,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        getDesc(manga.attributes.description),
-                        maxLines = 6,
-                        overflow = TextOverflow.Ellipsis,
-                        color = Color.White,
-                        fontSize = 10.sp
-                    )
                 }
             }
         }

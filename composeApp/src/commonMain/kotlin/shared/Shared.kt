@@ -15,6 +15,9 @@ expect val databaseDir: String
 expect fun applyEdgeToEdge()
 
 @Composable
+expect fun disableEdgeToEdge()
+
+@Composable
 expect fun adjustNavBarColor()
 
 expect val currentTimeMillis: Long

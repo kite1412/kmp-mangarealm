@@ -9,6 +9,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import com.nrr.mangarealm.MainActivity
 import io.github.irgaly.kottage.platform.KottageContext
 import io.github.irgaly.kottage.platform.contextOf
@@ -51,3 +52,9 @@ actual fun adjustNavBarColor() {
 
 actual val currentTimeMillis: Long
     get() = System.currentTimeMillis()
+
+@SuppressLint("ComposableNaming")
+@Composable
+actual fun disableEdgeToEdge() {
+    WindowCompat.setDecorFitsSystemWindows(MainActivity.c.window, true)
+}

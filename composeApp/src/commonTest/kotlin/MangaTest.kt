@@ -7,8 +7,8 @@ import kotlin.test.Test
 
 class MangaTest {
     private val api = MangaDexImpl(token = object : TokenHandler {
-        override suspend fun invoke(): Boolean {
-            return false
+        override suspend fun invoke(): String {
+            return ""
         }
     })
 

@@ -10,7 +10,8 @@ val gradient2 = listOf(Color(0xFFA300B0), Color(0xFFE62323))
 val appColors = lightColors(
     primary = Color.Black,
     background = Color(0xFFE8DED1),
-    onBackground = Color(0xFFBFAA8C)
+    onBackground = Color(0xFFBFAA8C),
+    secondary = Color(0xFF3881E5)
 )
 
 val Colors.unselectedButton: Color

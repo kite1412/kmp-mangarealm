@@ -21,5 +21,8 @@ data class Token(
     val sessionState: String,
     val scope: String,
     @SerialName("client_type")
-    val clientType: String
+    val clientType: String,
+    val error: String? = null,
+    @SerialName("error_description")
+    val errorDescription: String? = null
 )

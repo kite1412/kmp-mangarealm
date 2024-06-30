@@ -262,7 +262,7 @@ private fun PromptPage(
                 onClick = onClick,
                 colors = ButtonDefaults.buttonColors(
                     // make a const
-                    backgroundColor = Color(0xFF3881E5),
+                    backgroundColor = MaterialTheme.colors.secondary,
                     contentColor = Color.White
                 ),
                 enabled = vm.enableTap.value,

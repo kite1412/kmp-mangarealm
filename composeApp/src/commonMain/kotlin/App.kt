@@ -1,13 +1,13 @@
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import api.mangadex.service.MangaDex
 import api.mangadex.service.MangaDexImpl
 import cafe.adriel.voyager.navigator.Navigator
@@ -18,7 +18,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import shared.adjustStatusBarColor
 import shared.databaseDir
 import shared.kottageContext
 import theme.AppTheme
@@ -33,6 +32,7 @@ data class ScreenSize(
 )
 
 lateinit var screenSize: ScreenSize
+var statusBarsHeight: Dp = 0.dp
 
 object Libs {
     private val kottage: Kottage = Kottage(
@@ -89,7 +89,7 @@ fun App() {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             screenSize = ScreenSize(height = this.maxHeight, width = this.maxWidth)
             if (!isShowingSplash.value) {
-                adjustStatusBarColor(MaterialTheme.colors.background)
+                mainViewModel.disableEdgeToEdge()
             }
             if (!isLoggedIn.value) {
                 LoginScreen(onSuccess = {
