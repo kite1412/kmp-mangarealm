@@ -2,12 +2,13 @@
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import api.mangadex.service.MangaDex
 import api.mangadex.service.MangaDexImpl
 import cafe.adriel.voyager.navigator.Navigator
@@ -32,7 +33,7 @@ data class ScreenSize(
 )
 
 lateinit var screenSize: ScreenSize
-var statusBarsHeight: Dp = 0.dp
+val LocalMainViewModel = compositionLocalOf { MainViewModel() }
 
 object Libs {
     private val kottage: Kottage = Kottage(
@@ -96,7 +97,9 @@ fun App() {
                     isLoggedIn.value = true
                 })
             } else {
-                Navigator(MainScreen(vm = mainViewModel))
+                CompositionLocalProvider(LocalMainViewModel provides mainViewModel) {
+                    Navigator(MainScreen())
+                }
             }
             if (isShowingSplash.value) {
                 SplashScreen()

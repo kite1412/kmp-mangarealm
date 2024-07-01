@@ -1,9 +1,12 @@
 package view
 
 import Assets
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -23,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
@@ -30,6 +35,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,13 +45,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import api.mangadex.model.response.Data
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTagList
@@ -53,16 +60,18 @@ import api.mangadex.util.getTitle
 import assets.`Book-open`
 import assets.`Bookmark-alt`
 import assets.`Chevron-right`
-import assets.Info
 import assets.`List-add`
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
-import model.Manga
+import kotlinx.coroutines.delay
 import screenSize
 import util.BLUR_TINT
+import util.Status
 import util.edgeToEdge
 import viewmodel.DetailViewModel
 
@@ -74,10 +83,28 @@ class DetailScreen(
         vm.init {
             edgeToEdge()
         }
+        val nav = LocalNavigator.currentOrThrow
+        var p by remember { mutableStateOf(0) }
+        LaunchedEffect(vm.popNoticeWidth) {
+            delay(2000)
+            p = -(vm.popNoticeWidth)
+        }
         Scaffold {
             val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             val hazeState = remember { HazeState() }
-            Box(modifier = Modifier.fillMaxSize().padding(bottom = bottomPadding)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = bottomPadding)
+                    .pointerInput(true) {
+                        detectHorizontalDragGestures(
+                        ) { change, dragAmount ->
+                            if (dragAmount > 30) {
+                                nav.pop()
+                            }
+                        }
+                    }
+            ) {
                 Box(modifier = Modifier.fillMaxSize().haze(hazeState)) {
                     Box(
                         modifier = Modifier
@@ -90,7 +117,10 @@ class DetailScreen(
                         Background()
                     }
                 }
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxSize().padding(bottom = vm.chapterListHeight.value.dp)
+                ) {
                     item {
                         CoverArtDisplay(vm)
                     }
@@ -107,7 +137,36 @@ class DetailScreen(
                         }
                     }
                 }
+                ChapterList(
+                    vm,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                )
             }
+        }
+    }
+
+    @Composable
+    private fun Pop(
+        vm: DetailViewModel,
+        modifier: Modifier = Modifier
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = modifier
+                .wrapContentWidth()
+        ) {
+            Text(
+                "Swipe to pop",
+                modifier = Modifier.wrapContentWidth()
+            )
+            Icon(
+                imageVector = Assets.`Chevron-right`,
+                contentDescription = "back",
+                tint = Color.Black
+            )
         }
     }
 
@@ -128,6 +187,8 @@ class DetailScreen(
         val coverArtHeight = totalHeight / 1.5f
         val coverArtWidth = (coverArtHeight * 2) / 3
         val remainingWidth = screenSize.width - (coverArtWidth + 16.dp)
+        val manga = vm.manga
+        val attributes = vm.manga.data.attributes
         Box(
             modifier = modifier
                 .height(totalHeight)
@@ -135,7 +196,7 @@ class DetailScreen(
         ) {
             Box(modifier = Modifier.haze(hazeState)) {
                 BrowseImageNullable(
-                    painter = vm.manga.coverArt,
+                    painter = manga.coverArt,
                     contentScale = ContentScale.FillWidth,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -154,23 +215,29 @@ class DetailScreen(
                     .padding(top = vm.titleTagsPadding.value + statusBarsHeight, start = 12.dp, end = 4.dp)
             ) {
                 Title(
-                    vm.manga,
+                    attributes,
                     textLines = {
                         if (it > 1) vm.titleTagsPadding.value = 10.dp
                     }
                 )
-                Tags(vm.manga.data)
+                Tags(attributes)
             }
-            BrowseImageNullable(
-                painter = vm.manga.coverArt,
-                contentScale = ContentScale.FillBounds,
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = 16.dp)
-                    .width(coverArtWidth)
-                    .height(coverArtHeight)
-                    .clip(RoundedCornerShape(8.dp))
-            )
+            ) {
+                Status(attributes, modifier = Modifier.align(Alignment.End))
+                BrowseImageNullable(
+                    painter = vm.manga.coverArt,
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier
+                        .width(coverArtWidth)
+                        .height(coverArtHeight)
+                        .clip(RoundedCornerShape(8.dp))
+                )
+            }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
@@ -179,7 +246,12 @@ class DetailScreen(
                     .align(Alignment.BottomStart)
                     .padding(8.dp)
             ) {
-                Action(modifier = Modifier.weight(0.6f).fillMaxHeight()) {
+                Action(
+                    onClick = {},
+                    modifier = Modifier
+                        .weight(0.6f)
+                        .fillMaxHeight()
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -199,6 +271,7 @@ class DetailScreen(
                     }
                 }
                 Action(
+                    onClick = {},
                     fill = false,
                     modifier = Modifier
                         .weight(0.2f)
@@ -212,6 +285,7 @@ class DetailScreen(
                     )
                 }
                 Action(
+                    onClick = {},
                     modifier = Modifier
                         .weight(0.2f)
                         .fillMaxHeight()
@@ -224,23 +298,23 @@ class DetailScreen(
                     )
                 }
             }
-            Icon(
-                imageVector = Assets.Info,
-                contentDescription = "detail",
-                tint = Color.White,
-                modifier = Modifier
-                    .padding(top = statusBarsHeight)
-                    .align(Alignment.TopEnd)
-                    .size(totalHeight - coverArtHeight - statusBarsHeight)
-                    .padding(top = 16.dp, end = 12.dp, bottom = 12.dp)
-                    .clickable {  }
-            )
+//            Icon(
+//                imageVector = Assets.Info,
+//                contentDescription = "detail",
+//                tint = Color.White,
+//                modifier = Modifier
+//                    .padding(top = statusBarsHeight)
+//                    .align(Alignment.TopEnd)
+//                    .size(totalHeight - coverArtHeight - statusBarsHeight)
+//                    .padding(top = 16.dp, end = 12.dp, bottom = 12.dp)
+//                    .clickable {  }
+//            )
         }
     }
 
     @Composable
     private fun Title(
-        manga: Manga,
+        manga: MangaAttributes,
         textLines: (Int) -> Unit = {},
         modifier: Modifier = Modifier
     ) {
@@ -254,7 +328,7 @@ class DetailScreen(
             }
         }
         Text(
-            getTitle(manga.data.attributes.title),
+            getTitle(manga.title),
             maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
             fontSize = fontSize.sp,
@@ -269,6 +343,7 @@ class DetailScreen(
 
     @Composable
     private fun Action(
+        onClick: () -> Unit,
         fill: Boolean = true,
         verticalPadding: Dp = 2.dp,
         modifier: Modifier = Modifier,
@@ -284,6 +359,7 @@ class DetailScreen(
         Box(
             modifier = modifier
                 .clip(corner)
+                .clickable(onClick = onClick)
                 .then(outer)
                 .padding(vertical = verticalPadding),
             content = content
@@ -293,7 +369,7 @@ class DetailScreen(
     @OptIn(ExperimentalLayoutApi::class)
     @Composable
     private fun Tags(
-        data: Data<MangaAttributes>,
+        data: MangaAttributes,
         modifier: Modifier = Modifier
     ) {
         FlowRow(
@@ -324,16 +400,22 @@ class DetailScreen(
         vm: DetailViewModel,
         modifier: Modifier = Modifier
     ) {
+        val manga = vm.manga.data.attributes
+        val rotateDegrees = animateFloatAsState(
+            if (!vm.isShowingDetail.value) 90f else 270f
+        )
         Column(
             modifier = modifier
                 .clip(RoundedCornerShape(16.dp))
+                .clickable(onClick = vm::detailVisibility)
                 .background(MaterialTheme.colors.onBackground)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
             ) {
                 Text(
                     "More Information",
@@ -347,10 +429,95 @@ class DetailScreen(
                     tint = Color.White,
                     modifier = Modifier
                         .size(20.dp)
-                        .rotate(90f),
+                        .rotate(rotateDegrees.value),
                 )
             }
+            AnimatedVisibility(vm.isShowingDetail.value) {
+                Column {
+                    Spacer(Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DetailField("Title", getTitle(manga.title))
+                    }
+                }
+            }
         }
+    }
+
+    @Composable
+    private fun DetailField(
+        field: String,
+        detail: String,
+        modifier: Modifier = Modifier
+    ) {
+        Row {
+            Text(
+                "$field:",
+                color = Color.White,
+                fontSize = 14.sp,
+                modifier = modifier
+            )
+            Text(
+                " $detail",
+                color = Color(235, 235, 235),
+                fontSize = 14.sp,
+                modifier = modifier
+            )
+        }
+    }
+
+    @Composable
+    private fun DetailFields(
+        fieldDetail: Map<String, String>,
+        header: String? = null,
+        modifier: Modifier = Modifier
+    ) {
+        Column(modifier = modifier) {
+            if (header != null) Text(
+                header,
+                fontSize = 15.sp,
+                color = Color.White,
+            )
+            fieldDetail.forEach {
+                DetailField(it.key, it.value, modifier = Modifier.padding(start = 4.dp))
+            }
+        }
+    }
+
+    private fun status(raw: String): String {
+        return when(raw) {
+            Status.ON_GOING -> "On Going"
+            Status.COMPLETED -> "Completed"
+            Status.HIATUS -> "Hiatus"
+            Status.CANCELLED -> "Cancelled"
+            else -> "Unknown"
+        }
+    }
+
+    private fun statusColor(rawStatus: String): Color {
+        return when(rawStatus) {
+            Status.ON_GOING -> Color(0xFF1B663E)
+            Status.COMPLETED -> Color( 46, 90, 180)
+            Status.HIATUS -> Color.LightGray
+            Status.CANCELLED -> Color(255, 160, 0)
+            else -> Color.LightGray
+        }
+    }
+
+    @Composable
+    private fun Status(
+        manga: MangaAttributes,
+        modifier: Modifier = Modifier
+    ) {
+        if (manga.status != null) Text(
+            status(manga.status),
+            color = Color.White,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = modifier
+                .clip(RoundedCornerShape(5.dp))
+                .background(statusColor(manga.status))
+                .padding(horizontal = 4.dp, vertical = 2.dp)
+        )
     }
 
     @Composable
@@ -364,6 +531,32 @@ class DetailScreen(
                     .align(Alignment.BottomEnd)
                     .rotate(-30f)
                     .offset(y = (-40).dp)
+            )
+        }
+    }
+
+    @Composable
+    private fun ChapterList(
+        vm: DetailViewModel,
+        modifier: Modifier = Modifier
+    ) {
+        Action(
+            onClick = vm::navigateToChapterListScreen,
+            verticalPadding = 16.dp,
+            modifier = modifier
+        ) {
+            Text(
+                "Chapter List",
+                fontSize = 16.sp,
+                color = Color.White,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .onGloballyPositioned {
+                        vm.chapterListHeight.value = it.size.height +
+                            8 + // parent's bottom padding
+                            8 // space for desc
+                    }
             )
         }
     }
