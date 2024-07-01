@@ -1,6 +1,7 @@
 package view
 
 import Assets
+import LocalMainViewModel
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -48,6 +49,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -86,30 +88,33 @@ import util.undoEdgeToEdge
 import viewmodel.MainViewModel
 import viewmodel.Page
 
-class MainScreen(
-    private val vm: MainViewModel = MainViewModel(),
-) : Screen {
+class MainScreen : Screen {
     private val imageRatio = 2f / 3f
     private val latestBarHeight = (screenSize.height.value / 4.2).dp
     private val bottomBarHeight = 62.dp
     private val bottomBarTotalHeight = bottomBarHeight + 8.dp
     private val smallDisplayHeight = latestBarHeight / 2
     private val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp
-    private val tagsDisplayWidth = (screenSize.width / 1.3.dp).dp
-    private val mangaTagsModifier = Modifier.fillMaxWidth()
-        .layout { measurable, constraints ->
-            val placeable = measurable.measure(constraints.copy(
-                maxWidth = constraints.maxWidth + 4.dp.roundToPx() * 2
-            ))
-            layout(placeable.width, placeable.height) {
-                placeable.place(0, 0)
+    private val tagsDisplayWidth = (screenSize.width / 1.3f)
+
+    @Composable
+    private fun mangaTagsModifier(): Modifier {
+        return Modifier.fillMaxWidth()
+            .layout { measurable, constraints ->
+                val placeable = measurable.measure(constraints.copy(
+                    maxWidth = constraints.maxWidth + 4.dp.roundToPx() * 2
+                ))
+                layout(placeable.width, placeable.height) {
+                    placeable.place(0, 0)
+                }
             }
-        }
-        .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(8.dp))
+    }
 
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     override fun Content() {
+        val vm = LocalMainViewModel.current
         vm.init()
         val nav = LocalNavigator.currentOrThrow
         Scaffold(
@@ -170,7 +175,7 @@ class MainScreen(
                                     Color(0xFFADD8E6),
                                     Color(0xFFFFB6C1)
                                 )),
-                                modifier = mangaTagsModifier
+                                modifier = mangaTagsModifier()
                             )
                             MangaTags(
                                 mangaList = vm.advComManga,
@@ -182,7 +187,7 @@ class MainScreen(
                                     Color(0xFFFFA07A),
                                     Color(0xFFFFC48C)
                                 )),
-                                modifier = mangaTagsModifier
+                                modifier = mangaTagsModifier()
                             )
                             MangaTags(
                                 mangaList = vm.psyMysManga,
@@ -195,7 +200,7 @@ class MainScreen(
                                     Color(0xFF2F4F4F)
                                 )),
                                 unselectedDotColor = Color(0xFF949494),
-                                modifier = mangaTagsModifier
+                                modifier = mangaTagsModifier()
                             )
                         }
                     }
@@ -616,11 +621,12 @@ class MainScreen(
     ) {
         val pagerState = rememberPagerState { mangaList.size }
         val labelHeight  = vm.mangaTagsLabelHeight.value.dp
-        Box(modifier = modifier
-            .fillMaxWidth()
-            .height(labelHeight + (tagsDisplayWidth * imageRatio))
-            .background(brush = backgroundGradient)
-            .padding(top = 16.dp, start = 16.dp)
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(labelHeight + (tagsDisplayWidth * imageRatio))
+                .background(brush = backgroundGradient)
+                .padding(top = 16.dp, start = 16.dp)
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -632,13 +638,17 @@ class MainScreen(
                         .fillMaxWidth()
                         .padding(end = 10.dp)
                 ) {
+                    val density = LocalDensity.current
                     Text(
                         label,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         modifier = Modifier.onGloballyPositioned {
-                            vm.mangaTagsLabelHeight.value = it.size.height
+                            // TODO change to dp
+                            with(density) {
+                                vm.mangaTagsLabelHeight.value = it.size.height.toDp().value.toInt()
+                            }
                         }
                     )
                     IndicatorDots(
@@ -665,7 +675,7 @@ class MainScreen(
                         onClick = { p ->
                             vm.navigateToDetail(nav, Manga.populateDetail(p, mangaList[it]))
                         },
-                        modifier = Modifier.offset(x = if (pagerState.currentPage == 9)
+                        modifier = Modifier.offset(x = if (pagerState.currentPage == mangaList.size - 1)
                             -((screenSize.width - tagsDisplayWidth)
                                     - 16.dp // page spacing
                                     - 8.dp // additional width (right and left)
@@ -689,16 +699,15 @@ class MainScreen(
         onClick: (Painter?) -> Unit,
         modifier: Modifier = Modifier
     ) {
-        val notSelectedWidth = contentWidth - (contentWidth / 10)
-        val width by animateDpAsState(targetValue = if (isSelected) contentWidth else notSelectedWidth)
-        val imageWidth = width / 2.3f
-        val height by animateDpAsState(targetValue = if (isSelected) (imageWidth * 3) / 2
-        else (imageWidth * 3) / 2)
+        val width = contentWidth - (contentWidth / 8)
+        val imageWidth by animateDpAsState(if (isSelected) width / 2.4f else width / 2.8f)
+        val imageHeight = (imageWidth * 3) / 2
+        val height = (width * 3) / 2
         val obstructColor by animateColorAsState(if (!isSelected) Color.Black else Color.Transparent)
         BoxWithConstraints(
             modifier = modifier
-                .width(width)
                 .height(height)
+                .width(width)
                 .clickable {
                     onClick(painter)
                 }
@@ -711,9 +720,10 @@ class MainScreen(
                 Box(
                     modifier = Modifier
                         .width(imageWidth)
-                        .height(height)
+                        .height(imageHeight)
                         .clip(RoundedCornerShape(5.dp))
                         .background(Color.White)
+                        .align(Alignment.Bottom)
                 ) {
                     BrowseImageNullable(
                         painter = painter,

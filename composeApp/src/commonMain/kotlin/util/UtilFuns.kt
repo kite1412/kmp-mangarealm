@@ -24,3 +24,11 @@ fun undoEdgeToEdge() {
     disableEdgeToEdge()
     adjustStatusBarColor(MaterialTheme.colors.background)
 }
+
+fun <K, V> List<Map<K, V>>.toMap(): Map<K, V> {
+    val m = mutableMapOf<K, V>()
+    forEach {
+        m[it.keys.first()] = it[it.keys.first()]!!
+    }
+    return m
+}

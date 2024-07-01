@@ -75,11 +75,13 @@ fun getDesc(desc: Map<String, String>): String {
     return desc["en"] ?: desc["id"] ?: desc["ja"] ?: ""
 }
 
-fun getTags(data: Data<MangaAttributes>): String {
+fun getTags(data: Data<MangaAttributes>): String = getTags(data.attributes)
+
+fun getTags(manga: MangaAttributes): String {
     var s = ""
-    data.attributes.tags.forEachIndexed { i, t ->
+    manga.tags.forEachIndexed { i, t ->
         s += "${t.attributes.name["en"]}"
-        if (i < (data.attributes.tags.size - 1)) {
+        if (i < (manga.tags.size - 1)) {
             s += ", "
         }
     }
@@ -88,6 +90,11 @@ fun getTags(data: Data<MangaAttributes>): String {
 
 fun getTagList(data: Data<MangaAttributes>): List<String> {
     val tags = getTags(data)
+    return if (tags.isNotEmpty()) tags.split(", ") else listOf()
+}
+
+fun getTagList(manga: MangaAttributes): List<String> {
+    val tags = getTags(manga)
     return if (tags.isNotEmpty()) tags.split(", ") else listOf()
 }
 
