@@ -8,6 +8,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import api.mangadex.service.MangaDex
 import api.mangadex.service.MangaDexImpl
@@ -18,6 +19,8 @@ import io.github.irgaly.kottage.getOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import model.EmptyManga
+import model.Manga
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import shared.databaseDir
 import shared.kottageContext
@@ -49,6 +52,11 @@ object Libs {
     val mangaDex: MangaDex = MangaDexImpl()
 }
 
+object SharedObject {
+    var detailCover: Painter? = null
+    var detailManga: Manga = EmptyManga()
+    var popNotifierCount = 2
+}
 
 private suspend fun isLoggedIn(): Boolean {
     Libs.kottageStorage.getOrNull<String>(util.KottageConst.TOKEN)?.let {

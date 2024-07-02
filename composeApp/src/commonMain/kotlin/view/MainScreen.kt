@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
@@ -37,8 +38,10 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -78,6 +81,7 @@ import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.distinctUntilChanged
 import model.Manga
 import screenSize
 import theme.selectedButton
@@ -124,7 +128,13 @@ class MainScreen : Screen {
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
+                val state = rememberLazyListState()
+                val scrollPosition by remember {
+                    snapshotFlow { state.firstVisibleItemIndex to state.firstVisibleItemScrollOffset }
+                        .distinctUntilChanged()
+                }.collectAsState(initial = "")
                 LazyColumn(
+                    state = state,
                     modifier = Modifier.padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
@@ -329,10 +339,7 @@ class MainScreen : Screen {
                                 .padding(horizontal = 4.dp)
                                 .clip(RoundedCornerShape(15.dp))
                                 .clickable {
-                                    vm.navigateToDetail(
-                                        nav = nav,
-                                        manga = Manga.populateDetail(painter, data)
-                                    )
+                                    vm.navigateToDetail(nav, painter, Manga(data))
                                 }
                         ) {
                             Box(
@@ -573,7 +580,7 @@ class MainScreen : Screen {
                         painter = painter,
                         title = getTitle(data.attributes.title),
                         modifier = Modifier.width(screenSize.width / 2)
-                    ) { vm.navigateToDetail(nav, Manga.populateDetail(painter, data)) }
+                    ) { vm.navigateToDetail(nav, painter, Manga(data)) }
                 }
             }
         }
@@ -645,7 +652,6 @@ class MainScreen : Screen {
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         modifier = Modifier.onGloballyPositioned {
-                            // TODO change to dp
                             with(density) {
                                 vm.mangaTagsLabelHeight.value = it.size.height.toDp().value.toInt()
                             }
@@ -667,13 +673,14 @@ class MainScreen : Screen {
                     pageSpacing = 16.dp,
                     verticalAlignment = Alignment.Bottom
                 ) {
+                    val painter = painters[it]
                     TagsDisplay(
                         manga = mangaList[it],
-                        painter = painters[it],
+                        painter = painter,
                         contentWidth = tagsDisplayWidth,
                         isSelected = it == pagerState.currentPage,
                         onClick = { p ->
-                            vm.navigateToDetail(nav, Manga.populateDetail(p, mangaList[it]))
+                            vm.navigateToDetail(nav, painter, Manga(mangaList[it]))
                         },
                         modifier = Modifier.offset(x = if (pagerState.currentPage == mangaList.size - 1)
                             -((screenSize.width - tagsDisplayWidth)

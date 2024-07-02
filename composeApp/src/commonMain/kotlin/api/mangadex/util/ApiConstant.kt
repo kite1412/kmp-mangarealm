@@ -7,4 +7,9 @@ object ApiConstant {
 
     const val MANGA_ENDPOINT = "$BASE_URL/manga"
     const val MANGA_STATUS = "$MANGA_ENDPOINT/status"
+    const val TAGS_ENDPOINT = "$MANGA_ENDPOINT/tag"
+
+    fun MANGA_CHAPTERS(mangaId: String): String {
+        return "$MANGA_ENDPOINT/$mangaId/feed"
+    }
 }

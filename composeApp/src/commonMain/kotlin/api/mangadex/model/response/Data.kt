@@ -4,8 +4,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class Data<T>(
-    val id: String,
-    val type: String,
+    val id: String = "",
+    val type: String = "",
     val attributes: T,
-    val relationships: List<Relationship>
+    val relationships: List<Relationship> = listOf()
 )
