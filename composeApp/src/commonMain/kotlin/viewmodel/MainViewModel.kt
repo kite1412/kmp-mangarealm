@@ -16,26 +16,23 @@ import api.mangadex.util.constructQuery
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
 import api.mangadex.util.getCoverUrl
-import cafe.adriel.voyager.navigator.Navigator
 import com.seiko.imageloader.model.ImageAction
 import com.seiko.imageloader.rememberImageSuccessPainter
 import com.seiko.imageloader.ui.AutoSizeBox
 import io.github.irgaly.kottage.KottageStorage
 import io.github.irgaly.kottage.get
 import kotlinx.coroutines.launch
-import model.Manga
 import util.ADVENTURE_TAG
 import util.COMEDY_TAG
 import util.KottageConst
 import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
-import view.DetailScreen
 
 class MainViewModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val kottageStorage: KottageStorage = Libs.kottageStorage
-) : ViewModel() {
+) : ViewModel(), DetailNavigable {
     private var _currentPage = mutableStateOf(Page.MAIN)
     val currentPage = _currentPage
 
@@ -273,10 +270,6 @@ class MainViewModel(
         initRomCom()
         initAdvCom()
         initPsyMys()
-    }
-
-    fun navigateToDetail(nav: Navigator, manga: Manga) {
-        if (manga.coverArt != null) nav.push(DetailScreen(vm = DetailViewModel(manga)))
     }
 }
 

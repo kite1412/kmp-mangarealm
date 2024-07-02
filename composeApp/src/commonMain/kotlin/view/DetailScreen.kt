@@ -1,7 +1,9 @@
 package view
 
 import Assets
+import SharedObject
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,8 +29,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -48,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -68,43 +71,40 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
-import kotlinx.coroutines.delay
 import screenSize
 import util.BLUR_TINT
 import util.Status
 import util.edgeToEdge
+import util.toMap
 import viewmodel.DetailViewModel
 
-class DetailScreen(
-    private val vm: DetailViewModel
-) : Screen {
+class DetailScreen : Screen {
     @Composable
     override fun Content() {
+        // TODO change passing strategy, as parent will be recomposed every time the screen is navigated back to
+        val vm = remember { DetailViewModel(SharedObject.detailManga) }
         vm.init {
             edgeToEdge()
         }
         val nav = LocalNavigator.currentOrThrow
-        var p by remember { mutableStateOf(0) }
-        LaunchedEffect(vm.popNoticeWidth) {
-            delay(2000)
-            p = -(vm.popNoticeWidth)
+        LaunchedEffect(true) {
+            SharedObject.popNotifierCount--
         }
         Scaffold {
             val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-            val hazeState = remember { HazeState() }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = bottomPadding)
                     .pointerInput(true) {
-                        detectHorizontalDragGestures(
-                        ) { change, dragAmount ->
+                        detectHorizontalDragGestures { _, dragAmount ->
                             if (dragAmount > 30) {
                                 nav.pop()
                             }
                         }
                     }
             ) {
+                val hazeState = remember { HazeState() }
                 Box(modifier = Modifier.fillMaxSize().haze(hazeState)) {
                     Box(
                         modifier = Modifier
@@ -119,7 +119,7 @@ class DetailScreen(
                 }
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize().padding(bottom = vm.chapterListHeight.value.dp)
+                    modifier = Modifier.fillMaxSize().padding(bottom = vm.chapterListHeight.dp)
                 ) {
                     item {
                         CoverArtDisplay(vm)
@@ -144,6 +144,7 @@ class DetailScreen(
                         .fillMaxWidth()
                         .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                 )
+                if (SharedObject.popNotifierCount >= 0) Pop(vm, modifier = Modifier.align(Alignment.CenterStart))
             }
         }
     }
@@ -153,19 +154,34 @@ class DetailScreen(
         vm: DetailViewModel,
         modifier: Modifier = Modifier
     ) {
+        val density = LocalDensity.current
+        val popAnimation by animateDpAsState(vm.popNoticeWidth.dp)
+        val startPadding = 4.dp
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = modifier
-                .wrapContentWidth()
+                .offset(x = popAnimation)
+                .padding(start = startPadding)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.5f))
+                .padding(start = 8.dp, end = 4.dp, top = 2.dp, bottom = 2.dp)
+                .onGloballyPositioned {
+                    with(density) {
+                        val width = it.size.width.toDp().value
+                        val additionalWidth = startPadding + 12.dp
+                        vm.animatePopNotice(width, additionalWidth)
+                    }
+                }
         ) {
             Text(
                 "Swipe to pop",
-                modifier = Modifier.wrapContentWidth()
+                color = Color.White
             )
             Icon(
                 imageVector = Assets.`Chevron-right`,
                 contentDescription = "back",
-                tint = Color.Black
+                tint = Color.White,
+                modifier = Modifier.size(16.dp)
             )
         }
     }
@@ -187,7 +203,6 @@ class DetailScreen(
         val coverArtHeight = totalHeight / 1.5f
         val coverArtWidth = (coverArtHeight * 2) / 3
         val remainingWidth = screenSize.width - (coverArtWidth + 16.dp)
-        val manga = vm.manga
         val attributes = vm.manga.data.attributes
         Box(
             modifier = modifier
@@ -196,7 +211,7 @@ class DetailScreen(
         ) {
             Box(modifier = Modifier.haze(hazeState)) {
                 BrowseImageNullable(
-                    painter = manga.coverArt,
+                    painter = SharedObject.detailCover,
                     contentScale = ContentScale.FillWidth,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -212,12 +227,12 @@ class DetailScreen(
                 modifier = Modifier
                     .height(backgroundHeight)
                     .width(remainingWidth)
-                    .padding(top = vm.titleTagsPadding.value + statusBarsHeight, start = 12.dp, end = 4.dp)
+                    .padding(top = vm.titleTagsPadding.dp + statusBarsHeight, start = 12.dp, end = 4.dp)
             ) {
                 Title(
                     attributes,
                     textLines = {
-                        if (it > 1) vm.titleTagsPadding.value = 10.dp
+                        if (it > 1) vm.titleTagsPadding = 10
                     }
                 )
                 Tags(attributes)
@@ -230,7 +245,7 @@ class DetailScreen(
             ) {
                 Status(attributes, modifier = Modifier.align(Alignment.End))
                 BrowseImageNullable(
-                    painter = vm.manga.coverArt,
+                    painter = SharedObject.detailCover,
                     contentScale = ContentScale.FillBounds,
                     modifier = Modifier
                         .width(coverArtWidth)
@@ -298,17 +313,6 @@ class DetailScreen(
                     )
                 }
             }
-//            Icon(
-//                imageVector = Assets.Info,
-//                contentDescription = "detail",
-//                tint = Color.White,
-//                modifier = Modifier
-//                    .padding(top = statusBarsHeight)
-//                    .align(Alignment.TopEnd)
-//                    .size(totalHeight - coverArtHeight - statusBarsHeight)
-//                    .padding(top = 16.dp, end = 12.dp, bottom = 12.dp)
-//                    .clickable {  }
-//            )
         }
     }
 
@@ -402,7 +406,7 @@ class DetailScreen(
     ) {
         val manga = vm.manga.data.attributes
         val rotateDegrees = animateFloatAsState(
-            if (!vm.isShowingDetail.value) 90f else 270f
+            if (!vm.isShowingDetail) 90f else 270f
         )
         Column(
             modifier = modifier
@@ -432,11 +436,14 @@ class DetailScreen(
                         .rotate(rotateDegrees.value),
                 )
             }
-            AnimatedVisibility(vm.isShowingDetail.value) {
+            AnimatedVisibility(vm.isShowingDetail) {
                 Column {
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         DetailField("Title", getTitle(manga.title))
+                        DetailField("Alt Titles", manga.altTitles.toMap().values.toSet().joinToString(", "))
+                        DetailField("Publication Year", manga.year)
+                        DetailField("Demographic", manga.publicationDemographic?.replaceFirstChar { it.uppercase() })
                     }
                 }
             }
@@ -446,10 +453,10 @@ class DetailScreen(
     @Composable
     private fun DetailField(
         field: String,
-        detail: String,
+        value: Any?,
         modifier: Modifier = Modifier
     ) {
-        Row {
+        if (value != null) Row {
             Text(
                 "$field:",
                 color = Color.White,
@@ -457,9 +464,33 @@ class DetailScreen(
                 modifier = modifier
             )
             Text(
-                " $detail",
-                color = Color(235, 235, 235),
+                " $value",
+                color = Color.White,
                 fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = modifier
+            )
+        }
+    }
+
+    @Composable
+    private fun DetailField(
+        field: String,
+        value: String?,
+        modifier: Modifier = Modifier
+    ) {
+        if (!value.isNullOrEmpty()) Row {
+            Text(
+                "$field:",
+                color = Color.White,
+                fontSize = 14.sp,
+                modifier = modifier
+            )
+            Text(
+                " $value",
+                color = Color.White,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
                 modifier = modifier
             )
         }
@@ -497,8 +528,8 @@ class DetailScreen(
         return when(rawStatus) {
             Status.ON_GOING -> Color(0xFF1B663E)
             Status.COMPLETED -> Color( 46, 90, 180)
-            Status.HIATUS -> Color.LightGray
-            Status.CANCELLED -> Color(255, 160, 0)
+            Status.HIATUS -> Color.DarkGray
+            Status.CANCELLED -> Color(150, 0, 0)
             else -> Color.LightGray
         }
     }
@@ -508,16 +539,33 @@ class DetailScreen(
         manga: MangaAttributes,
         modifier: Modifier = Modifier
     ) {
-        if (manga.status != null) Text(
-            status(manga.status),
-            color = Color.White,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
+        if (manga.status != null) Row(
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
             modifier = modifier
-                .clip(RoundedCornerShape(5.dp))
-                .background(statusColor(manga.status))
-                .padding(horizontal = 4.dp, vertical = 2.dp)
-        )
+        ) {
+            if (manga.year != null) {
+                Text(
+                    manga.year.toString(),
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = modifier
+                        .clip(RoundedCornerShape(5.dp))
+                        .background(Color.Gray)
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                )
+            }
+            Text(
+                status(manga.status),
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(statusColor(manga.status))
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
+            )
+        }
     }
 
     @Composable
@@ -540,23 +588,28 @@ class DetailScreen(
         vm: DetailViewModel,
         modifier: Modifier = Modifier
     ) {
+        val density = LocalDensity.current
+        val nav = LocalNavigator.currentOrThrow
         Action(
-            onClick = vm::navigateToChapterListScreen,
+            onClick = {
+                vm.navigateToChapterListScreen(nav)
+            },
             verticalPadding = 16.dp,
             modifier = modifier
+                .onGloballyPositioned {
+                    with(density) {
+                        vm.chapterListHeight = it.size.height.toDp().value.toInt() +
+                                8 + // parent's bottom padding
+                                8 // space for desc
+                    }
+                }
         ) {
             Text(
                 "Chapter List",
                 fontSize = 16.sp,
                 color = Color.White,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .onGloballyPositioned {
-                        vm.chapterListHeight.value = it.size.height +
-                            8 + // parent's bottom padding
-                            8 // space for desc
-                    }
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }

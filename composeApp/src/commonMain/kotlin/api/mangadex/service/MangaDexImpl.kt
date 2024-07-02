@@ -1,10 +1,13 @@
 package api.mangadex.service
 
+import api.mangadex.model.request.Queries
+import api.mangadex.model.request.Status
 import api.mangadex.model.request.TokenRequest
 import api.mangadex.model.response.EntityResponse
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.MangaStatus
 import api.mangadex.model.response.Token
+import api.mangadex.model.response.attribute.ChapterAttributes
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.model.response.attribute.TagAttributes
 import api.mangadex.model.response.attribute.UserAttributes
@@ -30,6 +33,44 @@ class MangaDexImpl(
     },
     private val token: TokenHandler = TokenHandlerImpl(client)
 ) : MangaDex {
+    private suspend fun HttpRequestBuilder.authHeader() {
+        header("Authorization", "Bearer ${token()}")
+    }
+
+    private suspend inline fun <reified R> get(
+        url: String,
+        methodName: String,
+        queries: Queries = "",
+        auth: Boolean = false,
+    ): R? {
+        return try {
+            client.get {
+                url("$url$queries")
+                if (auth) authHeader()
+            }.body<R>()
+        } catch (e: Exception) {
+            e.message?.let {
+                Log.e("($methodName) $it")
+            }
+            null
+        }
+    }
+
+    private suspend inline fun <reified ATTR> getList(
+        url: String,
+        methodName: String,
+        queries: Queries = "",
+        auth: Boolean = false,
+    ): ListResponse<ATTR>? {
+        return get<ListResponse<ATTR>>(
+            url, methodName, queries, auth
+        ).also {
+            if (it != null) {
+                Log.d("GET ($methodName$queries) list length: ${it.data.size}")
+            }
+        }
+    }
+
     override suspend fun login(request: TokenRequest): Token? {
         return try {
             client.submitForm(
@@ -52,61 +93,31 @@ class MangaDexImpl(
         }
     }
 
-    override suspend fun getManga(queries: String): ListResponse<MangaAttributes>? {
-        return try {
-            client.get("${ApiConstant.MANGA_ENDPOINT}/$queries")
-                .body<ListResponse<MangaAttributes>>()
-                .also {
-                    Log.d("GET (getManga$queries) list length: ${it.data.size}")
-                }
-        } catch (e: Throwable) {
-            e.message?.let {
-                Log.e("(getManga) $it")
-            }
-            null
+    override suspend fun getManga(queries: Queries): ListResponse<MangaAttributes>? =
+        getList(
+            url = ApiConstant.MANGA_ENDPOINT,
+            methodName = "getManga",
+            queries = queries
+        )
+
+    override suspend fun getMangaByStatus(status: Status): MangaStatus? {
+        var q = ""
+        if (status.isNotEmpty()) q = "?status=$status"
+        return get<MangaStatus?>(
+            url = ApiConstant.MANGA_STATUS,
+            methodName = "getMangaByStatus",
+            queries = q,
+            auth = true
+        ).also {
+            if (it != null) Log.d("GET (getMangaByStatus$q) list length: ${it.statuses.size}")
         }
     }
 
-    private suspend fun HttpRequestBuilder.authHeader() {
-        header("Authorization", "Bearer ${token()}")
-    }
-
-    override suspend fun getMangaByStatus(status: String): MangaStatus? {
-        return try {
-            var q = ""
-            if (status.isNotEmpty()) {
-                q = "?status=$status"
-            }
-            client.get {
-                url("${ApiConstant.MANGA_STATUS}$q")
-                authHeader()
-            }
-                .body<MangaStatus>()
-                .also {
-                    Log.d("GET (getMangaByStatus$q) status length: ${it.statuses.size} ")
-                }
-        } catch (e: Exception) {
-            e.message?.let {
-                Log.e("(getMangaByStatus) $it")
-            }
-            null
-        }
-    }
-
-    override suspend fun getTags(): ListResponse<TagAttributes>? {
-        return try {
-            client.get("${ApiConstant.MANGA_ENDPOINT}/tag")
-                .body<ListResponse<TagAttributes>>()
-                .also {
-                    Log.d("GET (getTags) tags length: ${it.data.size}")
-                }
-        } catch (e: Exception) {
-            e.message?.let {
-                Log.e("(getTags) $it")
-            }
-            null
-        }
-    }
+    override suspend fun getTags(): ListResponse<TagAttributes>? =
+        getList(
+            url = ApiConstant.TAGS_ENDPOINT,
+            methodName = "getTags"
+        )
 
     override suspend fun getLoggedInUser(): EntityResponse<UserAttributes>? {
         return try {
@@ -120,4 +131,11 @@ class MangaDexImpl(
             null
         }
     }
+
+    override suspend fun getMangaChapters(mangaId: String, queries: Queries): ListResponse<ChapterAttributes>? =
+        getList(
+            url = ApiConstant.MANGA_CHAPTERS(mangaId),
+            methodName = "getMangaChapters",
+            queries = queries
+        )
 }
