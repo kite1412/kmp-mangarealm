@@ -8,7 +8,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -37,7 +36,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
@@ -64,6 +61,9 @@ import assets.`Book-open`
 import assets.`Bookmark-alt`
 import assets.`Chevron-right`
 import assets.`List-add`
+import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -75,34 +75,28 @@ import screenSize
 import util.BLUR_TINT
 import util.Status
 import util.edgeToEdge
+import util.swipeToPop
 import util.toMap
-import viewmodel.DetailViewModel
+import viewmodel.DetailScreenModel
 
 class DetailScreen : Screen {
+
+    @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        // TODO change passing strategy, as parent will be recomposed every time the screen is navigated back to
-        val vm = remember { DetailViewModel(SharedObject.detailManga) }
-        vm.init {
-            edgeToEdge()
-        }
-        val nav = LocalNavigator.currentOrThrow
-        LaunchedEffect(true) {
+        LifecycleEffectOnce {
             SharedObject.popNotifierCount--
         }
+        val sm = rememberScreenModel { DetailScreenModel(SharedObject.detailManga) }
+        edgeToEdge()
+        val nav = LocalNavigator.currentOrThrow
         Scaffold {
             val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = bottomPadding)
-                    .pointerInput(true) {
-                        detectHorizontalDragGestures { _, dragAmount ->
-                            if (dragAmount > 30) {
-                                nav.pop()
-                            }
-                        }
-                    }
+                    .swipeToPop(nav)
             ) {
                 val hazeState = remember { HazeState() }
                 Box(modifier = Modifier.fillMaxSize().haze(hazeState)) {
@@ -119,43 +113,43 @@ class DetailScreen : Screen {
                 }
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize().padding(bottom = vm.chapterListHeight.dp)
+                    modifier = Modifier.fillMaxSize().padding(bottom = sm.chapterListHeight.dp)
                 ) {
                     item {
-                        CoverArtDisplay(vm)
+                        CoverArtDisplay(sm)
                     }
                     item {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
                             modifier = Modifier.padding(start = 8.dp, end = 16.dp)
                         ) {
-                            Detail(vm)
+                            Detail(sm)
                             Text(
-                                getDesc(vm.manga.data.attributes.description),
+                                getDesc(sm.manga.data.attributes.description),
                                 modifier = Modifier.padding(start = 8.dp)
                             )
                         }
                     }
                 }
                 ChapterList(
-                    vm,
+                    sm,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                 )
-                if (SharedObject.popNotifierCount >= 0) Pop(vm, modifier = Modifier.align(Alignment.CenterStart))
+                if (SharedObject.popNotifierCount >= 0) Pop(sm, modifier = Modifier.align(Alignment.CenterStart))
             }
         }
     }
 
     @Composable
     private fun Pop(
-        vm: DetailViewModel,
+        sm: DetailScreenModel,
         modifier: Modifier = Modifier
     ) {
         val density = LocalDensity.current
-        val popAnimation by animateDpAsState(vm.popNoticeWidth.dp)
+        val popAnimation by animateDpAsState(sm.popNoticeWidth.dp)
         val startPadding = 4.dp
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -169,7 +163,7 @@ class DetailScreen : Screen {
                     with(density) {
                         val width = it.size.width.toDp().value
                         val additionalWidth = startPadding + 12.dp
-                        vm.animatePopNotice(width, additionalWidth)
+                        sm.animatePopNotice(width, additionalWidth)
                     }
                 }
         ) {
@@ -193,7 +187,7 @@ class DetailScreen : Screen {
 
     @Composable
     private fun CoverArtDisplay(
-        vm: DetailViewModel,
+        sm: DetailScreenModel,
         modifier: Modifier = Modifier
     ) {
         val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -203,7 +197,7 @@ class DetailScreen : Screen {
         val coverArtHeight = totalHeight / 1.5f
         val coverArtWidth = (coverArtHeight * 2) / 3
         val remainingWidth = screenSize.width - (coverArtWidth + 16.dp)
-        val attributes = vm.manga.data.attributes
+        val attributes = sm.manga.data.attributes
         Box(
             modifier = modifier
                 .height(totalHeight)
@@ -223,16 +217,16 @@ class DetailScreen : Screen {
                 )
             }
             Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .height(backgroundHeight)
                     .width(remainingWidth)
-                    .padding(top = vm.titleTagsPadding.dp + statusBarsHeight, start = 12.dp, end = 4.dp)
+                    .padding(top = sm.titleTagsPadding.dp + statusBarsHeight, start = 12.dp, end = 4.dp)
             ) {
                 Title(
                     attributes,
                     textLines = {
-                        if (it > 1) vm.titleTagsPadding = 10
+                        if (it > 1) sm.titleTagsPadding = 10
                     }
                 )
                 Tags(attributes)
@@ -401,17 +395,17 @@ class DetailScreen : Screen {
 
     @Composable
     private fun Detail(
-        vm: DetailViewModel,
+        sm: DetailScreenModel,
         modifier: Modifier = Modifier
     ) {
-        val manga = vm.manga.data.attributes
+        val manga = sm.manga.data.attributes
         val rotateDegrees = animateFloatAsState(
-            if (!vm.isShowingDetail) 90f else 270f
+            if (!sm.isShowingDetail) 90f else 270f
         )
         Column(
             modifier = modifier
                 .clip(RoundedCornerShape(16.dp))
-                .clickable(onClick = vm::detailVisibility)
+                .clickable(onClick = sm::detailVisibility)
                 .background(MaterialTheme.colors.onBackground)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
@@ -436,7 +430,7 @@ class DetailScreen : Screen {
                         .rotate(rotateDegrees.value),
                 )
             }
-            AnimatedVisibility(vm.isShowingDetail) {
+            AnimatedVisibility(sm.isShowingDetail) {
                 Column {
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -585,20 +579,20 @@ class DetailScreen : Screen {
 
     @Composable
     private fun ChapterList(
-        vm: DetailViewModel,
+        sm: DetailScreenModel,
         modifier: Modifier = Modifier
     ) {
         val density = LocalDensity.current
         val nav = LocalNavigator.currentOrThrow
         Action(
             onClick = {
-                vm.navigateToChapterListScreen(nav)
+                sm.navigateToChapterListScreen(nav)
             },
             verticalPadding = 16.dp,
             modifier = modifier
                 .onGloballyPositioned {
                     with(density) {
-                        vm.chapterListHeight = it.size.height.toDp().value.toInt() +
+                        sm.chapterListHeight = it.size.height.toDp().value.toInt() +
                                 8 + // parent's bottom padding
                                 8 // space for desc
                     }

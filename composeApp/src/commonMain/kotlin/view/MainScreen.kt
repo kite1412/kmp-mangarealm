@@ -86,6 +86,7 @@ import model.Manga
 import screenSize
 import theme.selectedButton
 import theme.unselectedButton
+import util.APP_BAR_HEIGHT
 import util.BLUR_TINT
 import util.LATEST_UPDATE_SLIDE_TIME
 import util.undoEdgeToEdge
@@ -95,8 +96,7 @@ import viewmodel.Page
 class MainScreen : Screen {
     private val imageRatio = 2f / 3f
     private val latestBarHeight = (screenSize.height.value / 4.2).dp
-    private val bottomBarHeight = 62.dp
-    private val bottomBarTotalHeight = bottomBarHeight + 8.dp
+    private val bottomBarTotalHeight = APP_BAR_HEIGHT + 8.dp
     private val smallDisplayHeight = latestBarHeight / 2
     private val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp
     private val tagsDisplayWidth = (screenSize.width / 1.3f)
@@ -479,7 +479,7 @@ class MainScreen : Screen {
         Row(
             modifier = modifier
                 .fillMaxWidth()
-                .height(bottomBarHeight)
+                .height(APP_BAR_HEIGHT)
                 .padding(horizontal = 8.dp)
                 .offset(y = (-8).dp)
                 .clip(RoundedCornerShape(15.dp))

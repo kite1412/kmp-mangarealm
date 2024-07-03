@@ -8,7 +8,7 @@ val gradient1 = listOf(Color(0xFF640D6B), Color(0xFFD11E1E))
 val gradient2 = listOf(Color(0xFFA300B0), Color(0xFFE62323))
 
 val appColors = lightColors(
-    primary = Color.Black,
+    primary = Color(111, 78, 55),
     background = Color(0xFFE8DED1),
     onBackground = Color(0xFFBFAA8C),
     secondary = Color(0xFF3881E5)

@@ -39,16 +39,15 @@ lateinit var screenSize: ScreenSize
 val LocalMainViewModel = compositionLocalOf { MainViewModel() }
 
 object Libs {
-    private val kottage: Kottage = Kottage(
+    val kottageStorage = Kottage(
         name = "kottage",
         directoryPath = databaseDir,
         environment = KottageEnvironment(
             context = kottageContext
         ),
         scope = CoroutineScope(Dispatchers.Default)
-    )
-    val kottageStorage = kottage.storage("default")
-    val kottageCache = kottage.cache("default")
+    ).storage("default")
+    val cache = Cache()
     val mangaDex: MangaDex = MangaDexImpl()
 }
 

@@ -32,7 +32,7 @@ import util.ROMANCE_TAG
 class MainViewModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val kottageStorage: KottageStorage = Libs.kottageStorage
-) : ViewModel(), DetailNavigable {
+) : ViewModel(), DetailNavigator {
     private var _currentPage = mutableStateOf(Page.MAIN)
     val currentPage = _currentPage
 

@@ -1,6 +1,7 @@
 package util
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 
 // Kottage's keys
 object KottageConst {
@@ -28,3 +29,5 @@ const val PSYCHOLOGICAL_TAG = "Psychological"
 const val MYSTERY_TAG = "Mystery"
 
 val BLUR_TINT = Color.LightGray.copy(alpha = 0.4f)
+
+val APP_BAR_HEIGHT = 62.dp
