@@ -1,17 +1,9 @@
 
-import api.mangadex.service.MangaDexImpl
-import api.mangadex.service.TokenHandler
 import api.mangadex.util.generateArrayQueryParam
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 
 class MangaTest {
-    private val api = MangaDexImpl(token = object : TokenHandler {
-        override suspend fun invoke(): String {
-            return ""
-        }
-    })
-
     @Test
     fun getManga() = runBlocking {
         try {

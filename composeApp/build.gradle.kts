@@ -51,6 +51,7 @@ kotlin {
             implementation(libs.haze)
             implementation(libs.image.loader)
             implementation(libs.voyager.navigator)
+            implementation(libs.voyager.screenmodel)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test.v200)

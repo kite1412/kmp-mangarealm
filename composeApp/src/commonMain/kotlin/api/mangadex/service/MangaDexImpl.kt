@@ -12,6 +12,8 @@ import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.model.response.attribute.TagAttributes
 import api.mangadex.model.response.attribute.UserAttributes
 import api.mangadex.util.ApiConstant
+import api.mangadex.util.DataType
+import api.mangadex.util.generateQuery
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -138,4 +140,34 @@ class MangaDexImpl(
             methodName = "getMangaChapters",
             queries = queries
         )
+
+    override val nextPage: MangaDex.Paging
+        get() = Paging()
+
+    private inner class Paging : MangaDex.Paging {
+        private suspend fun <R> nextPage(
+            prevResponse: ListResponse<R>,
+            get: suspend (offset: Int) -> ListResponse<R>?
+        ): ListResponse<R>? = if (prevResponse.offset >= prevResponse.total) null else
+            get(prevResponse.offset + prevResponse.limit)
+
+        private fun getMangaId(r: ListResponse<ChapterAttributes>): String? = run {
+            r.data.first().relationships.forEach {
+                if (it.type == DataType.MANGA) return@run it.id
+            }
+            null
+        }
+
+        override suspend fun manga(prevResponse: ListResponse<MangaAttributes>): ListResponse<MangaAttributes>? =
+            nextPage(prevResponse) {
+                getManga(generateQuery(mapOf("offset" to it)))
+            }
+
+        override suspend fun chapters(prevResponse: ListResponse<ChapterAttributes>): ListResponse<ChapterAttributes>? =
+            nextPage(prevResponse) {
+                val mangaId = getMangaId(prevResponse)
+                if (mangaId == null) return@nextPage null else
+                    getMangaChapters(mangaId, generateQuery(mapOf("offset" to it)))
+            }
+    }
 }

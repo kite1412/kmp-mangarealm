@@ -14,6 +14,8 @@ import api.mangadex.model.response.attribute.UserAttributes
 import api.mangadex.util.Status as S
 
 interface MangaDex {
+    val nextPage: Paging
+
     suspend fun login(request: TokenRequest): Token?
 
     suspend fun getManga(queries: Queries = ""): ListResponse<MangaAttributes>?
@@ -25,4 +27,11 @@ interface MangaDex {
     suspend fun getLoggedInUser(): EntityResponse<UserAttributes>?
 
     suspend fun getMangaChapters(mangaId: String, queries: Queries = ""): ListResponse<ChapterAttributes>?
+
+    // TODO add queries param
+    interface Paging {
+        suspend fun manga(prevResponse: ListResponse<MangaAttributes>): ListResponse<MangaAttributes>?
+
+        suspend fun chapters(prevResponse: ListResponse<ChapterAttributes>): ListResponse<ChapterAttributes>?
+    }
 }

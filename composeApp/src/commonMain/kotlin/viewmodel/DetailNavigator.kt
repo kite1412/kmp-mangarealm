@@ -7,7 +7,7 @@ import model.Manga
 import view.DetailScreen
 
 /** Should only be implemented by ViewModel that could navigate to [DetailScreen] */
-interface DetailNavigable {
+interface DetailNavigator {
     fun navigateToDetail(nav: Navigator, painter: Painter?, manga: Manga) {
         if (painter != null) {
             SharedObject.detailCover = painter
