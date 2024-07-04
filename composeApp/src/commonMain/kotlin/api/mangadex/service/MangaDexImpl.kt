@@ -141,14 +141,14 @@ class MangaDexImpl(
             queries = queries
         )
 
-    override val nextPage: MangaDex.Paging
+    override val paging: MangaDex.Paging
         get() = Paging()
 
     private inner class Paging : MangaDex.Paging {
         private suspend fun <R> nextPage(
             prevResponse: ListResponse<R>,
             get: suspend (offset: Int) -> ListResponse<R>?
-        ): ListResponse<R>? = if (prevResponse.offset >= prevResponse.total) null else
+        ): ListResponse<R>? = if (nextPageExists(prevResponse)) null else
             get(prevResponse.offset + prevResponse.limit)
 
         private fun getMangaId(r: ListResponse<ChapterAttributes>): String? = run {
@@ -158,16 +158,26 @@ class MangaDexImpl(
             null
         }
 
-        override suspend fun manga(prevResponse: ListResponse<MangaAttributes>): ListResponse<MangaAttributes>? =
-            nextPage(prevResponse) {
-                getManga(generateQuery(mapOf("offset" to it)))
-            }
+        override suspend fun manga(
+            prevResponse: ListResponse<MangaAttributes>,
+            queries: Queries
+        ): ListResponse<MangaAttributes>? = nextPage(prevResponse) {
+            getManga(generateQuery(mapOf("offset" to it), queries))
+        }
 
-        override suspend fun chapters(prevResponse: ListResponse<ChapterAttributes>): ListResponse<ChapterAttributes>? =
-            nextPage(prevResponse) {
-                val mangaId = getMangaId(prevResponse)
-                if (mangaId == null) return@nextPage null else
-                    getMangaChapters(mangaId, generateQuery(mapOf("offset" to it)))
-            }
+        override suspend fun chapters(
+            prevResponse: ListResponse<ChapterAttributes>,
+            queries: Queries
+        ): ListResponse<ChapterAttributes>? = nextPage(prevResponse) {
+            val mangaId = getMangaId(prevResponse)
+            if (mangaId == null) return@nextPage null else
+                getMangaChapters(
+                    mangaId = mangaId,
+                    queries = generateQuery(
+                        queryParams = mapOf("offset" to it),
+                        otherParams = queries
+                    )
+                )
+        }
     }
 }
