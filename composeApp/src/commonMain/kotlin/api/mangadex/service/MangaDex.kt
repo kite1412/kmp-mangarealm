@@ -14,7 +14,7 @@ import api.mangadex.model.response.attribute.UserAttributes
 import api.mangadex.util.Status as S
 
 interface MangaDex {
-    val nextPage: Paging
+    val paging: Paging
 
     suspend fun login(request: TokenRequest): Token?
 
@@ -28,10 +28,12 @@ interface MangaDex {
 
     suspend fun getMangaChapters(mangaId: String, queries: Queries = ""): ListResponse<ChapterAttributes>?
 
-    // TODO add queries param
     interface Paging {
-        suspend fun manga(prevResponse: ListResponse<MangaAttributes>): ListResponse<MangaAttributes>?
+        fun <R> nextPageExists(r: ListResponse<R>): Boolean =
+            r.offset >= r.total
 
-        suspend fun chapters(prevResponse: ListResponse<ChapterAttributes>): ListResponse<ChapterAttributes>?
+        suspend fun manga(prevResponse: ListResponse<MangaAttributes>, queries: Queries = ""): ListResponse<MangaAttributes>?
+
+        suspend fun chapters(prevResponse: ListResponse<ChapterAttributes>, queries: Queries = ""): ListResponse<ChapterAttributes>?
     }
 }

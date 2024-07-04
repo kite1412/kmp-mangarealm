@@ -10,7 +10,7 @@ class PagingTest {
     @Test
     fun getNextPageManga() = runBlocking {
         try {
-            val res = api.nextPage.manga(mock) ?: throw Exception("no response")
+            val res = api.paging.manga(mock) ?: throw Exception("no response")
             println(res.data.size)
         } catch (e: Exception) {
             throw e

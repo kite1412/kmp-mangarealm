@@ -21,12 +21,13 @@ object KottageConst {
 
 const val SPLASH_TIME = 2000
 const val LATEST_UPDATE_SLIDE_TIME = 4500
-
 const val ROMANCE_TAG = "Romance"
 const val COMEDY_TAG = "Comedy"
 const val ADVENTURE_TAG = "Adventure"
 const val PSYCHOLOGICAL_TAG = "Psychological"
 const val MYSTERY_TAG = "Mystery"
+const val ASCENDING = "asc"
+const val DESCENDING = "desc"
 
 val BLUR_TINT = Color.LightGray.copy(alpha = 0.4f)
 

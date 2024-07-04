@@ -6,5 +6,5 @@ import api.mangadex.model.response.attribute.ChapterAttributes
 
 data class Chapters(
     var response: ListResponse<ChapterAttributes>,
-    val data: List<Data<ChapterAttributes>>
+    val data: MutableList<Data<ChapterAttributes>>
 )
