@@ -6,11 +6,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -50,7 +48,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
@@ -80,7 +77,6 @@ import util.toMap
 import viewmodel.DetailScreenModel
 
 class DetailScreen : Screen {
-
     @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
@@ -336,31 +332,6 @@ class DetailScreen : Screen {
                 isOverflow = it.hasVisualOverflow
                 textLines(it.lineCount)
             }
-        )
-    }
-
-    @Composable
-    private fun Action(
-        onClick: () -> Unit,
-        fill: Boolean = true,
-        verticalPadding: Dp = 2.dp,
-        modifier: Modifier = Modifier,
-        content: @Composable BoxScope.() -> Unit
-    ) {
-        val corner = RoundedCornerShape(8.dp)
-        val outer: Modifier = if (fill) Modifier.background(color = MaterialTheme.colors.secondary)
-            else Modifier.border(
-                width = 2.dp,
-                color = MaterialTheme.colors.secondary,
-                shape = corner
-            )
-        Box(
-            modifier = modifier
-                .clip(corner)
-                .clickable(onClick = onClick)
-                .then(outer)
-                .padding(vertical = verticalPadding),
-            content = content
         )
     }
 

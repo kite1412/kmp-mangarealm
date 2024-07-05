@@ -1,6 +1,8 @@
 package api.mangadex.util
 
+import api.mangadex.model.request.ImageQuality
 import api.mangadex.model.response.Data
+import api.mangadex.model.response.HomeUrl
 import api.mangadex.model.response.attribute.MangaAttributes
 
 fun generateArrayQueryParam(name: String, values: List<Any>): String {
@@ -100,3 +102,30 @@ fun getTagList(manga: MangaAttributes): List<String> {
 
 fun getTagList(tags: String): List<String> = if (tags.isNotEmpty()) tags.split(", ")
     else listOf()
+
+fun getChapterImageUrl(
+    baserUrl: String,
+    hash: String,
+    imageQuality: ImageQuality,
+    filename: String
+): String = "$baserUrl/$imageQuality/$hash/$filename"
+
+fun getChapterImageUrls(
+    url: HomeUrl,
+    imageQuality: ImageQuality
+): List<String> {
+    val fileUrls = if (imageQuality == ImageQuality.DATA) url.chapter.data
+        else url.chapter.dataSaver
+
+    return mutableListOf<String>().run {
+        fileUrls.forEach {
+            add(getChapterImageUrl(
+                baserUrl = url.baseUrl,
+                hash = url.chapter.hash,
+                imageQuality = imageQuality,
+                filename = it
+            ))
+        }
+        this
+    }
+}
