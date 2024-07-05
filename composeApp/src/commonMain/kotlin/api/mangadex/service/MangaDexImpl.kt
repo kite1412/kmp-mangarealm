@@ -4,6 +4,7 @@ import api.mangadex.model.request.Queries
 import api.mangadex.model.request.Status
 import api.mangadex.model.request.TokenRequest
 import api.mangadex.model.response.EntityResponse
+import api.mangadex.model.response.HomeUrl
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.MangaStatus
 import api.mangadex.model.response.Token
@@ -35,6 +36,9 @@ class MangaDexImpl(
     },
     private val token: TokenHandler = TokenHandlerImpl(client)
 ) : MangaDex {
+    override val paging: MangaDex.Paging
+        get() = Paging()
+
     private suspend fun HttpRequestBuilder.authHeader() {
         header("Authorization", "Bearer ${token()}")
     }
@@ -121,28 +125,25 @@ class MangaDexImpl(
             methodName = "getTags"
         )
 
-    override suspend fun getLoggedInUser(): EntityResponse<UserAttributes>? {
-        return try {
-            client.get("${ApiConstant.BASE_URL}/user/me") {
-                authHeader()
-            }.body<EntityResponse<UserAttributes>>()
-        } catch (e: Exception) {
-            e.message?.let {
-                Log.e("(getLoggedInUser) $it")
-            }
-            null
-        }
-    }
+    override suspend fun getLoggedInUser(): EntityResponse<UserAttributes>? =
+        get<EntityResponse<UserAttributes>?>(
+            url = "${ApiConstant.BASE_URL}/user/me",
+            methodName = "getLoggedInUser",
+            auth = true
+        )
 
     override suspend fun getMangaChapters(mangaId: String, queries: Queries): ListResponse<ChapterAttributes>? =
         getList(
-            url = ApiConstant.MANGA_CHAPTERS(mangaId),
+            url = ApiConstant.mangaChapters(mangaId),
             methodName = "getMangaChapters",
             queries = queries
         )
 
-    override val paging: MangaDex.Paging
-        get() = Paging()
+    override suspend fun getHomeUrl(chapterId: String): HomeUrl? =
+        get<HomeUrl?>(
+            url = ApiConstant.chapterImagesUrl(chapterId),
+            methodName = "getHomeUrl"
+        )
 
     private inner class Paging : MangaDex.Paging {
         private suspend fun <R> nextPage(

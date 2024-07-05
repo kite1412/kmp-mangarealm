@@ -55,6 +55,7 @@ import assets.`Settings-adjust-solid`
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.white_textured_concrete
@@ -64,6 +65,7 @@ import screenSize
 import util.APP_BAR_HEIGHT
 import util.ASCENDING
 import util.DESCENDING
+import util.edgeToEdge
 import util.mapLanguage
 import util.swipeToPop
 import viewmodel.ChapterScreenModel
@@ -71,6 +73,7 @@ import viewmodel.ChapterScreenModel
 class ChapterScreen : Screen {
     @Composable
     override fun Content() {
+        edgeToEdge()
         val sm = rememberScreenModel { ChapterScreenModel() }
         val nav = LocalNavigator.currentOrThrow
         val navBarsHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
@@ -82,21 +85,32 @@ class ChapterScreen : Screen {
                 .padding(bottom = navBarsHeight)
                 .swipeToPop(nav)
         ) {
-            Box {
-                ChapterList(
-                    sm,
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, top = statusBarsHeight)
-                        .align(Alignment.Center)
-                )
-                TopBar(appBarHeight)
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
-                    ChapterSettings(sm, modifier = Modifier.padding(end = 8.dp))
-                    BottomBar(sm)
+            Navigator(
+                this,
+                onBackPressed = {
+                    if (sm.showSettings) {
+                        sm.showSettings = false
+                        return@Navigator false
+                    } else true
+                },
+            ) {
+                Box {
+                    ChapterList(
+                        nav = nav,
+                        sm = sm,
+                        modifier = Modifier
+                            .padding(start = 8.dp, end = 8.dp, top = statusBarsHeight)
+                            .align(Alignment.Center)
+                    )
+                    TopBar(appBarHeight)
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    ) {
+                        ChapterSettings(sm, modifier = Modifier.padding(end = 8.dp))
+                        BottomBar(sm)
+                    }
                 }
             }
         }
@@ -104,6 +118,7 @@ class ChapterScreen : Screen {
 
     @Composable
     private fun ChapterList(
+        nav: Navigator,
         sm: ChapterScreenModel,
         modifier: Modifier = Modifier
     ) {
@@ -116,8 +131,8 @@ class ChapterScreen : Screen {
                 Spacer(Modifier.height(APP_BAR_HEIGHT))
             }
             items(sm.chapters) {
-                ChapterBar(it, modifier = Modifier.padding(horizontal = 8.dp)) {
-
+                ChapterBar(it, modifier = Modifier.padding(horizontal = 8.dp)) { d ->
+                    sm.navigateToReader(nav, d)
                 }
             }
             item {
@@ -280,7 +295,7 @@ class ChapterScreen : Screen {
                         }
                     }
                     ApplySettingsButton(
-                        false,
+                        enabled = sm.applyEnabled,
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .padding(end = 18.dp, bottom = 24.dp),
@@ -324,7 +339,7 @@ class ChapterScreen : Screen {
         ) {
             Text(
                 "Apply",
-                color = if (enabled) Color.Green else Color.Gray,
+                color = if (enabled) Color(0, 200, 0) else Color.Gray,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
             )
@@ -341,8 +356,8 @@ class ChapterScreen : Screen {
             sm.availableLanguages.forEach {
                 SelectionBar(
                     label = mapLanguage(it),
-                    selected = sm.language == it,
-                    onClick = { sm.language = it }
+                    selected = sm.languageSetting == it,
+                    onClick = { sm.languageSetting = it }
                 )
             }
         }
@@ -355,8 +370,8 @@ class ChapterScreen : Screen {
         modifier: Modifier = Modifier
     ) {
         Selection("Order") {
-            SelectionBar("Ascending", sm.order == ASCENDING) { sm.order = ASCENDING }
-            SelectionBar("Descending", sm.order == DESCENDING) { sm.order = DESCENDING }
+            SelectionBar("Ascending", sm.orderSetting == ASCENDING) { sm.orderSetting = ASCENDING }
+            SelectionBar("Descending", sm.orderSetting == DESCENDING) { sm.orderSetting = DESCENDING }
         }
     }
 

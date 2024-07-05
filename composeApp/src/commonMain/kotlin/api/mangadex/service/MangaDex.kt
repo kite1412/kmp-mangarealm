@@ -4,6 +4,7 @@ import api.mangadex.model.request.Queries
 import api.mangadex.model.request.Status
 import api.mangadex.model.request.TokenRequest
 import api.mangadex.model.response.EntityResponse
+import api.mangadex.model.response.HomeUrl
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.MangaStatus
 import api.mangadex.model.response.Token
@@ -27,6 +28,8 @@ interface MangaDex {
     suspend fun getLoggedInUser(): EntityResponse<UserAttributes>?
 
     suspend fun getMangaChapters(mangaId: String, queries: Queries = ""): ListResponse<ChapterAttributes>?
+
+    suspend fun getHomeUrl(chapterId: String): HomeUrl?
 
     interface Paging {
         fun <R> nextPageExists(r: ListResponse<R>): Boolean =

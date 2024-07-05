@@ -10,6 +10,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
+import api.mangadex.model.response.Data
+import api.mangadex.model.response.attribute.ChapterAttributes
+import api.mangadex.model.response.attribute.emptyChapter
 import api.mangadex.service.MangaDex
 import api.mangadex.service.MangaDexImpl
 import cafe.adriel.voyager.navigator.Navigator
@@ -19,8 +22,8 @@ import io.github.irgaly.kottage.getOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import model.EmptyManga
 import model.Manga
+import model.emptyManga
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import shared.databaseDir
 import shared.kottageContext
@@ -53,7 +56,8 @@ object Libs {
 
 object SharedObject {
     var detailCover: Painter? = null
-    var detailManga: Manga = EmptyManga()
+    var detailManga: Manga = emptyManga()
+    var chapterRead: Data<ChapterAttributes> = emptyChapter()
     var popNotifierCount = 2
 }
 

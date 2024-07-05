@@ -3,6 +3,7 @@ package viewmodel
 import Cache
 import Libs
 import SharedObject
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -16,6 +17,7 @@ import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.Chapters
 import util.ASCENDING
@@ -23,7 +25,7 @@ import util.ASCENDING
 class ChapterScreenModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val cache: Cache = Libs.cache,
-) : ScreenModel {
+) : ScreenModel, ReaderNavigator {
     val chapters = mutableStateListOf<Data<ChapterAttributes>>()
     val availableLanguages = mutableStateListOf<String>()
     var totalPages by mutableIntStateOf(1)
@@ -31,8 +33,13 @@ class ChapterScreenModel(
     var ableToNavigate by mutableStateOf(true)
     var showLoading by mutableStateOf(false)
     var showSettings by mutableStateOf(false)
-    var language by mutableStateOf("")
-    var order by mutableStateOf(ASCENDING)
+    var languageSetting by mutableStateOf("")
+    var orderSetting by mutableStateOf(ASCENDING)
+    val applyEnabled by derivedStateOf {
+        languageSetting != language || orderSetting != order
+    }
+    private var language by mutableStateOf("")
+    private var order by mutableStateOf(ASCENDING)
     private val manga = SharedObject.detailManga
     private val mangaId = manga.data.id
 
@@ -41,17 +48,34 @@ class ChapterScreenModel(
         fetchChapters()
     }
 
-    private fun getByLanguage(
+    private fun setLanguageOrder(
         languages: List<String>,
         vararg prioritizedLanguage: String = arrayOf("en", "id")
     ): String {
-        languages.forEach { language ->
-            if (language in prioritizedLanguage) return language.also { this.language = language }
+        val c = cache.chapters[mangaId]
+        var l = ""
+        if (c == null) {
+            for (language in languages) {
+                if (language in prioritizedLanguage) {
+                    l = language
+                    break
+                }
+            }
+            if (l.isEmpty()) {
+                l = languages[0]
+            }
+        } else {
+            l =  c.language
+            order = c.order
+            orderSetting = c.order
         }
-        return languages[0].also { language = languages[0] }
+        return l.also {
+            language = it
+            languageSetting = it
+        }
     }
 
-    private fun defaultQuery(language: String): String {
+    private fun queries(language: String, order: String): String {
         val languageParam = generateArrayQueryParam(
             "translatedLanguage[]",
             listOf(language)
@@ -68,46 +92,50 @@ class ChapterScreenModel(
                 if (s != null) availableLanguages.add(s)
             }
         }
-        getByLanguage(availableLanguages)
+        setLanguageOrder(availableLanguages)
     }
 
     private fun fetchChapters() {
-        val loadedChapters = cache.loadedChapters
-        if (loadedChapters[mangaId] == null) {
+        val loadedChapters = cache.chapters[mangaId]
+        if (loadedChapters == null) {
             showLoading = true
             screenModelScope.launch {
                 mangaDex.getMangaChapters(
                     mangaId = mangaId,
-                    queries = defaultQuery(language)
+                    queries = queries(language, order)
                 )?.let { response ->
                     chapters.addAll(response.data)
-                    cache.loadedChapters[mangaId] = Chapters(response, response.data.toMutableList())
+                    cache.chapters[mangaId] = Chapters(
+                        language = language,
+                        order = order,
+                        response = response,
+                        data = response.data.toMutableList()
+                    )
                     setTotalPages(response)
                     showLoading = false
                 }
             }
         } else {
-            chapters.addAll(loadedChapters[mangaId]!!.data)
-            setTotalPages(loadedChapters[mangaId]!!.response)
-            order = "asc"
+            chapters.addAll(loadedChapters())
+            setTotalPages(loadedChapters.response)
         }
     }
 
     fun nextPage() {
         ableToNavigate = false
-        val loadedChapters = cache.loadedChapters[mangaId]!!
+        val loadedChapters = cache.chapters[mangaId]!!
         val limit = loadedChapters.response.limit
         val total = loadedChapters.response.total
         val nextPage = currentPage + 1
         var nextSize = limit * nextPage
         if (nextSize > total) nextSize = total
-        if (loadedChapters.data.size < nextSize) {
+        if (loadedChapters().size < nextSize) {
             showLoading = true
             screenModelScope.launch {
-                mangaDex.paging.chapters(loadedChapters.response, defaultQuery(language))?.let {
+                mangaDex.paging.chapters(loadedChapters.response, queries(language, order))?.let {
                     val chapters = it.data
-                    cache.loadedChapters[mangaId]!!.response = it
-                    cache.loadedChapters[mangaId]!!.data.addAll(chapters)
+                    cache.chapters[mangaId]!!.response = it
+                    cache.chapters[mangaId]!!().addAll(chapters)
                     this@ChapterScreenModel.chapters.run {
                         clear()
                         addAll(chapters)
@@ -125,7 +153,7 @@ class ChapterScreenModel(
                 clear()
                 addAll(loadedChapters.data.subList(startIndex, endIndex))
             }
-            cache.loadedChapters[mangaId]!!.response = cache.loadedChapters[mangaId]!!.response.copy(
+            cache.chapters[mangaId]!!.response = cache.chapters[mangaId]!!.response.copy(
                 offset = limit * currentPage
             )
             currentPage++
@@ -135,7 +163,7 @@ class ChapterScreenModel(
 
     fun prevPage() {
         ableToNavigate = false
-        val loadedChapters = cache.loadedChapters[mangaId]!!
+        val loadedChapters = cache.chapters[mangaId]!!
         val limit = loadedChapters.response.limit
         val offset = loadedChapters.response.offset
         val endIndex = offset - 1
@@ -144,7 +172,7 @@ class ChapterScreenModel(
             clear()
             addAll(loadedChapters.data.subList(startIndex, endIndex))
         }
-        cache.loadedChapters[mangaId]!!.response = cache.loadedChapters[mangaId]!!.response.copy(
+        cache.chapters[mangaId]!!.response = cache.chapters[mangaId]!!.response.copy(
             offset = startIndex
         )
         currentPage--
@@ -159,9 +187,25 @@ class ChapterScreenModel(
         }
     }
 
-    fun onSettingClick() { showSettings = !showSettings }
+    fun onSettingClick() {
+        if (!showSettings) {
+            showSettings = true
+        } else {
+            showSettings = false
+            screenModelScope.launch {
+                delay(500)
+                languageSetting = language
+                orderSetting = order
+            }
+        }
+    }
 
     fun onApplySettingsClick() {
-
+        chapters.clear()
+        cache.chapters[mangaId] = null
+        showSettings = false
+        language = languageSetting
+        order = orderSetting
+        fetchChapters()
     }
 }

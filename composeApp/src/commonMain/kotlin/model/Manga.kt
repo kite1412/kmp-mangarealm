@@ -10,6 +10,6 @@ data class Manga(
     val data: Data<MangaAttributes>
 )
 
-fun EmptyManga(): Manga {
+fun emptyManga(): Manga {
     return Manga(Data(attributes = EmptyMangaAttributes()))
 }

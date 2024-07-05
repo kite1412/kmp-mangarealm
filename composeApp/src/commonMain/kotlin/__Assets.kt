@@ -16,6 +16,7 @@ import assets.`Chevron-right-bold`
 import assets.`Chevron-right`
 import assets.`List-add`
 import assets.`List-check`
+import assets.`Menu-outline`
 import assets.`Settings-adjust-solid`
 import assets.`Shelf-outline`
 import assets.`Shelf-solid`
@@ -33,7 +34,7 @@ public val Assets.AllIcons: ____KtList<ImageVector>
     }
     __AllIcons= listOf(`Book-close`, `Book-open`, `Bookmark-alt-fill`, `Bookmark-alt`,
         `Chevron-right-bold`, `Chevron-right`, Clipboard, Cross, Eye, Eyeshut, Home, Info,
-        `List-add`, `List-check`, Logo, Person, Search, `Settings-adjust-solid`, `Shelf-outline`,
-        `Shelf-solid`, `Text-align-right`)
+        `List-add`, `List-check`, Logo, `Menu-outline`, Person, Search, `Settings-adjust-solid`,
+        `Shelf-outline`, `Shelf-solid`, `Text-align-right`)
     return __AllIcons!!
   }

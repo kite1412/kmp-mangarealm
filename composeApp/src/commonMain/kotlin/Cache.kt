@@ -1,7 +1,11 @@
 
+import model.ChapterImages
 import model.Chapters
 
 class Cache {
-    val loadedChapters =
-        mutableMapOf<String, Chapters>()
+    val chapters =
+        mutableMapOf<String, Chapters?>()
+
+    val chapterImages =
+        mutableMapOf<String, ChapterImages>()
 }
