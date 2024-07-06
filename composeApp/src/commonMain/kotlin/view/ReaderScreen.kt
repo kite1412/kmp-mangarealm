@@ -277,11 +277,6 @@ class ReaderScreen : Screen {
     }
 
     @Composable
-    private fun Reader(modifier: Modifier = Modifier) {
-
-    }
-
-    @Composable
     private fun ChaptersView(
         sm: ReaderScreenModel,
         modifier: Modifier = Modifier

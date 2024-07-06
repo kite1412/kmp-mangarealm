@@ -129,6 +129,7 @@ class MainScreen : Screen {
                 modifier = Modifier.fillMaxSize()
             ) {
                 val state = rememberLazyListState()
+                // TODO fix scroll position after back press from detail screen
                 val scrollPosition by remember {
                     snapshotFlow { state.firstVisibleItemIndex to state.firstVisibleItemScrollOffset }
                         .distinctUntilChanged()
@@ -483,7 +484,8 @@ class MainScreen : Screen {
                 .padding(horizontal = 8.dp)
                 .offset(y = (-8).dp)
                 .clip(RoundedCornerShape(15.dp))
-                .background(MaterialTheme.colors.onBackground),
+                .background(MaterialTheme.colors.onBackground)
+                .clickable(enabled = false) {},
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
