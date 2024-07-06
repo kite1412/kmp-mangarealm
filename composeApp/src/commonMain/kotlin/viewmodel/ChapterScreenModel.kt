@@ -115,9 +115,12 @@ class ChapterScreenModel(
                     showLoading = false
                 }
             }
-        // exclusive for initialisation
+        // exclusive for initialization
         } else {
-            chapters.addAll(loadedChapters().subList(0, 99))
+            val limit = loadedChapters.response.limit
+            val total = loadedChapters.response.total
+            if (total < limit) chapters.addAll(loadedChapters())
+                else chapters.addAll(loadedChapters().subList(0, limit - 1))
             setTotalPages(loadedChapters.response)
         }
     }

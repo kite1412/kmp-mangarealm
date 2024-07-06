@@ -5,6 +5,6 @@ enum class ImageQuality {
 
     override fun toString(): String = when(this) {
         DATA -> "data"
-        DATA_SAVER -> "dataSaver"
+        DATA_SAVER -> "data-saver"
     }
 }
