@@ -6,10 +6,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import com.github.panpf.zoomimage.ZoomImage
 import com.nrr.mangarealm.MainActivity
 import io.github.irgaly.kottage.platform.KottageContext
 import io.github.irgaly.kottage.platform.contextOf
@@ -57,4 +62,22 @@ actual val currentTimeMillis: Long
 @Composable
 actual fun disableEdgeToEdge() {
     WindowCompat.setDecorFitsSystemWindows(MainActivity.c.window, true)
+}
+
+@Composable
+actual fun ZoomableImage(
+    painter: Painter?,
+    contentDescription: String,
+    contentScale: ContentScale,
+    modifier: Modifier,
+    onTap: ((Offset) -> Unit)?,
+    onPainterNull: @Composable (() -> Unit)?
+) {
+    if (painter != null) ZoomImage(
+        painter = painter,
+        contentDescription = contentDescription,
+        contentScale = contentScale,
+        onTap = onTap,
+        modifier = modifier
+    ) else onPainterNull?.invoke()
 }

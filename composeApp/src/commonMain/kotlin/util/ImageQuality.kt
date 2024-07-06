@@ -7,8 +7,8 @@ object ImageQuality {
     const val DATA_SAVER = "Data Saver"
 
     // maps to api's image quality representation
-    operator fun invoke(imageQuality: String): String = when(imageQuality) {
-        DATA_SAVER -> quality.DATA_SAVER.toString()
-        else -> quality.DATA.toString()
+    operator fun invoke(imageQuality: String): quality = when(imageQuality) {
+        DATA_SAVER -> quality.DATA_SAVER
+        else -> quality.DATA
     }
 }

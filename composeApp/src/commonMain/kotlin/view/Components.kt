@@ -19,7 +19,10 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.seiko.imageloader.model.ImageAction
 import com.seiko.imageloader.rememberImagePainter
+import com.seiko.imageloader.rememberImageSuccessPainter
+import com.seiko.imageloader.ui.AutoSizeBox
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.no_image
 import org.jetbrains.compose.resources.ExperimentalResourceApi
@@ -123,4 +126,18 @@ fun Action(
             .padding(vertical = verticalPadding),
         content = content
     )
+}
+
+@Composable
+fun PainterLoader(
+    url: String,
+    onImageLoaded: (Painter) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    AutoSizeBox(url) { action ->
+        when (action) {
+            is ImageAction.Success -> onImageLoaded(rememberImageSuccessPainter(action))
+            else -> Unit
+        }
+    }
 }

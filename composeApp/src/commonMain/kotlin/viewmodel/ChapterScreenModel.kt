@@ -3,6 +3,7 @@ package viewmodel
 import Cache
 import Libs
 import SharedObject
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -42,6 +43,7 @@ class ChapterScreenModel(
     private var order by mutableStateOf(ASCENDING)
     private val manga = SharedObject.detailManga
     private val mangaId = manga.data.id
+    val chapterListState = LazyListState()
 
     init {
         initLanguages()
@@ -87,10 +89,8 @@ class ChapterScreenModel(
     }
 
     private fun initLanguages() {
-        manga.data.attributes.availableTranslatedLanguages.let {
-            it.forEach { s ->
-                if (s != null) availableLanguages.add(s)
-            }
+        manga.data.attributes.availableTranslatedLanguages.forEach {
+            if (it != null) availableLanguages.add(it)
         }
         setLanguageOrder(availableLanguages)
     }
@@ -115,14 +115,18 @@ class ChapterScreenModel(
                     showLoading = false
                 }
             }
+        // exclusive for initialisation
         } else {
-            chapters.addAll(loadedChapters())
+            chapters.addAll(loadedChapters().subList(0, 99))
             setTotalPages(loadedChapters.response)
         }
     }
 
     fun nextPage() {
         ableToNavigate = false
+        screenModelScope.launch {
+            chapterListState.scrollToItem(0)
+        }
         val loadedChapters = cache.chapters[mangaId]!!
         val limit = loadedChapters.response.limit
         val total = loadedChapters.response.total
@@ -163,6 +167,9 @@ class ChapterScreenModel(
 
     fun prevPage() {
         ableToNavigate = false
+        screenModelScope.launch {
+            chapterListState.scrollToItem(0)
+        }
         val loadedChapters = cache.chapters[mangaId]!!
         val limit = loadedChapters.response.limit
         val offset = loadedChapters.response.offset
@@ -201,11 +208,15 @@ class ChapterScreenModel(
     }
 
     fun onApplySettingsClick() {
+        screenModelScope.launch {
+            chapterListState.scrollToItem(0)
+        }
         chapters.clear()
         cache.chapters[mangaId] = null
         showSettings = false
         language = languageSetting
         order = orderSetting
+        currentPage = 1
         fetchChapters()
     }
 }
