@@ -24,6 +24,7 @@ napier = "2.7.1"
 firebaseFirestoreKtx = "25.0.0"
 navigationCompose = "2.7.0-alpha07"
 voyagerNavigator = "1.1.0-beta02"
+zoomimageCompose = "1.0.2"
 
 [libraries]
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelKtx" }
@@ -52,6 +53,7 @@ napier = { module = "io.github.aakira:napier", version.ref = "napier" }
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 voyager-navigator = { module = "cafe.adriel.voyager:voyager-navigator", version.ref = "voyagerNavigator" }
 voyager-screenmodel = { module = "cafe.adriel.voyager:voyager-screenmodel", version.ref = "voyagerNavigator" }
+zoomimage-compose = { module = "io.github.panpf.zoomimage:zoomimage-compose", version.ref = "zoomimageCompose" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

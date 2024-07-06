@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -79,38 +80,29 @@ class ChapterScreen : Screen {
         val navBarsHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val appBarHeight = APP_BAR_HEIGHT + statusBarsHeight
+        // TODO test using BackHandler to handle back press when settings are open
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(bottom = navBarsHeight)
                 .swipeToPop(nav)
         ) {
-            Navigator(
-                this,
-                onBackPressed = {
-                    if (sm.showSettings) {
-                        sm.showSettings = false
-                        return@Navigator false
-                    } else true
-                },
-            ) {
-                Box {
-                    ChapterList(
-                        nav = nav,
-                        sm = sm,
-                        modifier = Modifier
-                            .padding(start = 8.dp, end = 8.dp, top = statusBarsHeight)
-                            .align(Alignment.Center)
-                    )
-                    TopBar(appBarHeight)
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    ) {
-                        ChapterSettings(sm, modifier = Modifier.padding(end = 8.dp))
-                        BottomBar(sm)
-                    }
+            Box {
+                ChapterList(
+                    nav = nav,
+                    sm = sm,
+                    modifier = Modifier
+                        .padding(start = 8.dp, end = 8.dp, top = statusBarsHeight)
+                        .align(Alignment.Center)
+                )
+                TopBar(appBarHeight)
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                ) {
+                    ChapterSettings(sm, modifier = Modifier.padding(end = 8.dp))
+                    BottomBar(sm)
                 }
             }
         }
@@ -120,12 +112,13 @@ class ChapterScreen : Screen {
     private fun ChapterList(
         nav: Navigator,
         sm: ChapterScreenModel,
+        state: LazyListState = sm.chapterListState,
         modifier: Modifier = Modifier
     ) {
         if (sm.chapters.isNotEmpty() && !sm.showLoading) LazyColumn(
+            state = state,
             verticalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = modifier
-                .fillMaxSize()
+            modifier = modifier.fillMaxSize()
         ) {
             item {
                 Spacer(Modifier.height(APP_BAR_HEIGHT))
@@ -188,6 +181,8 @@ class ChapterScreen : Screen {
             modifier = modifier
                 .fillMaxWidth()
                 .height(APP_BAR_HEIGHT)
+                // makes the obstructed chapter bars not clickable
+                .clickable(enabled = false) {}
         ) {
             Image(
                 painter = painterResource(Res.drawable.white_textured_concrete),

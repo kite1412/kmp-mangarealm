@@ -52,6 +52,7 @@ kotlin {
             implementation(libs.image.loader)
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.screenmodel)
+            implementation(libs.zoomimage.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test.v200)
