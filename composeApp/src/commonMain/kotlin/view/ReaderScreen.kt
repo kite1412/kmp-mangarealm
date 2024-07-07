@@ -10,7 +10,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -21,8 +23,13 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -70,13 +77,13 @@ import viewmodel.Layout
 import viewmodel.LayoutBarStatus
 import viewmodel.ReaderScreenModel
 
-private val BACKGROUND_COLOR = Color(40, 40, 40)
+private val BACKGROUND_COLOR = Color(30, 30, 30)
 
 class ReaderScreen : Screen {
     @Composable
     private fun adjustStatusBar() {
         disableEdgeToEdge()
-        adjustStatusBarColor(Color.DarkGray)
+        adjustStatusBarColor(BACKGROUND_COLOR)
     }
 
     @Composable
@@ -92,6 +99,7 @@ class ReaderScreen : Screen {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(BACKGROUND_COLOR)
                     .pointerInput(true) {
                         detectTapGestures { sm.handleLayoutBar() }
                     }
@@ -128,7 +136,7 @@ class ReaderScreen : Screen {
             modifier = modifier
                 .fillMaxWidth()
                 .height(APP_BAR_HEIGHT)
-                .background(BACKGROUND_COLOR)
+                .background(Color.Transparent)
         ) {
             NavigationBar(
                 sm = sm,
@@ -284,6 +292,17 @@ class ReaderScreen : Screen {
         painterLoaders(sm)
         Box(modifier = modifier) {
             ColumnLayout(sm)
+            AnimatedVisibility(
+                visible = sm.showPageIndicator,
+                modifier = Modifier
+                    .offset(y = -(24).dp)
+                    .clip(CircleShape)
+                    .background(Color.Black)
+                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                    .align(Alignment.BottomCenter)
+            ) {
+                PageIndicator(sm, Color.White)
+            }
         }
     }
 
@@ -293,11 +312,25 @@ class ReaderScreen : Screen {
         sm: ReaderScreenModel,
         modifier: Modifier = Modifier
     ) {
-        if (sm.painters.isNotEmpty()) if (sm.zoomIn) VerticalPager(
-            state = rememberPagerState { sm.painters.size },
-            modifier = modifier
-        ) {
-            ZoomedInChapter(sm.painters[it]) { sm.handleLayoutBar() }
+        if (sm.painters.isNotEmpty()) if (sm.zoomIn) {
+            val pagerState = rememberPagerState(initialPage = sm.currentPage - 1) { sm.painters.size }
+            LaunchedEffect(pagerState.currentPage) {
+                sm.currentPage = pagerState.currentPage + 1
+                sm.showPageIndicator = true
+                delay(1000)
+                sm.showPageIndicator = false
+            }
+            LaunchedEffect(sm.pageNavigatorIndex) {
+                delay(500)
+                sm.currentPage = sm.pageNavigatorIndex + 1
+                pagerState.scrollToPage(sm.pageNavigatorIndex)
+            }
+            VerticalPager(
+                state = pagerState,
+                modifier = modifier
+            ) {
+                ZoomedInChapter(sm.painters[it]) { sm.handleLayoutBar() }
+            }
         } else LazyColumn(modifier = modifier) {
             items(sm.painters) {
                 ZoomedInChapter(it)
@@ -318,7 +351,7 @@ class ReaderScreen : Screen {
     ) {
         val common = Modifier
             .fillMaxSize()
-            .background(BACKGROUND_COLOR)
+            .background(Color.Transparent)
         ZoomableImage(
             painter = painter,
             onTap = onTap,
@@ -330,7 +363,7 @@ class ReaderScreen : Screen {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.align(Alignment.Center)
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = Color.White)
                     Text(
                         "loading chapter...",
                         color = Color.White,
@@ -358,32 +391,42 @@ class ReaderScreen : Screen {
         modifier: Modifier = Modifier
     ) {
         val show = sm.showLayoutBar == LayoutBarStatus.SHOW || sm.showLayoutBar == LayoutBarStatus.UPDATE
-        LaunchedEffect(sm.showLayoutBar) {
-            if (show) delay(4000)
-            sm.showLayoutBar = LayoutBarStatus.HIDE
+        LaunchedEffect(sm.showLayoutBar, sm.layoutBarDismissible) {
+            if (sm.layoutBarDismissible) {
+                if (show) delay(4000)
+                sm.showLayoutBar = LayoutBarStatus.HIDE
+            }
         }
         val offset by animateDpAsState(if (show) 0.dp else 88.dp)
-        Box(
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = modifier
                 .offset(y = offset)
-                .height(APP_BAR_HEIGHT)
-                .width(screenSize.width / 1.4f)
-                .clip(CircleShape)
-                .background(MaterialTheme.colors.onBackground)
         ) {
+            AnimatedVisibility(
+                visible = sm.showPageNavigator,
+                modifier = Modifier.height(APP_BAR_HEIGHT / 1.4f)
+            ) {
+                PageNavigator(sm)
+            }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .height(APP_BAR_HEIGHT / 1.4f)
+                    .width(screenSize.width)
+                    .padding(horizontal = 16.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black)
+                    .padding(horizontal = 8.dp, vertical = 6.dp)
+                    .clickable(enabled = false) {}
             ) {
                 LayoutButton(
                     imageVector = Assets.Height,
                     layout = Layout.COLUMN,
                     selected = sm.defaultLayout,
                     onClick = sm::changeLayout,
-                    modifier = Modifier.weight(0.4f)
+                    modifier = Modifier.weight(0.3f)
                 )
                 LayoutButton(
                     imageVector = Assets.Width,
@@ -391,9 +434,20 @@ class ReaderScreen : Screen {
                     selected = !sm.defaultLayout,
                     onClick = sm::changeLayout,
                     applySpace = true,
-                    modifier = Modifier.weight(0.4f)
+                    modifier = Modifier.weight(0.3f)
                 )
-                ZoomMode(sm.zoomIn, modifier = Modifier.weight(0.2f)) {}
+                ZoomMode(sm.zoomIn, modifier = Modifier.weight(0.1f)) {}
+                PageIndicator(
+                    sm = sm,
+                    modifier = Modifier
+                        .weight(0.3f)
+                        .clickable {
+                            sm.handlePageNavigator(
+                                showNavigator = true,
+                                layoutBarDismissible = false
+                            )
+                        }
+                )
             }
         }
     }
@@ -449,14 +503,87 @@ class ReaderScreen : Screen {
         modifier: Modifier = Modifier,
         onClick: () -> Unit
     ) {
-        val icon = if (zoomedIn) Assets.`Collapse-solid` else Assets.`Expand-solid`
+        val icon = if (zoomedIn) Assets.`Expand-solid` else Assets.`Collapse-solid`
         Icon(
             imageVector = icon,
             contentDescription = if (zoomedIn) "zoom out" else "zoom in",
-            tint = Color.DarkGray,
+            tint = Color.Gray,
             modifier = modifier
                 .size(30.dp)
+                .clip(CircleShape)
                 .clickable(onClick = onClick)
+        )
+    }
+
+    @Composable
+    private fun PageIndicator(
+        sm: ReaderScreenModel,
+        color: Color = Color.Gray,
+        modifier: Modifier = Modifier
+    ) {
+        Text(
+            "${sm.currentPage} / ${sm.totalPages}",
+            fontWeight = FontWeight.Medium,
+            color = color,
+            modifier = modifier.wrapContentWidth()
+        )
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Composable
+    private fun PageNavigator(
+        sm: ReaderScreenModel,
+        modifier: Modifier = Modifier
+    ) {
+        BoxWithConstraints(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(Color.Black)
+                .padding(vertical = 6.dp)
+                .clickable(enabled = false) {}
+        ) {
+            val pagerState = rememberPagerState(initialPage = sm.currentPage - 1) { sm.totalPages }
+            LaunchedEffect(pagerState.currentPage) {
+                sm.pageNavigatorIndex = pagerState.currentPage
+            }
+            LaunchedEffect(sm.currentPage) {
+                pagerState.animateScrollToPage(sm.currentPage - 1)
+            }
+            HorizontalPager(
+                state = pagerState,
+                pageSize = PageSize.Fixed(maxWidth / 5),
+                contentPadding = PaddingValues(horizontal = maxWidth / 2),
+                flingBehavior = PagerDefaults.flingBehavior(
+                    pagerState,
+                    pagerSnapDistance = PagerSnapDistance.atMost(5)
+                ),
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                PageNavigatorIndex(
+                    page = (it + 1).toString(),
+                    selected = (sm.pageNavigatorIndex + 1) == it + 1
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun PageNavigatorIndex(
+        page: String,
+        selected: Boolean,
+        modifier: Modifier = Modifier
+    ) {
+        val color = if (selected) Color.White else Color.DarkGray
+        val fontSize = if (selected) 16.sp else 14.sp
+        Text(
+            page,
+            color = color,
+            fontSize = fontSize,
+            fontWeight = FontWeight.SemiBold,
+            modifier = modifier
         )
     }
 }
