@@ -10,11 +10,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import api.mangadex.service.MangaDex
-import api.mangadex.util.getChapterImageUrls
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import model.ChapterImage
+import model.ChapterImages
 import util.ImageQuality
 
 class ReaderScreenModel(
@@ -33,8 +34,8 @@ class ReaderScreenModel(
     var layoutBarDismissible by mutableStateOf(true)
     var showPageNavigator by mutableStateOf(false)
     var pageNavigatorIndex by mutableIntStateOf(0)
-    val imageFiles = mutableStateListOf<String>()
-    val painters = mutableStateListOf<Painter?>()
+    val images = mutableStateListOf<ChapterImage>()
+    private val index = chapter.id + imageQuality
 
     init {
         screenModelScope.launch {
@@ -44,23 +45,40 @@ class ReaderScreenModel(
     }
 
     private fun getChapterImages() {
-        val images = cache.chapterImages[chapter.id]
-        if (images == null) {
-            screenModelScope.launch {
-                val res = mangaDex.getHomeUrl(chapter.id)
+        screenModelScope.launch {
+            val images = cache.chapterImages[index]
+            val res = mangaDex.getHomeUrl(chapter.id)
+            if (images == null) {
                 if (res != null) {
-                    // TODO handle caching
-                    getChapterImageUrls(res, ImageQuality(imageQuality)).run {
-                        totalPages = size
-                        forEach {
-                            imageFiles.add(it)
-                            painters.add(null)
+                    val imageFiles = if (imageQuality == ImageQuality.HIGH) res.chapter.data
+                        else res.chapter.dataSaver
+                    totalPages = imageFiles.size
+                    val chapterImages = ChapterImages(
+                        images = imageFiles.mapIndexed { i, s ->
+                            ChapterImage(
+                                baseUrl = res.baseUrl,
+                                hash = res.chapter.hash,
+                                quality = imageQuality,
+                                fileUrl = s,
+                                painter = null
+                            )
+                        }.toMutableList()
+                    )
+                    cache.chapterImages[index] = chapterImages
+                    this@ReaderScreenModel.images.addAll(chapterImages())
+                }
+            } else {
+                if (res != null) {
+                    images().forEach {
+                        if (it.painter == null) {
+                            if (it.baseUrl != res.baseUrl) it.baseUrl = res.baseUrl
+                            if (it.hash != res.chapter.hash) it.hash = res.chapter.hash
                         }
+                        this@ReaderScreenModel.images.add(it)
                     }
                 }
+                totalPages = images().size
             }
-        } else {
-            painters.addAll(images())
         }
     }
 
@@ -107,6 +125,11 @@ class ReaderScreenModel(
     fun handlePageNavigator(showNavigator: Boolean, layoutBarDismissible: Boolean) {
         showPageNavigator = showNavigator
         this.layoutBarDismissible = layoutBarDismissible
+    }
+
+    fun updatePainter(index: Int, p: Painter?) {
+        images[index] = images[index].copy(painter = p)
+        cache.chapterImages[this.index]!!.images[index].painter = p
     }
 }
 

@@ -7,7 +7,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -25,7 +24,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerDefaults
@@ -42,6 +40,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,11 +49,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import api.mangadex.util.getChapterImageUrl
 import assets.`Chevron-right`
 import assets.`Collapse-solid`
 import assets.`Expand-solid`
@@ -66,6 +65,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import screenSize
 import shared.ZoomableImage
 import shared.adjustStatusBarColor
@@ -100,16 +100,13 @@ class ReaderScreen : Screen {
                 modifier = Modifier
                     .fillMaxSize()
                     .background(BACKGROUND_COLOR)
-                    .pointerInput(true) {
-                        detectTapGestures { sm.handleLayoutBar() }
-                    }
             ) {
                 if (!sm.showPrompt) Box(
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
                     TopBar(sm)
-                    ChaptersView(
+                    PagesView(
                         sm = sm,
                         modifier = Modifier
                             .fillMaxSize()
@@ -204,7 +201,7 @@ class ReaderScreen : Screen {
             ) {
                 Icon(
                     imageVector = Assets.`Chevron-right`,
-                    contentDescription = "previous chapter",
+                    contentDescription = "next chapter",
                     tint = Color.White,
                     modifier = Modifier
                         .align(Alignment.Center)
@@ -285,11 +282,10 @@ class ReaderScreen : Screen {
     }
 
     @Composable
-    private fun ChaptersView(
+    private fun PagesView(
         sm: ReaderScreenModel,
         modifier: Modifier = Modifier
     ) {
-        painterLoaders(sm)
         Box(modifier = modifier) {
             ColumnLayout(sm)
             AnimatedVisibility(
@@ -306,14 +302,37 @@ class ReaderScreen : Screen {
         }
     }
 
+    @Composable
+    private fun PageImageLoader(
+        sm: ReaderScreenModel,
+        index: Int,
+        modifier: Modifier = Modifier,
+        onTap: ((Offset) -> Unit)? = null
+    ) {
+        if (sm.images.isNotEmpty()) {
+            val image = sm.images[index]
+            if (image.painter == null) PainterLoader(
+                url = getChapterImageUrl(
+                    baserUrl = image.baseUrl,
+                    hash = image.hash,
+                    imageQuality = ImageQuality(image.quality),
+                    filename = image.fileUrl
+                )
+            ) {
+                sm.updatePainter(index, it)
+            }
+            ZoomedInPage(sm.images[index].painter, onTap = onTap)
+        }
+    }
+
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun ColumnLayout(
         sm: ReaderScreenModel,
         modifier: Modifier = Modifier
     ) {
-        if (sm.painters.isNotEmpty()) if (sm.zoomIn) {
-            val pagerState = rememberPagerState(initialPage = sm.currentPage - 1) { sm.painters.size }
+        if (sm.images.isNotEmpty()) if (sm.zoomIn) {
+            val pagerState = rememberPagerState(initialPage = sm.currentPage - 1) { sm.images.size }
             LaunchedEffect(pagerState.currentPage) {
                 sm.currentPage = pagerState.currentPage + 1
                 sm.showPageIndicator = true
@@ -327,14 +346,13 @@ class ReaderScreen : Screen {
             }
             VerticalPager(
                 state = pagerState,
-                modifier = modifier
+                modifier = modifier,
+                beyondBoundsPageCount = 1
             ) {
-                ZoomedInChapter(sm.painters[it]) { sm.handleLayoutBar() }
+                PageImageLoader(sm, it) { sm.handleLayoutBar() }
             }
         } else LazyColumn(modifier = modifier) {
-            items(sm.painters) {
-                ZoomedInChapter(it)
-            }
+
         }
     }
 
@@ -344,7 +362,7 @@ class ReaderScreen : Screen {
     }
 
     @Composable
-    private fun ZoomedInChapter(
+    private fun ZoomedInPage(
         painter: Painter?,
         modifier: Modifier = Modifier,
         onTap: ((Offset) -> Unit)? = null
@@ -365,24 +383,13 @@ class ReaderScreen : Screen {
                 ) {
                     CircularProgressIndicator(color = Color.White)
                     Text(
-                        "loading chapter...",
+                        "loading page...",
                         color = Color.White,
                         fontWeight = FontWeight.Medium
                     )
                 }
             }
         }
-    }
-
-    @Composable
-    fun painterLoaders(sm: ReaderScreenModel) {
-        if (sm.imageFiles.isNotEmpty()) for ((i, filename) in sm.imageFiles.withIndex())
-            PainterLoader(
-                url = filename,
-                onImageLoaded = { p ->
-                    sm.painters[i] = p
-                }
-            )
     }
 
     @Composable
@@ -545,6 +552,7 @@ class ReaderScreen : Screen {
                 .clickable(enabled = false) {}
         ) {
             val pagerState = rememberPagerState(initialPage = sm.currentPage - 1) { sm.totalPages }
+            val scope = rememberCoroutineScope()
             LaunchedEffect(pagerState.currentPage) {
                 sm.pageNavigatorIndex = pagerState.currentPage
             }
@@ -565,7 +573,12 @@ class ReaderScreen : Screen {
                 PageNavigatorIndex(
                     page = (it + 1).toString(),
                     selected = (sm.pageNavigatorIndex + 1) == it + 1
-                )
+                ) {
+                    scope.launch {
+                        pagerState.animateScrollToPage(it)
+                        sm.pageNavigatorIndex = it
+                    }
+                }
             }
         }
     }
@@ -574,7 +587,8 @@ class ReaderScreen : Screen {
     private fun PageNavigatorIndex(
         page: String,
         selected: Boolean,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        onClick: () -> Unit
     ) {
         val color = if (selected) Color.White else Color.DarkGray
         val fontSize = if (selected) 16.sp else 14.sp
@@ -584,6 +598,7 @@ class ReaderScreen : Screen {
             fontSize = fontSize,
             fontWeight = FontWeight.SemiBold,
             modifier = modifier
+                .clickable(onClick = onClick)
         )
     }
 }
