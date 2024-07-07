@@ -130,7 +130,9 @@ class MangaDexImpl(
             url = "${ApiConstant.BASE_URL}/user/me",
             methodName = "getLoggedInUser",
             auth = true
-        )
+        ).also {
+            Log.d("GET (getLoggedInUser) success retrieving user information")
+        }
 
     override suspend fun getMangaChapters(mangaId: String, queries: Queries): ListResponse<ChapterAttributes>? =
         getList(
@@ -143,7 +145,10 @@ class MangaDexImpl(
         get<HomeUrl?>(
             url = ApiConstant.chapterImagesUrl(chapterId),
             methodName = "getHomeUrl"
-        )
+        ).also {
+            Log.d("GET (getHomeUrl) data length: ${it?.chapter?.data?.size}, " +
+                    "dataSaver length: ${it?.chapter?.dataSaver?.size}")
+        }
 
     private inner class Paging : MangaDex.Paging {
         private suspend fun <R> nextPage(

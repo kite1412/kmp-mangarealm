@@ -1,10 +1,7 @@
 package model
 
-import androidx.compose.ui.graphics.painter.Painter
-
 data class ChapterImages(
-    val quality: String,
-    val images: MutableList<Painter?>
+    val images: MutableList<ChapterImage>
 ) {
-    operator fun invoke(): MutableList<Painter?> = images
+    operator fun invoke(): MutableList<ChapterImage> = images
 }

@@ -131,8 +131,8 @@ fun Action(
 @Composable
 fun PainterLoader(
     url: String,
-    onImageLoaded: (Painter) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onImageLoaded: (Painter) -> Unit
 ) {
     AutoSizeBox(url) { action ->
         when (action) {
