@@ -4,6 +4,7 @@ import Cache
 import Libs
 import SharedObject
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -24,9 +25,14 @@ class ReaderScreenModel(
     var imageQuality by mutableStateOf("")
     var showPrompt by mutableStateOf(true)
     var zoomIn by mutableStateOf(true)
-    // column
-    var defaultLayout by mutableStateOf(true)
-    var showLayoutBar by mutableStateOf(LayoutBarStatus.HIDE)
+    var currentPage by mutableIntStateOf(1)
+    var totalPages by mutableIntStateOf(0)
+    var defaultLayout by mutableStateOf(true) // column
+    var showLayoutBar by mutableStateOf(LayoutBarStatus.SHOW)
+    var showPageIndicator by mutableStateOf(false)
+    var layoutBarDismissible by mutableStateOf(true)
+    var showPageNavigator by mutableStateOf(false)
+    var pageNavigatorIndex by mutableIntStateOf(0)
     val imageFiles = mutableStateListOf<String>()
     val painters = mutableStateListOf<Painter?>()
 
@@ -44,9 +50,12 @@ class ReaderScreenModel(
                 val res = mangaDex.getHomeUrl(chapter.id)
                 if (res != null) {
                     // TODO handle caching
-                    getChapterImageUrls(res, ImageQuality(imageQuality)).forEach {
-                        imageFiles.add(it)
-                        painters.add(null)
+                    getChapterImageUrls(res, ImageQuality(imageQuality)).run {
+                        totalPages = size
+                        forEach {
+                            imageFiles.add(it)
+                            painters.add(null)
+                        }
                     }
                 }
             }
@@ -81,11 +90,23 @@ class ReaderScreenModel(
     }
 
     fun handleLayoutBar() {
-        showLayoutBar = when(showLayoutBar) {
-            LayoutBarStatus.SHOW -> LayoutBarStatus.HIDE
-            LayoutBarStatus.UPDATE -> LayoutBarStatus.HIDE
-            else -> LayoutBarStatus.SHOW
+        if (layoutBarDismissible) {
+            showLayoutBar = when(showLayoutBar) {
+                LayoutBarStatus.SHOW -> LayoutBarStatus.HIDE
+                LayoutBarStatus.UPDATE -> LayoutBarStatus.HIDE
+                else -> LayoutBarStatus.SHOW
+            }
+        } else {
+            if (showPageNavigator) {
+                handlePageNavigator(showNavigator = false, layoutBarDismissible = true)
+                showLayoutBar = LayoutBarStatus.HIDE
+            }
         }
+    }
+
+    fun handlePageNavigator(showNavigator: Boolean, layoutBarDismissible: Boolean) {
+        showPageNavigator = showNavigator
+        this.layoutBarDismissible = layoutBarDismissible
     }
 }
 
