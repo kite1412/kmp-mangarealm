@@ -61,6 +61,7 @@ import api.mangadex.util.getTagList
 import api.mangadex.util.getTitle
 import assets.`Book-open`
 import assets.`Bookmark-alt`
+import assets.`Bookmark-alt-fill`
 import assets.`Chevron-right`
 import assets.Cross
 import assets.`List-add`
@@ -92,7 +93,7 @@ class DetailScreen : Screen {
         LifecycleEffectOnce {
             SharedObject.popNotifierCount--
         }
-        val sm = rememberScreenModel { DetailScreenModel(SharedObject.detailManga) }
+        val sm = rememberScreenModel { DetailScreenModel() }
         edgeToEdge()
         val nav = LocalNavigator.currentOrThrow
         Scaffold {
@@ -303,14 +304,17 @@ class DetailScreen : Screen {
                 }
                 Action(
                     onClick = { sm.showUpdateStatus = true },
+                    fill = sm.manga.status == null || sm.manga.status == MangaStatus.None,
                     modifier = Modifier
                         .weight(0.2f)
                         .fillMaxHeight()
                 ) {
                     Icon(
-                        imageVector = Assets.`Bookmark-alt`,
+                        imageVector = if (sm.manga.status == null) Assets.`Bookmark-alt`
+                            else Assets.`Bookmark-alt-fill`,
                         contentDescription = "udpate status",
-                        tint = actionIconColor(true),
+                        tint = if (sm.manga.status == null || sm.manga.status == MangaStatus.None)
+                            actionIconColor(true) else MaterialTheme.colors.secondary,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
@@ -644,7 +648,9 @@ class DetailScreen : Screen {
                     Statuses(sm, modifier = Modifier.padding(horizontal = 8.dp))
                     Spacer(Modifier.height(16.dp))
                     Action(
-                        onClick = {},
+                        onClick = {
+                              sm.onUpdateStatus()
+                        },
                         modifier = Modifier.align(Alignment.End)
                     ) {
                         Text(

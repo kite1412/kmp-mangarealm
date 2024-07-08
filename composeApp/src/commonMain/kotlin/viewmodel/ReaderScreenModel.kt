@@ -142,6 +142,7 @@ class ReaderScreenModel(
     fun onChapterClick(index: Int) {
         showChapterList = false
         currentChapterIndex = index
+        currentPage = 0
         this.index = chapters[currentChapterIndex].id + imageQuality
         images.clear()
         getChapterImages()

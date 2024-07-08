@@ -340,7 +340,7 @@ class MainScreen : Screen {
                                 .padding(horizontal = 4.dp)
                                 .clip(RoundedCornerShape(15.dp))
                                 .clickable {
-                                    vm.navigateToDetail(nav, painter, Manga(data))
+                                    vm.navigateToDetailScreen(nav, painter, Manga(data))
                                 }
                         ) {
                             Box(
@@ -582,7 +582,7 @@ class MainScreen : Screen {
                         painter = painter,
                         title = getTitle(data.attributes.title),
                         modifier = Modifier.width(screenSize.width / 2)
-                    ) { vm.navigateToDetail(nav, painter, Manga(data)) }
+                    ) { vm.navigateToDetailScreen(nav, painter, Manga(data)) }
                 }
             }
         }
@@ -682,7 +682,7 @@ class MainScreen : Screen {
                         contentWidth = tagsDisplayWidth,
                         isSelected = it == pagerState.currentPage,
                         onClick = { p ->
-                            vm.navigateToDetail(nav, painter, Manga(mangaList[it]))
+                            vm.navigateToDetailScreen(nav, painter, Manga(mangaList[it]))
                         },
                         modifier = Modifier.offset(x = if (pagerState.currentPage == mangaList.size - 1)
                             -((screenSize.width - tagsDisplayWidth)

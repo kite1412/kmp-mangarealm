@@ -1,9 +1,10 @@
-
 import api.mangadex.util.generateArrayQueryParam
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 
 class MangaTest {
+    val mangaId = "dc332d04-d3b0-413c-a767-70f5e451b031"
+
     @Test
     fun getManga() = runBlocking {
         try {
