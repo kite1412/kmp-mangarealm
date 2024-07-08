@@ -1,6 +1,6 @@
 package util
 
-object Status {
+object PublicationStatus {
     const val ON_GOING = "ongoing"
     const val COMPLETED = "completed"
     const val HIATUS = "hiatus"

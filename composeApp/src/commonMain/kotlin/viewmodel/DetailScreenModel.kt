@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import model.ChapterList
 import model.Chapters
 import model.Manga
+import model.MangaStatus
 import screenSize
 import util.ASCENDING
 import view.ChapterScreen
@@ -31,6 +32,8 @@ class DetailScreenModel(
     var popNoticeWidth: Float by mutableStateOf(-(screenSize.width.value / 2f))
     private var animateOnce = false
     var readClicked by mutableStateOf(false)
+    var showUpdateStatus by mutableStateOf(false)
+    var status by mutableStateOf(MangaStatus.PlanToRead)
 
     fun detailVisibility() {
         isShowingDetail = !isShowingDetail
@@ -54,7 +57,7 @@ class DetailScreenModel(
         }
     }
 
-    fun onReadClick(nav: Navigator) {
+    fun onRead(nav: Navigator) {
         readClicked = true
         screenModelScope.launch {
             val chapters = cache.chapters[manga.data.id]
@@ -102,5 +105,13 @@ class DetailScreenModel(
             )
             readClicked = false
         }
+    }
+
+    fun onAddToList() {
+
+    }
+
+    fun onUpdateStatus() {
+
     }
 }
