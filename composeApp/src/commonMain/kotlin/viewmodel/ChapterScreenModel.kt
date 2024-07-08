@@ -57,8 +57,8 @@ class ChapterScreenModel(
         val c = cache.chapters[mangaId]
         var l = ""
         if (c == null) {
-            for (language in languages) {
-                if (language in prioritizedLanguage) {
+            for (language in prioritizedLanguage) {
+                if (language in languages) {
                     l = language
                     break
                 }
