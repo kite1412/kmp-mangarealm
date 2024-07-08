@@ -165,9 +165,8 @@ class ReaderScreen : Screen {
                 .padding(vertical = 8.dp)
         ) {
             Action(
-                onClick = {
-
-                },
+                enabled = sm.currentChapterIndex > 0,
+                onClick = { sm.onChapterClick(sm.currentChapterIndex - 1) },
                 modifier = Modifier.fillMaxHeight().weight(0.15f)
             ) {
                 Icon(
@@ -201,9 +200,8 @@ class ReaderScreen : Screen {
                 )
             }
             Action(
-                onClick = {
-
-                },
+                enabled = sm.currentChapterIndex < sm.chapters.size - 1,
+                onClick = { sm.onChapterClick(sm.currentChapterIndex + 1) },
                 modifier = Modifier.fillMaxHeight().weight(0.15f)
             ) {
                 Icon(

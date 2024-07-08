@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
@@ -108,11 +109,14 @@ fun Action(
     onClick: () -> Unit,
     fill: Boolean = true,
     verticalPadding: Dp = 2.dp,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
     val corner = RoundedCornerShape(8.dp)
-    val outer: Modifier = if (fill) Modifier.background(color = MaterialTheme.colors.secondary)
+    val outer: Modifier = if (fill) Modifier.background(
+        color = if (enabled) MaterialTheme.colors.secondary else Color.Gray
+    )
     else Modifier.border(
         width = 2.dp,
         color = MaterialTheme.colors.secondary,
@@ -121,7 +125,7 @@ fun Action(
     Box(
         modifier = modifier
             .clip(corner)
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .then(outer)
             .padding(vertical = verticalPadding),
         content = content
