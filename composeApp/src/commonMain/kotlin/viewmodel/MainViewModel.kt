@@ -1,5 +1,6 @@
 package viewmodel
 
+import Cache
 import Libs
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -16,12 +17,15 @@ import api.mangadex.util.constructQuery
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
 import api.mangadex.util.getCoverUrl
+import cafe.adriel.voyager.navigator.Navigator
 import com.seiko.imageloader.model.ImageAction
 import com.seiko.imageloader.rememberImageSuccessPainter
 import com.seiko.imageloader.ui.AutoSizeBox
 import io.github.irgaly.kottage.KottageStorage
 import io.github.irgaly.kottage.get
 import kotlinx.coroutines.launch
+import model.Manga
+import model.MangaStatus
 import util.ADVENTURE_TAG
 import util.COMEDY_TAG
 import util.KottageConst
@@ -31,7 +35,8 @@ import util.ROMANCE_TAG
 
 class MainViewModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
-    private val kottageStorage: KottageStorage = Libs.kottageStorage
+    private val kottageStorage: KottageStorage = Libs.kottageStorage,
+    private val cache: Cache = Libs.cache
 ) : ViewModel(), DetailNavigator {
     private var _currentPage = mutableStateOf(Page.MAIN)
     val currentPage = _currentPage
@@ -124,6 +129,7 @@ class MainViewModel(
     private fun initContinueReadingData() {
         viewModelScope.launch {
             if (continueReadingData.isEmpty()) {
+                // TODO change to all statuses
                 val res = mangaDex.getMangaByStatus(Status.READING)
                 if (res?.statuses != null) {
                     if (res.statuses.isNotEmpty()) {
@@ -137,7 +143,15 @@ class MainViewModel(
                         )
                         val queries = generateQuery(mapOf(Pair("includes[]", "cover_art")), mangaIds)
                         val mangaList = mangaDex.getManga(queries)
-                        mangaList?.data?.let { continueReadingData.addAll(it) }
+                        mangaList?.data?.let {
+                            continueReadingData.addAll(it)
+                            it.forEach { d ->
+                                cache.mangaStatus[d.id] = Manga(
+                                    data = d,
+                                    status = MangaStatus.Reading
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -270,6 +284,11 @@ class MainViewModel(
         initRomCom()
         initAdvCom()
         initPsyMys()
+    }
+
+    fun navigateToDetailScreen(nav: Navigator, painter: Painter?, manga: Manga) {
+        val m = cache.mangaStatus[manga.data.id] ?: manga
+        navigateToDetail(nav, painter, m)
     }
 }
 

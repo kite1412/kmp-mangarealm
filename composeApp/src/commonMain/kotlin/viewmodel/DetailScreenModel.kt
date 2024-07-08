@@ -2,6 +2,7 @@ package viewmodel
 
 import Cache
 import Libs
+import SharedObject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -15,14 +16,12 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.ChapterList
 import model.Chapters
-import model.Manga
 import model.MangaStatus
 import screenSize
 import util.ASCENDING
 import view.ChapterScreen
 
 class DetailScreenModel(
-    val manga: Manga,
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val cache: Cache = Libs.cache
 ) : ScreenModel, ReaderNavigator {
@@ -33,7 +32,12 @@ class DetailScreenModel(
     private var animateOnce = false
     var readClicked by mutableStateOf(false)
     var showUpdateStatus by mutableStateOf(false)
-    var status by mutableStateOf(MangaStatus.PlanToRead)
+    var status by mutableStateOf(MangaStatus.None)
+    var manga by mutableStateOf(SharedObject.detailManga)
+
+    init {
+        if (manga.status != null) status = manga.status!!
+    }
 
     fun detailVisibility() {
         isShowingDetail = !isShowingDetail
@@ -112,6 +116,12 @@ class DetailScreenModel(
     }
 
     fun onUpdateStatus() {
-
+        screenModelScope.launch {
+            showUpdateStatus = false
+            val new = manga.copy(status = status)
+            cache.mangaStatus[manga.data.id] = new
+            manga = new
+            mangaDex.updateMangaStatus(manga.data.id, status.rawStatus)
+        }
     }
 }

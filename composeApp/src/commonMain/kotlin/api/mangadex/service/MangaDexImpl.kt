@@ -8,6 +8,7 @@ import api.mangadex.model.response.HomeUrl
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.MangaStatus
 import api.mangadex.model.response.Token
+import api.mangadex.model.response.UpdateStatusResponse
 import api.mangadex.model.response.attribute.ChapterAttributes
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.model.response.attribute.TagAttributes
@@ -23,7 +24,12 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.client.request.url
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
+import io.ktor.http.headers
 import io.ktor.http.parameters
 import io.ktor.serialization.kotlinx.json.json
 import util.Log
@@ -74,6 +80,32 @@ class MangaDexImpl(
             if (it != null) {
                 Log.d("GET ($methodName$queries) list length: ${it.data.size}")
             }
+        }
+    }
+
+    private suspend inline fun <reified R> post(
+        url: String,
+        body: Any,
+        methodName: String,
+        auth: Boolean = true,
+        headers: Map<String, String> = mapOf()
+    ): R? {
+        return try {
+            client.post(urlString = url) {
+                if (auth) authHeader()
+                contentType(type = ContentType.parse("application/json"))
+                if (headers.isNotEmpty()) headers {
+                    headers.forEach {
+                        append(it.key, it.value)
+                    }
+                }
+                setBody(body)
+            }.body<R>()
+        } catch (e: Exception) {
+            e.message?.let {
+                Log.e("($methodName) $it")
+            }
+            null
         }
     }
 
@@ -149,6 +181,26 @@ class MangaDexImpl(
             Log.d("GET (getHomeUrl) data length: ${it?.chapter?.data?.size}, " +
                     "dataSaver length: ${it?.chapter?.dataSaver?.size}")
         }
+
+    suspend fun updateMangaStatus(
+        mangaId: String,
+        status: String,
+        auth: Boolean = true,
+        headers: Map<String, String> = mapOf()
+    ): UpdateStatusResponse? =
+        post<UpdateStatusResponse>(
+            url = ApiConstant.updateMangaStatus(mangaId),
+            body = mapOf("status" to status),
+            methodName = "updateMangaStatus",
+            auth = auth,
+            headers = headers
+        )
+
+    override suspend fun updateMangaStatus(mangaId: String, status: String): UpdateStatusResponse? =
+        updateMangaStatus(mangaId, status, true)?.also {
+            Log.d("POST (updateMangaStatus) success updating manga status")
+        }
+
 
     private inner class Paging : MangaDex.Paging {
         private suspend fun <R> nextPage(

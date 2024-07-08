@@ -1,7 +1,7 @@
 package api.mangadex.util
 
 object Status {
-    const val ALL = ""
+    const val NONE = ""
     const val READING = "reading"
     const val ON_HOLD = "on_hold"
     const val COMPLETED = "completed"

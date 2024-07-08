@@ -10,11 +10,9 @@ object ApiConstant {
     const val TAGS_ENDPOINT = "$MANGA_ENDPOINT/tag"
     const val MANGADEX_HOME = "$BASE_URL/at-home/server"
 
-    fun mangaChapters(mangaId: String): String {
-        return "$MANGA_ENDPOINT/$mangaId/feed"
-    }
+    fun mangaChapters(mangaId: String): String = "$MANGA_ENDPOINT/$mangaId/feed"
 
-    fun chapterImagesUrl(chapterId: String): String {
-        return "$MANGADEX_HOME/$chapterId"
-    }
+    fun chapterImagesUrl(chapterId: String): String = "$MANGADEX_HOME/$chapterId"
+
+    fun updateMangaStatus(mangaId: String): String = "$MANGA_ENDPOINT/$mangaId/status"
 }
