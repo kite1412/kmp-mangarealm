@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerDefaults
@@ -37,6 +38,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -105,18 +107,25 @@ class ReaderScreen : Screen {
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
-                    TopBar(sm)
                     PagesView(
                         sm = sm,
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(top = APP_BAR_HEIGHT)
+                            .padding(bottom = APP_BAR_HEIGHT)
                     )
+                    BottomBar(sm, modifier = Modifier.align(Alignment.BottomCenter))
                     LayoutBar(
                         sm = sm,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 24.dp)
+                            .padding(bottom = 24.dp + APP_BAR_HEIGHT)
+                    )
+                    ChapterList(
+                        sm = sm,
+                        modifier = Modifier
+                            .width(screenSize.width * 0.7f)
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = APP_BAR_HEIGHT)
                     )
                 }
                 ImageQualityPrompt(sm)
@@ -125,7 +134,7 @@ class ReaderScreen : Screen {
     }
 
     @Composable
-    private fun TopBar(
+    private fun BottomBar(
         sm: ReaderScreenModel,
         modifier: Modifier = Modifier
     ) {
@@ -172,9 +181,7 @@ class ReaderScreen : Screen {
             }
             Action(
                 fill = false,
-                onClick = {
-
-                },
+                onClick = { sm.showChapterList = !sm.showChapterList },
                 modifier = Modifier.fillMaxSize().weight(0.7f)
             ) {
                 Icon(
@@ -186,7 +193,7 @@ class ReaderScreen : Screen {
                         .padding(start = 12.dp)
                 )
                 Text(
-                    "Chapter ${sm.chapter.attributes.chapter!!}",
+                    "Chapter ${sm.chapters[sm.currentChapterIndex].attributes.chapter!!}",
                     color = MaterialTheme.colors.secondary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -207,6 +214,62 @@ class ReaderScreen : Screen {
                         .align(Alignment.Center)
                 )
             }
+        }
+    }
+
+    @Composable
+    private fun ChapterList(
+        sm: ReaderScreenModel,
+        modifier: Modifier = Modifier
+    ) {
+        AnimatedVisibility(
+            visible = sm.showChapterList,
+            modifier = modifier
+        ) {
+            val listHeight = screenSize.height / 3.dp
+            val lazyListState = rememberLazyListState(
+                initialFirstVisibleItemIndex = sm.currentChapterIndex,
+                initialFirstVisibleItemScrollOffset = -(listHeight.toInt())
+            )
+            LazyColumn(
+                state = lazyListState,
+                modifier = Modifier
+                    .height(listHeight.dp)
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.White)
+                    .padding(start = 8.dp, end = 8.dp, top = 8.dp)
+            ) {
+                val chapters = sm.chapters
+                items(chapters.size) {
+                    Chapter(
+                        chapter = "Chapter ${chapters[it].attributes.chapter!!}",
+                        selected = it == sm.currentChapterIndex
+                    ) { sm.onChapterClick(it) }
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun Chapter(
+        chapter: String,
+        selected: Boolean,
+        modifier: Modifier = Modifier,
+        onClick: () -> Unit
+    ) {
+        val color = if (selected) MaterialTheme.colors.secondary else Color.Black
+        TextButton(
+            onClick = onClick,
+            modifier = modifier
+                .fillMaxWidth()
+        ) {
+            Text(
+                chapter,
+                fontWeight = FontWeight.Medium,
+                color = color,
+            )
         }
     }
 
@@ -404,7 +467,8 @@ class ReaderScreen : Screen {
                 sm.showLayoutBar = LayoutBarStatus.HIDE
             }
         }
-        val offset by animateDpAsState(if (show) 0.dp else 88.dp)
+        val height = APP_BAR_HEIGHT / 1.4f
+        val offset by animateDpAsState(if (show) 0.dp else 24.dp + APP_BAR_HEIGHT + height)
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = modifier
@@ -412,7 +476,7 @@ class ReaderScreen : Screen {
         ) {
             AnimatedVisibility(
                 visible = sm.showPageNavigator,
-                modifier = Modifier.height(APP_BAR_HEIGHT / 1.4f)
+                modifier = Modifier.height(height)
             ) {
                 PageNavigator(sm)
             }

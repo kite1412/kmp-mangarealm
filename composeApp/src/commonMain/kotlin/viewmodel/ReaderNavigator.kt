@@ -1,17 +1,16 @@
 package viewmodel
 
 import SharedObject
-import api.mangadex.model.response.Data
-import api.mangadex.model.response.attribute.ChapterAttributes
 import cafe.adriel.voyager.navigator.Navigator
+import model.ChapterList
 import view.ReaderScreen
 
 interface ReaderNavigator {
     fun navigateToReader(
         nav: Navigator,
-        chapter: Data<ChapterAttributes>
+        chapterList: ChapterList
     ) {
-        SharedObject.chapterRead = chapter
+        SharedObject.chapterList = chapterList
         nav.push(ReaderScreen())
     }
 }
