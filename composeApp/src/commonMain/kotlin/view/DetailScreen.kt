@@ -6,7 +6,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +32,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
@@ -43,9 +46,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -57,6 +62,7 @@ import api.mangadex.util.getTitle
 import assets.`Book-open`
 import assets.`Bookmark-alt`
 import assets.`Chevron-right`
+import assets.Cross
 import assets.`List-add`
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
@@ -69,9 +75,11 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import model.MangaStatus
+import model.Status
 import screenSize
 import util.BLUR_TINT
-import util.Status
+import util.PublicationStatus
 import util.edgeToEdge
 import util.swipeToPop
 import util.toMap
@@ -136,6 +144,7 @@ class DetailScreen : Screen {
                         .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                 )
                 if (SharedObject.popNotifierCount >= 0) Pop(sm, modifier = Modifier.align(Alignment.CenterStart))
+                if (sm.showUpdateStatus) UpdateStatus(sm)
             }
         }
     }
@@ -235,7 +244,7 @@ class DetailScreen : Screen {
                     .align(Alignment.BottomEnd)
                     .padding(end = 16.dp)
             ) {
-                Status(attributes, modifier = Modifier.align(Alignment.End))
+                PublicationStatus(attributes, modifier = Modifier.align(Alignment.End))
                 BrowseImageNullable(
                     painter = SharedObject.detailCover,
                     contentScale = ContentScale.FillBounds,
@@ -254,7 +263,7 @@ class DetailScreen : Screen {
                     .padding(8.dp)
             ) {
                 Action(
-                    onClick = { sm.onReadClick(nav) },
+                    onClick = { sm.onRead(nav) },
                     enabled = !sm.readClicked,
                     modifier = Modifier
                         .weight(0.6f)
@@ -293,14 +302,14 @@ class DetailScreen : Screen {
                     )
                 }
                 Action(
-                    onClick = {},
+                    onClick = { sm.showUpdateStatus = true },
                     modifier = Modifier
                         .weight(0.2f)
                         .fillMaxHeight()
                 ) {
                     Icon(
                         imageVector = Assets.`Bookmark-alt`,
-                        contentDescription = "add to list",
+                        contentDescription = "udpate status",
                         tint = actionIconColor(true),
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -482,28 +491,28 @@ class DetailScreen : Screen {
         }
     }
 
-    private fun status(raw: String): String {
+    private fun publicationStatus(raw: String): String {
         return when(raw) {
-            Status.ON_GOING -> "On Going"
-            Status.COMPLETED -> "Completed"
-            Status.HIATUS -> "Hiatus"
-            Status.CANCELLED -> "Cancelled"
+            PublicationStatus.ON_GOING -> "On Going"
+            PublicationStatus.COMPLETED -> "Completed"
+            PublicationStatus.HIATUS -> "Hiatus"
+            PublicationStatus.CANCELLED -> "Cancelled"
             else -> "Unknown"
         }
     }
 
-    private fun statusColor(rawStatus: String): Color {
+    private fun publicationStatusColor(rawStatus: String): Color {
         return when(rawStatus) {
-            Status.ON_GOING -> Color(0xFF1B663E)
-            Status.COMPLETED -> Color( 46, 90, 180)
-            Status.HIATUS -> Color.DarkGray
-            Status.CANCELLED -> Color(150, 0, 0)
+            PublicationStatus.ON_GOING -> Color(0xFF1B663E)
+            PublicationStatus.COMPLETED -> Color( 46, 90, 180)
+            PublicationStatus.HIATUS -> Color.DarkGray
+            PublicationStatus.CANCELLED -> Color(150, 0, 0)
             else -> Color.LightGray
         }
     }
 
     @Composable
-    private fun Status(
+    private fun PublicationStatus(
         manga: MangaAttributes,
         modifier: Modifier = Modifier
     ) {
@@ -524,13 +533,13 @@ class DetailScreen : Screen {
                 )
             }
             Text(
-                status(manga.status),
+                publicationStatus(manga.status),
                 color = Color.White,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .clip(RoundedCornerShape(5.dp))
-                    .background(statusColor(manga.status))
+                    .background(publicationStatusColor(manga.status))
                     .padding(horizontal = 4.dp, vertical = 2.dp)
             )
         }
@@ -580,5 +589,117 @@ class DetailScreen : Screen {
                 modifier = Modifier.align(Alignment.Center)
             )
         }
+    }
+
+    @Composable
+    private fun UpdateStatus(
+        sm: DetailScreenModel,
+        modifier: Modifier = Modifier
+    ) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.6f))
+                .pointerInput(true) {
+                    detectTapGestures {
+                        sm.showUpdateStatus = false
+                    }
+                }
+        ) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .clickable(enabled = false) {}
+                    .padding(horizontal = 24.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colors.background)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .padding(16.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "Update Status",
+                            fontStyle = FontStyle.Italic,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        IconButton(
+                            onClick = { sm.showUpdateStatus = false }
+                        ) {
+                            Icon(
+                                imageVector = Assets.Cross,
+                                contentDescription = "cancel",
+                                tint = Color.Red
+                            )
+                        }
+                    }
+                    Statuses(sm, modifier = Modifier.padding(horizontal = 8.dp))
+                    Spacer(Modifier.height(16.dp))
+                    Action(
+                        onClick = {},
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(
+                            "Update",
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White,
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalLayoutApi::class)
+    @Composable
+    private fun Statuses(
+        sm: DetailScreenModel,
+        modifier: Modifier = Modifier
+    ) {
+        FlowRow(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = modifier.fillMaxWidth()
+        ) {
+            MangaStatus().forEach {
+                StatusBar(it, Color.DarkGray, sm.status == it) {
+                    sm.status = it
+                }
+            }
+        }
+    }
+
+    @Composable
+    private fun StatusBar(
+        status: Status,
+        color: Color,
+        selected: Boolean,
+        modifier: Modifier = Modifier,
+        onClick: () -> Unit
+    ) {
+        val textColor = if (selected) Color.White else color
+        val corner = RoundedCornerShape(6.dp)
+        val outer = if (selected) Modifier.background(Color.DarkGray) else
+            Modifier.border(width = 2.dp, color = color, shape = corner)
+        Text(
+            status.status,
+            color = textColor,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier
+                .clip(corner)
+                .clickable(onClick = onClick)
+                .then(outer)
+                .padding(horizontal = 12.dp, vertical = 10.dp)
+        )
     }
 }
