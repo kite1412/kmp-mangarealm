@@ -63,6 +63,7 @@ import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -112,7 +113,7 @@ class DetailScreen : Screen {
                     modifier = Modifier.fillMaxSize().padding(bottom = sm.chapterListHeight.dp)
                 ) {
                     item {
-                        CoverArtDisplay(sm)
+                        CoverArtDisplay(sm, nav)
                     }
                     item {
                         Column(
@@ -184,6 +185,7 @@ class DetailScreen : Screen {
     @Composable
     private fun CoverArtDisplay(
         sm: DetailScreenModel,
+        nav: Navigator,
         modifier: Modifier = Modifier
     ) {
         val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -252,7 +254,8 @@ class DetailScreen : Screen {
                     .padding(8.dp)
             ) {
                 Action(
-                    onClick = {},
+                    onClick = { sm.onReadClick(nav) },
+                    enabled = !sm.readClicked,
                     modifier = Modifier
                         .weight(0.6f)
                         .fillMaxHeight()
