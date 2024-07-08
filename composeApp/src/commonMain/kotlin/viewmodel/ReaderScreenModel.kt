@@ -22,7 +22,8 @@ class ReaderScreenModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val cache: Cache = Libs.cache
 ) : ScreenModel {
-    val chapter = SharedObject.chapterRead
+    val chapters = SharedObject.chapterList()
+    var currentChapterIndex by mutableIntStateOf(SharedObject.chapterList.index)
     var imageQuality by mutableStateOf("")
     var showPrompt by mutableStateOf(true)
     var zoomIn by mutableStateOf(true)
@@ -35,7 +36,8 @@ class ReaderScreenModel(
     var showPageNavigator by mutableStateOf(false)
     var pageNavigatorIndex by mutableIntStateOf(0)
     val images = mutableStateListOf<ChapterImage>()
-    private val index = chapter.id + imageQuality
+    private var index by mutableStateOf("")
+    var showChapterList by mutableStateOf(false)
 
     init {
         screenModelScope.launch {
@@ -46,8 +48,9 @@ class ReaderScreenModel(
 
     private fun getChapterImages() {
         screenModelScope.launch {
+            index = chapters[currentChapterIndex].id + imageQuality
             val images = cache.chapterImages[index]
-            val res = mangaDex.getHomeUrl(chapter.id)
+            val res = mangaDex.getHomeUrl(chapters[currentChapterIndex].id)
             if (images == null) {
                 if (res != null) {
                     val imageFiles = if (imageQuality == ImageQuality.HIGH) res.chapter.data
@@ -108,17 +111,21 @@ class ReaderScreenModel(
     }
 
     fun handleLayoutBar() {
-        if (layoutBarDismissible) {
-            showLayoutBar = when(showLayoutBar) {
-                LayoutBarStatus.SHOW -> LayoutBarStatus.HIDE
-                LayoutBarStatus.UPDATE -> LayoutBarStatus.HIDE
-                else -> LayoutBarStatus.SHOW
+        if (!showChapterList) {
+            if (layoutBarDismissible) {
+                showLayoutBar = when(showLayoutBar) {
+                    LayoutBarStatus.SHOW -> LayoutBarStatus.HIDE
+                    LayoutBarStatus.UPDATE -> LayoutBarStatus.HIDE
+                    else -> LayoutBarStatus.SHOW
+                }
+            } else {
+                if (showPageNavigator) {
+                    handlePageNavigator(showNavigator = false, layoutBarDismissible = true)
+                    showLayoutBar = LayoutBarStatus.HIDE
+                }
             }
         } else {
-            if (showPageNavigator) {
-                handlePageNavigator(showNavigator = false, layoutBarDismissible = true)
-                showLayoutBar = LayoutBarStatus.HIDE
-            }
+            showChapterList = false
         }
     }
 
@@ -130,6 +137,14 @@ class ReaderScreenModel(
     fun updatePainter(index: Int, p: Painter?) {
         images[index] = images[index].copy(painter = p)
         cache.chapterImages[this.index]!!.images[index].painter = p
+    }
+
+    fun onChapterClick(index: Int) {
+        showChapterList = false
+        currentChapterIndex = index
+        this.index = chapters[currentChapterIndex].id + imageQuality
+        images.clear()
+        getChapterImages()
     }
 }
 

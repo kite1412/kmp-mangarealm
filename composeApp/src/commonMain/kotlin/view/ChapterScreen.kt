@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
@@ -123,9 +122,9 @@ class ChapterScreen : Screen {
             item {
                 Spacer(Modifier.height(APP_BAR_HEIGHT))
             }
-            items(sm.chapters) {
-                ChapterBar(it, modifier = Modifier.padding(horizontal = 8.dp)) { d ->
-                    sm.navigateToReader(nav, d)
+            items(sm.chapters.size) {
+                ChapterBar(sm.chapters[it], modifier = Modifier.padding(horizontal = 8.dp)) { _ ->
+                    sm.navigateToReader(nav, model.ChapterList(it, sm.chapters))
                 }
             }
             item {
