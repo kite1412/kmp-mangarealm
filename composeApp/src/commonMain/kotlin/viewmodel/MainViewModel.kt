@@ -2,6 +2,7 @@ package viewmodel
 
 import Cache
 import Libs
+import SharedObject
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -154,6 +155,14 @@ class MainViewModel(
                             }
                         }
                     }
+                }
+            } else {
+                val reading = cache.mangaStatus.filter { it.value.status == MangaStatus.Reading }
+                if (continueReadingData.size != reading.size) {
+                    if (continueReadingData.size < reading.size) continueReadingPainter.add(SharedObject.detailCover)
+                        else continueReadingPainter.remove(SharedObject.detailCover)
+                    continueReadingData.clear()
+                    continueReadingData.addAll(reading.values.map { it.data })
                 }
             }
         }

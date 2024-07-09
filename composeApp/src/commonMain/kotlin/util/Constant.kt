@@ -21,6 +21,7 @@ object KottageConst {
 
 const val SPLASH_TIME = 2000
 const val LATEST_UPDATE_SLIDE_TIME = 4500
+const val WARNING_TIME = 2000L
 const val ROMANCE_TAG = "Romance"
 const val COMEDY_TAG = "Comedy"
 const val ADVENTURE_TAG = "Adventure"
