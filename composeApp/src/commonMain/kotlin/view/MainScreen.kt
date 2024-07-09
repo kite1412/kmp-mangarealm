@@ -46,6 +46,7 @@ class MainScreen : Screen {
         LifecycleEffectOnce {
             vm.init()
         }
+        vm.syncReadingStatus()
         if (vm.undoEdgeToEdge) undoEdgeToEdge()
         val nav = LocalNavigator.currentOrThrow
         Scaffold(

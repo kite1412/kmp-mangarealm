@@ -36,7 +36,6 @@ import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
 
-// TODO change fetching strategy
 class MainViewModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val kottageStorage: KottageStorage = Libs.kottageStorage,
@@ -142,15 +141,17 @@ class MainViewModel(
                         }
                     }
                 }
-            } else {
-                val reading = cache.mangaStatus.filter { it.value.status == MangaStatus.Reading }
-                if (continueReadingData.size != reading.size) {
-                    if (continueReadingData.size < reading.size) continueReadingPainter.add(SharedObject.detailCover)
-                        else continueReadingPainter.remove(SharedObject.detailCover)
-                    continueReadingData.clear()
-                    continueReadingData.addAll(reading.values.map { it.data })
-                }
             }
+        }
+    }
+
+    fun syncReadingStatus() {
+        val reading = cache.mangaStatus.filter { it.value.status == MangaStatus.Reading }
+        if (SharedObject.detailCover != null && reading.size != continueReadingData.size) {
+            if (continueReadingData.size < reading.size) continueReadingPainter.add(SharedObject.detailCover)
+                else continueReadingPainter.remove(SharedObject.detailCover)
+            continueReadingData.clear()
+            continueReadingData.addAll(reading.values.map { it.data })
         }
     }
 

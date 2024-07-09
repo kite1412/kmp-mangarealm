@@ -1,5 +1,6 @@
 package view
 
+import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,12 +16,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.seiko.imageloader.model.ImageAction
+import com.seiko.imageloader.model.ImageRequest
+import com.seiko.imageloader.option.SizeResolver
 import com.seiko.imageloader.rememberImagePainter
 import com.seiko.imageloader.rememberImageSuccessPainter
 import com.seiko.imageloader.ui.AutoSizeBox
@@ -138,7 +142,10 @@ fun PainterLoader(
     modifier: Modifier = Modifier,
     onImageLoaded: (Painter) -> Unit
 ) {
-    AutoSizeBox(url) { action ->
+    AutoSizeBox(ImageRequest {
+        data(url)
+        this.size(SizeResolver(Size.VisibilityThreshold))
+    }) { action ->
         when (action) {
             is ImageAction.Success -> onImageLoaded(rememberImageSuccessPainter(action))
             else -> Unit
