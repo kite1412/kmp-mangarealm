@@ -303,17 +303,17 @@ class DetailScreen : Screen {
                     )
                 }
                 Action(
-                    onClick = { sm.showUpdateStatus = true },
-                    fill = sm.manga.status == null || sm.manga.status == MangaStatus.None,
+                    onClick = { sm.onStatus() },
+                    fill = sm.manga.status == MangaStatus.None,
                     modifier = Modifier
                         .weight(0.2f)
                         .fillMaxHeight()
                 ) {
                     Icon(
-                        imageVector = if (sm.manga.status == null) Assets.`Bookmark-alt`
+                        imageVector = if (sm.manga.status == MangaStatus.None) Assets.`Bookmark-alt`
                             else Assets.`Bookmark-alt-fill`,
                         contentDescription = "udpate status",
-                        tint = if (sm.manga.status == null || sm.manga.status == MangaStatus.None)
+                        tint = if (sm.manga.status == MangaStatus.None)
                             actionIconColor(true) else MaterialTheme.colors.secondary,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -647,22 +647,44 @@ class DetailScreen : Screen {
                     }
                     Statuses(sm, modifier = Modifier.padding(horizontal = 8.dp))
                     Spacer(Modifier.height(16.dp))
-                    Action(
-                        onClick = {
-                              sm.onUpdateStatus()
-                        },
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.align(Alignment.End)
                     ) {
-                        Text(
-                            "Update",
-                            fontWeight = FontWeight.Medium,
-                            color = Color.White,
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                        )
+                        if (sm.manga.status != MangaStatus.None) UpdateStatusAction(
+                            desc = "Delete",
+                            color = Color(170, 0, 0)
+                        ) { sm.onDeleteStatus() }
+                        UpdateStatusAction(
+                            desc = "Update",
+                            enabled = sm.manga.status != sm.status
+                        ) { sm.onUpdateStatus() }
                     }
                 }
             }
+        }
+    }
+
+    @Composable
+    private fun UpdateStatusAction(
+        desc: String,
+        enabled: Boolean = true,
+        color: Color = MaterialTheme.colors.secondary,
+        modifier: Modifier = Modifier,
+        onClick: () -> Unit
+    ) {
+        Action(
+            onClick = onClick,
+            color = color,
+            enabled = enabled
+        ) {
+            Text(
+                desc,
+                fontWeight = FontWeight.Medium,
+                color = Color.White,
+                modifier = modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
         }
     }
 

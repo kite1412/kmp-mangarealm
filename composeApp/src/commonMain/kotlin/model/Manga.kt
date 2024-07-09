@@ -6,7 +6,7 @@ import api.mangadex.model.response.attribute.MangaAttributes
 
 data class Manga(
     val data: Data<MangaAttributes>,
-    var status: Status? = null
+    var status: Status = MangaStatus.None
 )
 
 fun emptyManga(): Manga {

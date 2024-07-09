@@ -33,6 +33,7 @@ import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
 
+// TODO change fetching strategy
 class MainViewModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val kottageStorage: KottageStorage = Libs.kottageStorage,
