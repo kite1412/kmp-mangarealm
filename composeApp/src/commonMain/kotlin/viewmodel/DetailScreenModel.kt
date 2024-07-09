@@ -3,6 +3,7 @@ package viewmodel
 import Cache
 import Libs
 import SharedObject
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -35,7 +36,7 @@ class DetailScreenModel(
     var showUpdateStatus by mutableStateOf(false)
     var status by mutableStateOf(MangaStatus.None)
     var manga by mutableStateOf(SharedObject.detailManga)
-    var showWarning by mutableStateOf(true)
+    var showWarning by mutableStateOf(false)
     var warning = ""
 
     init {

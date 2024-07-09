@@ -1,6 +1,7 @@
 
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +24,7 @@ import model.ChapterList
 import model.Manga
 import model.emptyManga
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import shared.adjustStatusBarColor
 import shared.databaseDir
 import shared.kottageContext
 import theme.AppTheme
@@ -98,9 +100,6 @@ fun App() {
     AppTheme {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             screenSize = ScreenSize(height = this.maxHeight, width = this.maxWidth)
-            if (!isShowingSplash.value) {
-                mainViewModel.disableEdgeToEdge()
-            }
             if (!isLoggedIn.value) {
                 LoginScreen(onSuccess = {
                     isLoggedIn.value = true
@@ -112,6 +111,8 @@ fun App() {
             }
             if (isShowingSplash.value) {
                 SplashScreen()
+            } else {
+                if (isLoggedIn.value) adjustStatusBarColor(MaterialTheme.colors.background)
             }
         }
     }

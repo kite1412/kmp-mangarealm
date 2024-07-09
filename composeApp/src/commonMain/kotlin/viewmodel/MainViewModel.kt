@@ -5,8 +5,10 @@ import Libs
 import SharedObject
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -48,11 +50,12 @@ class MainViewModel(
     private var initLatestUpdatesPainter = false
     private var initContinueReadingPainter = false
 
+    var undoEdgeToEdge by mutableStateOf(false)
+
     val enableAutoSlide = derivedStateOf {
         latestUpdatesData.isNotEmpty() && latestUpdatesPainter.isNotEmpty() && latestUpdatesPainter[0] != null
     }
 
-    var disableEdgeToEdge = mutableStateOf(false)
     val sessionSize = 10
     var latestUpdatesBarPage = 0
 
@@ -79,10 +82,6 @@ class MainViewModel(
 
     fun setPage(page: Page) {
         _currentPage.value = page
-    }
-
-    fun disableEdgeToEdge() {
-        disableEdgeToEdge.value = true
     }
 
     suspend fun updateUsername() {

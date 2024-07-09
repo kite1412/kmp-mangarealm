@@ -429,7 +429,7 @@ class ChapterScreen : Screen {
         modifier: Modifier = Modifier,
         onClick: (Data<ChapterAttributes>) -> Unit
     ) {
-        if (chapter.attributes.chapter != null) Card(
+        Card(
             backgroundColor = MaterialTheme.colors.background,
             elevation = 6.dp,
             shape = RoundedCornerShape(12.dp),
@@ -439,7 +439,7 @@ class ChapterScreen : Screen {
             Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)) {
                 Row {
                     Text(
-                        "Chapter ${chapter.attributes.chapter}",
+                        "Chapter ${chapter.attributes.chapter ?: ""}",
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colors.primary
                     )
