@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
@@ -79,6 +80,7 @@ import dev.chrisbanes.haze.hazeChild
 import model.MangaStatus
 import model.Status
 import screenSize
+import util.APP_BAR_HEIGHT
 import util.BLUR_TINT
 import util.PublicationStatus
 import util.edgeToEdge
@@ -105,6 +107,7 @@ class DetailScreen : Screen {
                     .swipeToPop(nav)
             ) {
                 val hazeState = remember { HazeState() }
+                val aboveBottomBar = APP_BAR_HEIGHT + 16.dp
                 Box(modifier = Modifier.fillMaxSize().haze(hazeState)) {
                     Box(
                         modifier = Modifier
@@ -146,6 +149,12 @@ class DetailScreen : Screen {
                 )
                 if (SharedObject.popNotifierCount >= 0) Pop(sm, modifier = Modifier.align(Alignment.CenterStart))
                 if (sm.showUpdateStatus) UpdateStatus(sm)
+                Warning(
+                    message = sm.warning,
+                    height = aboveBottomBar,
+                    show = sm.showWarning,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
             }
         }
     }
@@ -729,5 +738,30 @@ class DetailScreen : Screen {
                 .then(outer)
                 .padding(horizontal = 12.dp, vertical = 10.dp)
         )
+    }
+
+    @Composable
+    private fun Warning(
+        message: String,
+        height: Dp,
+        show: Boolean,
+        modifier: Modifier = Modifier
+    ) {
+        val warningOffset by animateDpAsState(if (show) -(height) else height)
+        Box(
+            modifier = modifier
+                .offset(y = warningOffset)
+                .clip(CircleShape)
+                .background(MaterialTheme.colors.secondary)
+        ) {
+            Text(
+                message,
+                color = Color.White,
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp,
+                modifier = Modifier
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            )
+        }
     }
 }

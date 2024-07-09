@@ -19,6 +19,7 @@ import model.Chapters
 import model.MangaStatus
 import screenSize
 import util.ASCENDING
+import util.WARNING_TIME
 import view.ChapterScreen
 
 class DetailScreenModel(
@@ -34,6 +35,8 @@ class DetailScreenModel(
     var showUpdateStatus by mutableStateOf(false)
     var status by mutableStateOf(MangaStatus.None)
     var manga by mutableStateOf(SharedObject.detailManga)
+    var showWarning by mutableStateOf(true)
+    var warning = ""
 
     init {
         status = manga.status
@@ -91,6 +94,7 @@ class DetailScreenModel(
                     )
                 )
                 if (res != null) {
+                    if (res.errors != null) return@launch showWarning()
                     val chapterList = ChapterList(chapters = res.data)
                     cache.chapters[manga.data.id] = Chapters(
                         language = l,
@@ -102,13 +106,21 @@ class DetailScreenModel(
                         nav = nav,
                         chapterList = chapterList
                     )
-                }
+                } else return@launch showWarning()
             } else navigateToReader(
                 nav = nav,
                 chapterList = ChapterList(chapters = chapters())
             )
             readClicked = false
         }
+    }
+
+    private suspend fun showWarning(message: String = "Please try again later") {
+        warning = message
+        showWarning = true
+        delay(WARNING_TIME)
+        showWarning = false
+        readClicked = false
     }
 
     fun onAddToList() {
