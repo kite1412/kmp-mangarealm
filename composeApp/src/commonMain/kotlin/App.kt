@@ -90,6 +90,7 @@ fun App() {
         isLoggedIn.value = isLoggedIn()
         delay(util.SPLASH_TIME.toLong())
         isShowingSplash.value = false
+        mainViewModel.undoEdgeToEdge = true
     }
     // perform actions after logged in
     LaunchedEffect(isLoggedIn.value) {
