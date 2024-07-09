@@ -84,10 +84,9 @@ fun BrowseImageNullable(
     contentDescription: String = "image",
     contentScale: ContentScale = ContentScale.Fit,
     modifier: Modifier = Modifier,
-    loading: (@Composable () -> Unit)? = null
+    loading: (@Composable BoxScope.() -> Unit)? = null
 ) {
     Box(modifier = modifier.fillMaxSize()) {
-        CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         if (painter == null) {
             if (loading == null)
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))

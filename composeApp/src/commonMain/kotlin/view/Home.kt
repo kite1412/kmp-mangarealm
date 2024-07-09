@@ -31,6 +31,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.attribute.MangaAttributes
+import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTags
 import api.mangadex.util.getTitle
@@ -103,6 +105,15 @@ fun Home(
         autoSlide = vm.enableAutoSlide.value,
         pagerState = pagerState
     )
+    LaunchedEffect(pagerState.currentPageOffsetFraction) {
+        vm.adjustLatestUpdatesBar = pagerState.currentPageOffsetFraction != 0.0f
+    }
+    LaunchedEffect(true) {
+        if (vm.adjustLatestUpdatesBar) pagerState.animateScrollToPage(
+            pagerState.currentPage,
+            animationSpec = tween(500)
+        )
+    }
     LazyColumn(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -290,6 +301,9 @@ fun LatestUpdatesBar(
             val imageHeight = height / 1.5f
             val painter = vm.latestUpdatesPainter[it]
             val data = vm.latestUpdatesData[it]
+            if (painter == null) PainterLoader(
+                url = getCoverUrl(data),
+            ) { p -> vm.latestUpdatesPainter[it] = p }
             Box(
                 modifier = Modifier
                     .padding(horizontal = 4.dp)
@@ -336,7 +350,12 @@ fun LatestUpdatesBar(
                 .padding(horizontal = 4.dp)
                 .clip(RoundedCornerShape(15.dp))
                 .background(Color.White.copy(alpha = 0.4f))
-        )
+        ) {
+            CircularProgressIndicator(
+                color = MaterialTheme.colors.background,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
         IndicatorDots(
             n = pagerState.pageCount,
             selected = pagerState.currentPage + 1,
@@ -463,6 +482,9 @@ private fun ContinueReading(
             items(count = vm.continueReadingData.size) {
                 val painter = vm.continueReadingPainter[it]
                 val data = vm.continueReadingData[it]
+                if (painter == null) PainterLoader(
+                    url = getCoverUrl(data)
+                ) { p -> vm.continueReadingPainter[it] = p }
                 SmallDisplay(
                     painter = painter,
                     title = getTitle(data.attributes.title),

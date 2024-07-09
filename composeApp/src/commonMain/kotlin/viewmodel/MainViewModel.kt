@@ -47,9 +47,6 @@ class MainViewModel(
 
     var mangaTagsLabelHeight = mutableStateOf(0)
 
-    private var initLatestUpdatesPainter = false
-    private var initContinueReadingPainter = false
-
     var undoEdgeToEdge by mutableStateOf(false)
 
     val enableAutoSlide = derivedStateOf {
@@ -58,6 +55,7 @@ class MainViewModel(
 
     val sessionSize = 10
     var latestUpdatesBarPage = 0
+    var adjustLatestUpdatesBar = false
 
     val latestUpdatesData = mutableStateListOf<Data<MangaAttributes>>()
     val continueReadingData = mutableStateListOf<Data<MangaAttributes>>()
@@ -89,10 +87,9 @@ class MainViewModel(
         _username.value = username
     }
 
-    @Composable
     fun init() {
-        initLatestUpdates()
-        initContinueReading()
+        initLatestUpdatesData()
+        initContinueReadingData()
     }
 
     private fun initLatestUpdatesData() {
@@ -103,25 +100,14 @@ class MainViewModel(
                     values = listOf("cover_art")
                 )
                 val queries = generateQuery(mapOf("limit" to sessionSize), includes)
-                latestUpdatesData.addAll(mangaDex.getManga(queries)?.data ?: listOf())
-            }
-        }
-    }
-
-    @Composable
-    private fun initLatestUpdates() {
-        initLatestUpdatesData()
-        if (latestUpdatesData.isNotEmpty() && !initLatestUpdatesPainter) {
-            for (i in 0 until latestUpdatesData.size) latestUpdatesPainter.add(null)
-            initLatestUpdatesPainter = true
-        }
-        for ((i, d) in latestUpdatesData.withIndex()) {
-            AutoSizeBox(getCoverUrl(d)) {action ->
-                when (action) {
-                    is ImageAction.Success -> {
-                        latestUpdatesPainter[i] = rememberImageSuccessPainter(action)
+                val res = mangaDex.getManga(queries)
+                if (res != null) {
+                    res.data.forEach {
+                        latestUpdatesData.add(it)
+                        latestUpdatesPainter.add(null)
                     }
-                    else -> Unit
+                } else {
+                    // TODO handle
                 }
             }
         }
@@ -145,8 +131,9 @@ class MainViewModel(
                         val queries = generateQuery(mapOf(Pair("includes[]", "cover_art")), mangaIds)
                         val mangaList = mangaDex.getManga(queries)
                         mangaList?.data?.let {
-                            continueReadingData.addAll(it)
                             it.forEach { d ->
+                                continueReadingData.add(d)
+                                continueReadingPainter.add(null)
                                 cache.mangaStatus[d.id] = Manga(
                                     data = d,
                                     status = MangaStatus.Reading
@@ -162,25 +149,6 @@ class MainViewModel(
                         else continueReadingPainter.remove(SharedObject.detailCover)
                     continueReadingData.clear()
                     continueReadingData.addAll(reading.values.map { it.data })
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun initContinueReading() {
-        initContinueReadingData()
-        if (continueReadingData.isNotEmpty() && !initContinueReadingPainter) {
-            for (i in 0 until continueReadingData.size) continueReadingPainter.add(null)
-            initContinueReadingPainter = true
-        }
-        for ((i, d) in continueReadingData.withIndex()) {
-            AutoSizeBox(getCoverUrl(d)) {action ->
-                when (action) {
-                    is ImageAction.Success -> {
-                        continueReadingPainter[i] = rememberImageSuccessPainter(action)
-                    }
-                    else -> Unit
                 }
             }
         }
