@@ -51,6 +51,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -434,6 +435,7 @@ class ReaderScreen : Screen {
         ZoomableImage(
             painter = painter,
             onTap = onTap,
+            contentScale = ContentScale.FillWidth,
             modifier = modifier.then(common)
         ) {
             Box(modifier = modifier.then(common)) {

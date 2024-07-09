@@ -57,7 +57,7 @@ class ReaderScreenModel(
                         else res.chapter.dataSaver
                     totalPages = imageFiles.size
                     val chapterImages = ChapterImages(
-                        images = imageFiles.mapIndexed { i, s ->
+                        images = imageFiles.map { s ->
                             ChapterImage(
                                 baseUrl = res.baseUrl,
                                 hash = res.chapter.hash,
