@@ -192,7 +192,7 @@ class ReaderScreen : Screen {
                         .padding(start = 12.dp)
                 )
                 Text(
-                    "Chapter ${sm.chapters[sm.currentChapterIndex].attributes.chapter!!}",
+                    "Chapter ${sm.chapters[sm.currentChapterIndex].attributes.chapter ?: sm.currentPage}",
                     color = MaterialTheme.colors.secondary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -242,7 +242,7 @@ class ReaderScreen : Screen {
                 val chapters = sm.chapters
                 items(chapters.size) {
                     Chapter(
-                        chapter = "Chapter ${chapters[it].attributes.chapter!!}",
+                        chapter = "Chapter ${chapters[it].attributes.chapter ?: sm.currentPage}",
                         selected = it == sm.currentChapterIndex
                     ) { sm.onChapterClick(it) }
                 }

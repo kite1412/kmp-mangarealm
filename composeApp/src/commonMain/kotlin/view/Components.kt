@@ -108,6 +108,7 @@ fun BrowseImageNullable(
 fun Action(
     onClick: () -> Unit,
     fill: Boolean = true,
+    color: Color = MaterialTheme.colors.secondary,
     verticalPadding: Dp = 2.dp,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
@@ -115,7 +116,7 @@ fun Action(
 ) {
     val corner = RoundedCornerShape(8.dp)
     val outer: Modifier = if (fill) Modifier.background(
-        color = if (enabled) MaterialTheme.colors.secondary else Color.Gray
+        color = if (enabled) color else Color.Gray
     )
     else Modifier.border(
         width = 2.dp,

@@ -190,11 +190,12 @@ class MangaDexImpl(
     ): UpdateStatusResponse? =
         post<UpdateStatusResponse>(
             url = ApiConstant.updateMangaStatus(mangaId),
-            body = mapOf("status" to status),
+            body = mapOf("status" to status.ifEmpty { null }),
             methodName = "updateMangaStatus",
             auth = auth,
             headers = headers
         )
+
 
     override suspend fun updateMangaStatus(mangaId: String, status: String): UpdateStatusResponse? =
         updateMangaStatus(mangaId, status, true)?.also {

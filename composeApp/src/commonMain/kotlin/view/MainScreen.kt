@@ -124,6 +124,11 @@ class MainScreen : Screen {
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) {
+            val pagerState = rememberPagerState(initialPage = vm.latestUpdatesBarPage) { vm.sessionSize }
+            autoSlideLatestUpdates(
+                autoSlide = vm.enableAutoSlide.value,
+                pagerState = pagerState,
+            )
             if (vm.disableEdgeToEdge.value) undoEdgeToEdge()
             Box(
                 modifier = Modifier.fillMaxSize()
@@ -159,7 +164,8 @@ class MainScreen : Screen {
                             LatestUpdatesBar(
                                 vm = vm,
                                 height = latestBarHeight,
-                                nav = nav
+                                nav = nav,
+                                pagerState = pagerState,
                             )
                         }
                     }
@@ -316,10 +322,6 @@ class MainScreen : Screen {
         LaunchedEffect(pagerState.currentPage) {
             vm.latestUpdatesBarPage = pagerState.currentPage
         }
-        autoSlideLatestUpdates(
-            autoSlide = vm.enableAutoSlide.value,
-            pagerState = pagerState
-        )
         val hazeState = remember { HazeState() }
         Box(
             modifier = modifier

@@ -36,7 +36,7 @@ class DetailScreenModel(
     var manga by mutableStateOf(SharedObject.detailManga)
 
     init {
-        if (manga.status != null) status = manga.status!!
+        status = manga.status
     }
 
     fun detailVisibility() {
@@ -113,6 +113,16 @@ class DetailScreenModel(
 
     fun onAddToList() {
 
+    }
+
+    fun onStatus() {
+        showUpdateStatus = true
+        status = manga.status
+    }
+
+    fun onDeleteStatus() {
+        status = MangaStatus.None
+        onUpdateStatus()
     }
 
     fun onUpdateStatus() {
