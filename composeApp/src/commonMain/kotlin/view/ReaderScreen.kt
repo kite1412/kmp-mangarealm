@@ -349,7 +349,7 @@ class ReaderScreen : Screen {
         modifier: Modifier = Modifier
     ) {
         Box(modifier = modifier) {
-            ColumnLayout(sm)
+            ColumnLayout(sm, modifier = Modifier.align(Alignment.Center))
             AnimatedVisibility(
                 visible = sm.showPageIndicator,
                 modifier = Modifier
@@ -383,7 +383,12 @@ class ReaderScreen : Screen {
             ) {
                 sm.updatePainter(index, it)
             }
-            ZoomedInPage(sm.images[index].painter, onTap = onTap)
+            ZoomedInPage(
+                painter = image.painter,
+                onTap = onTap,
+                contentDescription = image.fileUrl,
+                modifier = modifier
+            )
         }
     }
 
@@ -409,9 +414,12 @@ class ReaderScreen : Screen {
             VerticalPager(
                 state = pagerState,
                 modifier = modifier,
-                beyondBoundsPageCount = 1
+                beyondBoundsPageCount = 2
             ) {
-                PageImageLoader(sm, it) { sm.handleLayoutBar() }
+                PageImageLoader(
+                    sm = sm,
+                    index = it,
+                ) { sm.handleLayoutBar() }
             }
         } else LazyColumn(modifier = modifier) {
 
@@ -426,6 +434,7 @@ class ReaderScreen : Screen {
     @Composable
     private fun ZoomedInPage(
         painter: Painter?,
+        contentDescription: String = "",
         modifier: Modifier = Modifier,
         onTap: ((Offset) -> Unit)? = null
     ) {
@@ -435,7 +444,8 @@ class ReaderScreen : Screen {
         ZoomableImage(
             painter = painter,
             onTap = onTap,
-            contentScale = ContentScale.FillWidth,
+            contentDescription = contentDescription,
+            contentScale = ContentScale.Fit,
             modifier = modifier.then(common)
         ) {
             Box(modifier = modifier.then(common)) {

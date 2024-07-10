@@ -1,6 +1,7 @@
 package shared
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -30,7 +31,8 @@ expect val currentTimeMillis: Long
 expect fun ZoomableImage(
     painter: Painter?,
     contentDescription: String = "",
-    contentScale: ContentScale = ContentScale.Fit,
+    contentScale: ContentScale? = null,
+    alignment: Alignment? = null,
     modifier: Modifier = Modifier,
     onTap: ((Offset) -> Unit)? = null,
     onPainterNull: @Composable (() -> Unit)? = null,

@@ -1,6 +1,7 @@
 package shared
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -37,7 +38,8 @@ actual fun disableEdgeToEdge() {
 actual fun ZoomableImage(
     painter: Painter?,
     contentDescription: String,
-    contentScale: ContentScale,
+    contentScale: ContentScale?,
+    alignment: Alignment?,
     modifier: Modifier,
     onTap: ((Offset) -> Unit)?,
     onPainterNull: @Composable (() -> Unit)?
