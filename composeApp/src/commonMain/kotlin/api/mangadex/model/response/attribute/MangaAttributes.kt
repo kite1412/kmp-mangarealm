@@ -19,7 +19,7 @@ data class MangaAttributes(
     val contentRating: String = "",
     val chapterNumbersResetOnNewVolume: Boolean = false,
     val availableTranslatedLanguages: List<String?> = listOf(),
-    val latestUploadedChapter: String = "",
+    val latestUploadedChapter: String? = null,
     val tags: List<Tag> = listOf(),
     val state: String = "",
     val version: Int = 0,

@@ -273,10 +273,16 @@ private fun PromptPage(
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Login", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Login",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White
+                    )
                     Icon(
                         Icons.AutoMirrored.Default.ArrowForward,
                         contentDescription = "login",
+                        tint = Color.White,
                         modifier = Modifier
                             .size(14.dp)
                             .offset(y = 1.dp)

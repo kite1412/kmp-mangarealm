@@ -36,7 +36,7 @@ import theme.selectedButton
 import theme.unselectedButton
 import util.APP_BAR_HEIGHT
 import util.undoEdgeToEdge
-import viewmodel.Page
+import viewmodel.main.Page
 
 class MainScreen : Screen {
     @OptIn(ExperimentalVoyagerApi::class)
@@ -55,11 +55,14 @@ class MainScreen : Screen {
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
-                Home(vm, nav)
+                when(vm.currentPage) {
+                    Page.DISCOVERY -> Discovery(vm)
+                    else -> Home(vm, nav)
+                }
                 BottomAppBar(
-                    page = vm.currentPage.value,
+                    page = vm.currentPage,
                     onPageChange = {
-                        vm.currentPage.value = it
+                        vm.currentPage = it
                     },
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )

@@ -1,4 +1,4 @@
-package viewmodel
+package viewmodel.main
 
 import Cache
 import Libs
@@ -35,14 +35,16 @@ import util.KottageConst
 import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
+import viewmodel.DetailNavigator
+import viewmodel.main.state.DiscoveryState
 
 class MainViewModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val kottageStorage: KottageStorage = Libs.kottageStorage,
     private val cache: Cache = Libs.cache
 ) : ViewModel(), DetailNavigator {
-    private var _currentPage = mutableStateOf(Page.MAIN)
-    val currentPage = _currentPage
+    var currentPage by mutableStateOf(Page.MAIN)
+    val discoveryState = DiscoveryState(mangaDex, cache, viewModelScope)
 
     var mangaTagsLabelHeight = mutableStateOf(0)
 
@@ -76,10 +78,6 @@ class MainViewModel(
     val romComPainter = mutableStateListOf<Painter?>()
     val advComPainter = mutableStateListOf<Painter?>()
     val psyMysPainter = mutableStateListOf<Painter?>()
-
-    fun setPage(page: Page) {
-        _currentPage.value = page
-    }
 
     suspend fun updateUsername() {
         val username = kottageStorage.get<String>(KottageConst.USERNAME)
