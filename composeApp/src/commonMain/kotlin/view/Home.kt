@@ -74,7 +74,7 @@ import screenSize
 import util.APP_BAR_HEIGHT
 import util.BLUR_TINT
 import util.LATEST_UPDATE_SLIDE_TIME
-import viewmodel.MainViewModel
+import viewmodel.main.MainViewModel
 
 private const val imageRatio = 2f / 3f
 private val latestBarHeight = (screenSize.height.value / 4.2).dp
@@ -93,6 +93,7 @@ private val mangaTagsModifier = Modifier.fillMaxWidth()
     }
     .clip(RoundedCornerShape(8.dp))
 
+// TODO make its own state
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Home(

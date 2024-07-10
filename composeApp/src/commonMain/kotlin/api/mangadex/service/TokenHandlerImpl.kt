@@ -15,6 +15,7 @@ import io.ktor.http.parameters
 import shared.currentTimeMillis
 import util.KottageConst
 import util.Log
+import util.retry
 import kotlin.time.Duration.Companion.days
 
 class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
@@ -23,15 +24,20 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
     private suspend fun refreshToken(request: RefreshTokenRequest): Token? {
         return try {
             var useReserve = false
-            var res = client.submitForm(
-                url = ApiConstant.AUTH_ENDPOINT,
-                formParameters = parameters {
-                    append("grant_type", request.grantType)
-                    append("refresh_token", request.refreshToken)
-                    append("client_id", request.clientId)
-                    append("client_secret", request.clientSecret)
-                }
-            ).body<Token>()
+            var res = retry<Token>(
+                count = 3,
+                predicate = { it.error != null }
+            ) {
+                client.submitForm(
+                    url = ApiConstant.AUTH_ENDPOINT,
+                    formParameters = parameters {
+                        append("grant_type", request.grantType)
+                        append("refresh_token", request.refreshToken)
+                        append("client_id", request.clientId)
+                        append("client_secret", request.clientSecret)
+                    }
+                ).body<Token>()
+            }
             // TODO handle if reserved refresh token also not works, typically prompting user to re-login
             if (res.error != null) {
                 Log.w("(refreshToken) ${res.error}")

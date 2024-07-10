@@ -25,7 +25,7 @@ fun generateQuery(queryParams: Map<String, Any>, otherParams: String = ""): Stri
     if (queryParams.isNotEmpty()) {
         var final = "?"
         queryParams.entries.forEachIndexed { i, e ->
-            final += "${e.key}=${e.value}"
+            final += "${e.key}=${e.value.toString().replace(" ", "%20")}"
             if ((i + 1) != queryParams.size) final += "&"
         }
         if (otherParams.isNotEmpty()) {

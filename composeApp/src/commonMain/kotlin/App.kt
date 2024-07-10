@@ -31,7 +31,7 @@ import theme.AppTheme
 import view.LoginScreen
 import view.MainScreen
 import view.SplashScreen
-import viewmodel.MainViewModel
+import viewmodel.main.MainViewModel
 
 data class ScreenSize(
     val height: Dp,

@@ -42,3 +42,13 @@ fun Modifier.swipeToPop(nav: Navigator): Modifier = pointerInput(true) {
         if (dragAmount > 30) nav.pop()
     }
 }
+
+suspend fun <R> retry(
+    count: Int,
+    predicate: (R) -> Boolean,
+    block: suspend (Int) -> R
+): R {
+    val r = block(count)
+    return if (count > 1) if (predicate(r)) retry(count - 1, predicate, block)
+        else r else r
+}
