@@ -135,9 +135,17 @@ class ChapterScreen : Screen {
             verticalArrangement = Arrangement.Center,
             modifier = modifier.fillMaxSize()
         ) {
-            CircularProgressIndicator()
-            Spacer(Modifier.height(8.dp))
-            Text("loading chapters...")
+            if (!sm.showWarning) Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressIndicator()
+                Spacer(Modifier.height(8.dp))
+                Text("loading chapters...")
+            } else Text(
+                "No chapters found",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+            )
         }
     }
 

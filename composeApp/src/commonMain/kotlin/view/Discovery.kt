@@ -10,8 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActionScope
@@ -27,12 +26,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getTitle
 import assets.Search
@@ -50,20 +51,26 @@ fun Discovery(
     val state = vm.discoveryState
     val nav = LocalNavigator.currentOrThrow
     Box(modifier = modifier.fillMaxSize()) {
+        val keyboardController = LocalSoftwareKeyboardController.current
         TopBar(
             textFieldValue = state.searchBarValue,
             onSearch = {
-                vm.discoveryState.updateSearchData(mapOf(
-                    "title" to state.searchBarValue,
-                    "includes[]" to "cover_art",
-                    "limit" to 100
-                ))
+                if (state.searchBarValue.isNotEmpty()) {
+                    keyboardController?.hide()
+                    vm.discoveryState.updateSearchData(mapOf(
+                        "title" to state.searchBarValue,
+                        "includes[]" to "cover_art",
+                        "limit" to 100
+                    ))
+                }
             },
             onValueChange = vm.discoveryState::searchBarValueChange
         )
-        // TODO change later
-        LazyColumn(
+        if (state.searchData.isNotEmpty()) RefreshableList<Manga, MangaAttributes>(
+            data = state.searchData.values,
+            initialResponse = state.searchSession.response,
             verticalArrangement = Arrangement.spacedBy(8.dp),
+            state = rememberLazyListState(),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
@@ -73,14 +80,12 @@ fun Discovery(
                     end = 8.dp
                 )
         ) {
-            items(vm.discoveryState.searchData.toList()) { p ->
-                Display(
-                    manga = p.second,
-                    onClick = {
-                        vm.navigateToDetailScreen(nav, p.second.painter, p.second)
-                    }
-                ) { vm.discoveryState.updateMangaPainter(p.second, it) }
-            }
+            Display(
+                manga = it,
+                onClick = {
+                    vm.navigateToDetailScreen(nav, it.painter, it)
+                }
+            ) { p -> vm.discoveryState.updateMangaPainter(it, p) }
         }
     }
 }

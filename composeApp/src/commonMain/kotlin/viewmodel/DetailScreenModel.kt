@@ -3,7 +3,6 @@ package viewmodel
 import Cache
 import Libs
 import SharedObject
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -70,8 +69,9 @@ class DetailScreenModel(
         screenModelScope.launch {
             val chapters = cache.chapters[manga.data.id]
             if (chapters == null) {
-                val languages = manga.data.attributes
-                    .availableTranslatedLanguages.filterNotNull().filter {
+                val availableLanguages = manga.data.attributes
+                    .availableTranslatedLanguages
+                val languages = availableLanguages.filterNotNull().filter {
                         it == "en" || it == "id"
                     }
                 var l = ""
@@ -84,7 +84,8 @@ class DetailScreenModel(
                         l = lang
                     }
                 } else {
-                    l =  manga.data.attributes.availableTranslatedLanguages[0]!!
+                    l =  if (availableLanguages.isNotEmpty()) manga.data.attributes
+                        .availableTranslatedLanguages[0]!! else return@launch showWarning("No chapters found")
                 }
                 val lang = generateQuery(mapOf("translatedLanguage[]" to l))
                 val res = mangaDex.getMangaChapters(

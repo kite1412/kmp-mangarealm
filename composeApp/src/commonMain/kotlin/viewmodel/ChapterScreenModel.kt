@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.Chapters
 import util.ASCENDING
+import util.Log
 
 class ChapterScreenModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
@@ -44,10 +45,11 @@ class ChapterScreenModel(
     private val manga = SharedObject.detailManga
     private val mangaId = manga.data.id
     val chapterListState = LazyListState()
+    var showWarning by mutableStateOf(false)
 
     init {
         initLanguages()
-        fetchChapters()
+        if (!showWarning) fetchChapters()
     }
 
     private fun setLanguageOrder(
@@ -64,7 +66,9 @@ class ChapterScreenModel(
                 }
             }
             if (l.isEmpty()) {
-                l = languages[0]
+                l = if (languages.isNotEmpty()) languages[0] else "".also {
+                    showWarning = true
+                }
             }
         } else {
             l =  c.language
@@ -91,6 +95,7 @@ class ChapterScreenModel(
     private fun initLanguages() {
         manga.data.attributes.availableTranslatedLanguages.forEach {
             if (it != null) availableLanguages.add(it)
+            Log.w(it.toString())
         }
         setLanguageOrder(availableLanguages)
     }

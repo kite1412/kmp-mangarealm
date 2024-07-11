@@ -20,12 +20,14 @@ class DiscoveryState(
 ) {
 
     var searchBarValue by mutableStateOf("")
-    val searchData: MutableMap<String, Manga> = mutableStateMapOf()
+    var searchSession by mutableStateOf(Session())
+    val searchData = mutableStateMapOf<String, Manga>()
+    private var q: String = ""
 
     fun updateSearchData(queries: Map<String, Any> = mapOf()) {
-        val q = generateQuery(queries)
+        q = generateQuery(queries)
         scope.launch {
-            searchData.clear()
+            searchSession.manga.clear()
             val fromCache = cache.latestMangaSearch[q]
             if (fromCache == null) {
                 val res = mangaDex.getManga(q)
@@ -35,12 +37,14 @@ class DiscoveryState(
                             Manga(it)
                         }.associateBy { it.data.id }.toMutableMap()
                     )
-                    cache.latestMangaSearch[q] = Session(
+                    searchSession = searchSession.copy(
                         response = res,
                         manga = searchData
                     )
+                    cache.latestMangaSearch[q] = searchSession
                 }
             } else {
+                searchSession = fromCache
                 searchData.putAll(fromCache.manga)
             }
         }
@@ -51,7 +55,7 @@ class DiscoveryState(
     fun updateMangaPainter(manga: Manga, painter: Painter) {
         val id = manga.data.id
         val new = manga.copy(painter = painter)
-        cache.mangaStatus[id] = new
         searchData[id] = new
+        cache.latestMangaSearch[q]!!.manga[id] = new
     }
 }
