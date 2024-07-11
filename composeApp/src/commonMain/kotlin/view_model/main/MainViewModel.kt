@@ -1,4 +1,4 @@
-package viewmodel.main
+package view_model.main
 
 import Cache
 import Libs
@@ -35,8 +35,9 @@ import util.KottageConst
 import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
-import viewmodel.DetailNavigator
-import viewmodel.main.state.DiscoveryState
+import util.retry
+import view_model.DetailNavigator
+import view_model.main.state.DiscoveryState
 
 class MainViewModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
@@ -91,7 +92,10 @@ class MainViewModel(
 
     private fun initLatestUpdatesData() {
         viewModelScope.launch {
-            if (latestUpdatesData.isEmpty()) {
+            retry(
+                count = 3,
+                predicate = { latestUpdatesData.isEmpty() }
+            ) {
                 val includes = generateArrayQueryParam(
                     name = "includes[]",
                     values = listOf("cover_art")
@@ -112,7 +116,10 @@ class MainViewModel(
 
     private fun initContinueReadingData() {
         viewModelScope.launch {
-            if (continueReadingData.isEmpty()) {
+            retry(
+                count = 3,
+                predicate = { continueReadingData.isEmpty() }
+            ) {
                 // TODO change to all statuses
                 val res = mangaDex.getMangaByStatus(Status.READING)
                 if (res?.statuses != null) {

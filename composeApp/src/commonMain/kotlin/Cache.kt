@@ -2,7 +2,7 @@
 import model.ChapterImages
 import model.Chapters
 import model.Manga
-import model.MangaSession
+import model.session.MangaSession
 
 class Cache {
     val chapters = mutableMapOf<String, Chapters?>()

@@ -76,9 +76,9 @@ import shared.disableEdgeToEdge
 import util.APP_BAR_HEIGHT
 import util.ImageQuality
 import util.swipeToPop
-import viewmodel.Layout
-import viewmodel.LayoutBarStatus
-import viewmodel.ReaderScreenModel
+import view_model.Layout
+import view_model.LayoutBarStatus
+import view_model.ReaderScreenModel
 
 private val BACKGROUND_COLOR = Color(30, 30, 30)
 

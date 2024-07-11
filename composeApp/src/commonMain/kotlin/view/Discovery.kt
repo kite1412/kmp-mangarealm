@@ -20,6 +20,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,7 +43,8 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import model.Manga
 import util.APP_BAR_HEIGHT
-import viewmodel.main.MainViewModel
+import util.session_handler.MangaSessionHandler
+import view_model.main.MainViewModel
 
 @Composable
 fun Discovery(
@@ -52,6 +54,10 @@ fun Discovery(
     val state = vm.discoveryState
     val nav = LocalNavigator.currentOrThrow
     Box(modifier = modifier.fillMaxSize()) {
+        val sessionHandler = remember(
+            state.session.data,
+            state.session.response
+        ) { MangaSessionHandler(state.session) }
         val keyboardController = LocalSoftwareKeyboardController.current
         val focusManager = LocalFocusManager.current
         TopBar(
@@ -69,11 +75,11 @@ fun Discovery(
             },
             onValueChange = vm.discoveryState::searchBarValueChange
         )
-        if (state.session.data.isNotEmpty()) RefreshableList<Manga, MangaAttributes>(
-            data = state.session.data.values,
-            initialResponse = state.session.response,
+        if (state.session.data.isNotEmpty()) SessionPagerColumn<String, Manga, MangaAttributes>(
+            session = state.session,
             verticalArrangement = Arrangement.spacedBy(8.dp),
             state = rememberLazyListState(),
+            handler = sessionHandler,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(

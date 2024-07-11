@@ -36,7 +36,7 @@ import theme.selectedButton
 import theme.unselectedButton
 import util.APP_BAR_HEIGHT
 import util.undoEdgeToEdge
-import viewmodel.main.Page
+import view_model.main.Page
 
 class MainScreen : Screen {
     @OptIn(ExperimentalVoyagerApi::class)

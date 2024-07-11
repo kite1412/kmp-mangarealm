@@ -76,7 +76,7 @@ import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
 import theme.gradient1
 import theme.gradient2
-import viewmodel.LoginViewModel
+import view_model.LoginViewModel
 
 @Composable
 private fun background(maxWidth: Dp) = Brush.linearGradient(

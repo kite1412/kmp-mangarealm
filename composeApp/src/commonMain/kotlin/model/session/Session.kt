@@ -1,13 +1,11 @@
-package model
+package model.session
 
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import api.mangadex.model.response.ListResponse
-import api.mangadex.model.response.attribute.MangaAttributes
-import api.mangadex.util.ApiConstant
 
 interface Session<K, T, ATTR> {
-    var url: String
+    val url: String
+    val queries: MutableMap<String, Any>
     var response: ListResponse<ATTR>
     var data: SnapshotStateMap<K, T>
 
@@ -25,13 +23,7 @@ interface Session<K, T, ATTR> {
         data.putAll(session.data)
     }
 
-    fun addQueries(queries: String) { url += queries }
-
     fun newResponse(res: ListResponse<ATTR>) { response = res }
-}
 
-data class MangaSession(
-    override var url: String = ApiConstant.MANGA_ENDPOINT,
-    override var response: ListResponse<MangaAttributes> = ListResponse(),
-    override var data: SnapshotStateMap<String, Manga> = mutableStateMapOf()
-): Session<String, Manga, MangaAttributes>
+    fun putAllQueries(queries: Map<String, Any>) = this.queries.putAll(queries)
+}
