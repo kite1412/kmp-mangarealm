@@ -297,6 +297,7 @@ fun LatestUpdatesBar(
     ) {
         if (vm.latestUpdatesData.isNotEmpty() && vm.latestUpdatesPainter.isNotEmpty()) HorizontalPager(
             state = pagerState,
+            beyondBoundsPageCount = vm.sessionSize / 2,
             modifier = Modifier.fillMaxSize()
         ) {
             val imageHeight = height / 1.5f
