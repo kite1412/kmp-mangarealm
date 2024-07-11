@@ -53,7 +53,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
@@ -738,30 +737,5 @@ class DetailScreen : Screen {
                 .then(outer)
                 .padding(horizontal = 12.dp, vertical = 10.dp)
         )
-    }
-
-    @Composable
-    private fun Warning(
-        message: String,
-        height: Dp,
-        show: Boolean,
-        modifier: Modifier = Modifier
-    ) {
-        val warningOffset by animateDpAsState(if (show) -(height) else height)
-        Box(
-            modifier = modifier
-                .offset(y = warningOffset)
-                .clip(CircleShape)
-                .background(MaterialTheme.colors.secondary)
-        ) {
-            Text(
-                message,
-                color = Color.White,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                modifier = Modifier
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            )
-        }
     }
 }

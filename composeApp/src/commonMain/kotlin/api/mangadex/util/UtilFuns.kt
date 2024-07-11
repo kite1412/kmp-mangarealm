@@ -40,9 +40,7 @@ fun constructQuery(vararg queries: String): String {
     var s = "?"
     queries.forEachIndexed { i, q ->
         var temp = q
-        if (temp.startsWith("?")) {
-            temp = trimStart(temp)
-        }
+        temp = trimStart(temp)
         s += temp
         if (i < queries.size) {
             s += "&"

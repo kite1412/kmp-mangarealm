@@ -1,18 +1,31 @@
 package view
 
 import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -20,8 +33,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import api.mangadex.model.response.ListResponse
 import com.seiko.imageloader.model.ImageAction
 import com.seiko.imageloader.model.ImageRequest
 import com.seiko.imageloader.option.SizeResolver
@@ -32,6 +48,7 @@ import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.no_image
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import util.Log
 
 // painter with default error handler.
 @OptIn(ExperimentalResourceApi::class)
@@ -174,4 +191,66 @@ fun ImageLoader(
         modifier = modifier,
         loading = loading
     )
+}
+
+@Composable
+fun <T, ATTR> RefreshableList(
+    data: Collection<T>,
+    initialResponse: ListResponse<ATTR>,
+    state: LazyListState,
+    thresholdFactor: Int = 1,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    reverseLayout: Boolean = false,
+    verticalArrangement: Arrangement.Vertical =
+        if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    userScrollEnabled: Boolean = true,
+    onContentReloaded: (ListResponse<ATTR>) -> Unit = {},
+    modifier: Modifier = Modifier,
+    content: @Composable (T) -> Unit
+) {
+    LaunchedEffect(state.layoutInfo.totalItemsCount) {
+        Log.w("totalItemsCount: ${state.layoutInfo.totalItemsCount}")
+    }
+    LazyColumn(
+        state = state,
+        verticalArrangement = verticalArrangement,
+        horizontalAlignment = horizontalAlignment,
+        contentPadding = contentPadding,
+        reverseLayout = reverseLayout,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        modifier = modifier.fillMaxSize()
+    ) {
+        items(data.toList()) { content(it) }
+        item {
+            CircularProgressIndicator()
+        }
+    }
+}
+
+@Composable
+fun Warning(
+    message: String,
+    height: Dp,
+    show: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val warningOffset by animateDpAsState(if (show) -(height) else height)
+    Box(
+        modifier = modifier
+            .offset(y = warningOffset)
+            .clip(CircleShape)
+            .background(MaterialTheme.colors.secondary)
+    ) {
+        Text(
+            message,
+            color = Color.White,
+            fontWeight = FontWeight.Medium,
+            fontSize = 16.sp,
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        )
+    }
 }
