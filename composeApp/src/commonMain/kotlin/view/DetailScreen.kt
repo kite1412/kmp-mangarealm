@@ -85,7 +85,7 @@ import util.PublicationStatus
 import util.edgeToEdge
 import util.swipeToPop
 import util.toMap
-import viewmodel.DetailScreenModel
+import view_model.DetailScreenModel
 
 class DetailScreen : Screen {
     @OptIn(ExperimentalVoyagerApi::class)

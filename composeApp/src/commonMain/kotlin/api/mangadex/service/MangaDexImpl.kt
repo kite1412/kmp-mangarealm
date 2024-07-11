@@ -78,7 +78,7 @@ class MangaDexImpl(
             url, methodName, queries, auth
         ).also {
             if (it != null) {
-                Log.d("GET ($methodName$queries) list length: ${it.data.size}")
+                Log.d("GET ($methodName$queries) list length: ${it.data.size}, total: ${it.total}")
             }
         }
     }

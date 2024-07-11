@@ -24,7 +24,11 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,8 +49,10 @@ import com.seiko.imageloader.rememberImageSuccessPainter
 import com.seiko.imageloader.ui.AutoSizeBox
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.no_image
+import model.session.Session
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import util.session_handler.SessionHandler
 
 // painter with default error handler.
 @OptIn(ExperimentalResourceApi::class)
@@ -192,11 +198,11 @@ fun ImageLoader(
 }
 
 @Composable
-fun <T, ATTR> RefreshableList(
-    data: Collection<T>,
-    initialResponse: ListResponse<ATTR>,
+fun <K, T, ATTR> SessionPagerColumn(
+    session: Session<K, T, ATTR>,
     state: LazyListState,
-    thresholdFactor: Int = 1,
+    handler: SessionHandler<K, T, ATTR>,
+    thresholdFactor: Int = 2,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     reverseLayout: Boolean = false,
     verticalArrangement: Arrangement.Vertical =
@@ -204,11 +210,16 @@ fun <T, ATTR> RefreshableList(
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
-    onContentReloaded: (ListResponse<ATTR>) -> Unit = {},
     modifier: Modifier = Modifier,
     content: @Composable (T) -> Unit
 ) {
-    LazyColumn(
+    var finished by remember { mutableStateOf(false) }
+    if (!finished && session.response != ListResponse<ATTR>()) LaunchedEffect(
+        key1 = state.firstVisibleItemIndex >= (session.data.size / thresholdFactor)
+    ) {
+        handler.updateSession { finished = it }
+    }
+    if (session.data.isNotEmpty()) LazyColumn(
         state = state,
         verticalArrangement = verticalArrangement,
         horizontalAlignment = horizontalAlignment,
@@ -218,7 +229,7 @@ fun <T, ATTR> RefreshableList(
         userScrollEnabled = userScrollEnabled,
         modifier = modifier.fillMaxSize()
     ) {
-        items(data.toList()) { content(it) }
+        items(session.data.toList()) { content(it.second) }
         item {
             CircularProgressIndicator()
         }
@@ -249,11 +260,3 @@ fun Warning(
         )
     }
 }
-
-//@Composable
-//fun SessionPager(
-//    session: Session,
-//    modifier: Modifier = Modifier
-//) {
-//
-//}

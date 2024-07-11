@@ -68,7 +68,7 @@ import util.DESCENDING
 import util.edgeToEdge
 import util.mapLanguage
 import util.swipeToPop
-import viewmodel.ChapterScreenModel
+import view_model.ChapterScreenModel
 
 class ChapterScreen : Screen {
     @Composable

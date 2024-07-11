@@ -1,4 +1,4 @@
-package viewmodel
+package view_model
 
 import SharedObject
 import androidx.compose.ui.graphics.painter.Painter

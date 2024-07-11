@@ -1,4 +1,4 @@
-package viewmodel.main.state
+package view_model.main.state
 
 import Cache
 import androidx.compose.runtime.getValue
@@ -10,7 +10,8 @@ import api.mangadex.util.generateQuery
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import model.Manga
-import model.MangaSession
+import model.session.MangaSession
+import model.toMangaMap
 
 class DiscoveryState(
     private val mangaDex: MangaDex,
@@ -29,14 +30,11 @@ class DiscoveryState(
             if (fromCache == null) {
                 val res = mangaDex.getManga(q)
                 if (res != null) {
-                    val data = res.data.map {
-                        Manga(it)
-                    }.associateBy { it.data.id }.toMutableMap()
-                    session.addQueries(q)
+                    val data = res.toMangaMap()
                     session.newResponse(res)
+                    session.putAllQueries(queries)
                     session.putAll(data)
                     cache.latestMangaSearch[q] = MangaSession().apply {
-                        addQueries(q)
                         newResponse(res)
                         putAll(data.toMap())
                     }

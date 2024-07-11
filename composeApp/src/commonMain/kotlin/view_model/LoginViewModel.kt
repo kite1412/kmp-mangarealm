@@ -1,4 +1,4 @@
-package viewmodel
+package view_model
 
 import Libs
 import androidx.compose.foundation.ExperimentalFoundationApi

@@ -1,4 +1,4 @@
-package viewmodel
+package view_model
 
 import Cache
 import Libs
