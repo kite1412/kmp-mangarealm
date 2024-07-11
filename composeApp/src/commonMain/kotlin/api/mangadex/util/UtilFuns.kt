@@ -4,6 +4,7 @@ import api.mangadex.model.request.ImageQuality
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.HomeUrl
 import api.mangadex.model.response.attribute.MangaAttributes
+import util.Log
 
 fun generateArrayQueryParam(name: String, values: List<Any>): String {
     if (values.isNotEmpty()) {
@@ -50,7 +51,9 @@ fun constructQuery(vararg queries: String): String {
 }
 
 fun getCoverUrl(mangaId: String, filename: String): String {
-    return "${ApiConstant.COVER_DISCOVERY_ENDPOINT}/$mangaId/$filename"
+    val url = "${ApiConstant.COVER_DISCOVERY_ENDPOINT}/$mangaId/$filename"
+    Log.v(url)
+    return url
 }
 
 fun getCoverUrl(manga: Data<MangaAttributes>): String {

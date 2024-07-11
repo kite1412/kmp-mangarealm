@@ -26,6 +26,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -52,23 +53,25 @@ fun Discovery(
     val nav = LocalNavigator.currentOrThrow
     Box(modifier = modifier.fillMaxSize()) {
         val keyboardController = LocalSoftwareKeyboardController.current
+        val focusManager = LocalFocusManager.current
         TopBar(
             textFieldValue = state.searchBarValue,
             onSearch = {
                 if (state.searchBarValue.isNotEmpty()) {
                     keyboardController?.hide()
-                    vm.discoveryState.updateSearchData(mapOf(
+                    focusManager.clearFocus()
+                    vm.discoveryState.updateSession(mapOf(
                         "title" to state.searchBarValue,
                         "includes[]" to "cover_art",
-                        "limit" to 100
+                        "limit" to 50
                     ))
                 }
             },
             onValueChange = vm.discoveryState::searchBarValueChange
         )
-        if (state.searchData.isNotEmpty()) RefreshableList<Manga, MangaAttributes>(
-            data = state.searchData.values,
-            initialResponse = state.searchSession.response,
+        if (state.session.data.isNotEmpty()) RefreshableList<Manga, MangaAttributes>(
+            data = state.session.data.values,
+            initialResponse = state.session.response,
             verticalArrangement = Arrangement.spacedBy(8.dp),
             state = rememberLazyListState(),
             modifier = Modifier

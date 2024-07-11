@@ -24,7 +24,6 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +47,6 @@ import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.no_image
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import util.Log
 
 // painter with default error handler.
 @OptIn(ExperimentalResourceApi::class)
@@ -210,9 +208,6 @@ fun <T, ATTR> RefreshableList(
     modifier: Modifier = Modifier,
     content: @Composable (T) -> Unit
 ) {
-    LaunchedEffect(state.layoutInfo.totalItemsCount) {
-        Log.w("totalItemsCount: ${state.layoutInfo.totalItemsCount}")
-    }
     LazyColumn(
         state = state,
         verticalArrangement = verticalArrangement,
@@ -254,3 +249,11 @@ fun Warning(
         )
     }
 }
+
+//@Composable
+//fun SessionPager(
+//    session: Session,
+//    modifier: Modifier = Modifier
+//) {
+//
+//}

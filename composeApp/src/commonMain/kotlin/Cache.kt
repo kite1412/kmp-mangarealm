@@ -2,7 +2,7 @@
 import model.ChapterImages
 import model.Chapters
 import model.Manga
-import model.Session
+import model.MangaSession
 
 class Cache {
     val chapters = mutableMapOf<String, Chapters?>()
@@ -11,5 +11,5 @@ class Cache {
 
     val mangaStatus = mutableMapOf<String, Manga>()
 
-    val latestMangaSearch = mutableMapOf<String, Session>()
+    val latestMangaSearch = mutableMapOf<String, MangaSession>()
 }
