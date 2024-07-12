@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -40,12 +41,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.util.getCoverUrl
+import api.mangadex.util.getDesc
 import api.mangadex.util.getTitle
+import assets.Cross
 import assets.Search
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import model.Manga
 import util.APP_BAR_HEIGHT
+import util.publicationDemographic
+import util.publicationDemographicColor
+import util.publicationStatus
+import util.publicationStatusColor
 import util.session_handler.MangaSessionHandler
 import view_model.main.MainViewModel
 
@@ -69,13 +76,16 @@ fun Discovery(
                 if (state.searchBarValue.isNotEmpty()) {
                     keyboardController?.hide()
                     focusManager.clearFocus()
-                    vm.discoveryState.updateSession(mapOf(
-                        "title" to state.searchBarValue,
-                        "includes[]" to "cover_art",
-                        "limit" to 50
-                    ))
+                    vm.discoveryState.updateSession(
+                        queries = mapOf(
+                            "title" to state.searchBarValue,
+                            "includes[]" to "cover_art",
+                            "limit" to 50
+                        )
+                    )
                 }
             },
+            onClear = { state.searchBarValue = "" },
             onValueChange = vm.discoveryState::searchBarValueChange
         )
         if (state.session.data.isNotEmpty()) BoxWithConstraints(
@@ -85,12 +95,13 @@ fun Discovery(
                     top = APP_BAR_HEIGHT + 8.dp,
                     bottom = 8.dp,
                     start = 8.dp,
-                    end = 8.dp
+                    end = 16.dp
                 )
         ) {
             SessionPagerColumn<Manga, MangaAttributes>(
                 session = state.session,
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                state = state.listState,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 contentPadding = PaddingValues(bottom = APP_BAR_HEIGHT + 16.dp),
                 handler = sessionHandler,
@@ -115,6 +126,7 @@ fun Discovery(
 private fun TopBar(
     textFieldValue: String,
     onSearch: KeyboardActionScope.() -> Unit,
+    onClear: () -> Unit = {},
     modifier: Modifier = Modifier,
     onValueChange: (String) -> Unit
 ) {
@@ -124,7 +136,6 @@ private fun TopBar(
             .height(APP_BAR_HEIGHT)
     ) {
         val showPlaceholder = textFieldValue.isEmpty()
-        val textColor = if (showPlaceholder) Color.Gray else Color.Black
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -144,7 +155,6 @@ private fun TopBar(
                     singleLine = true,
                     textStyle = MaterialTheme.typography.body1.copy(
                         fontSize = 16.sp,
-                        color = textColor,
                         fontWeight = FontWeight.Medium
                     ),
                     keyboardActions = KeyboardActions(onSearch = onSearch),
@@ -161,10 +171,12 @@ private fun TopBar(
                     }
                 }
                 Icon(
-                    imageVector = Assets.Search,
+                    imageVector = if (showPlaceholder) Assets.Search else Assets.Cross,
                     contentDescription = "search",
                     tint = Color.Black,
-                    modifier = Modifier.weight(0.1f)
+                    modifier = Modifier
+                        .weight(0.1f)
+                        .clickable { if (!showPlaceholder) onClear() }
                 )
             }
         }
@@ -198,17 +210,57 @@ private fun Display(
         )
         Column(
             horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
                 .weight(0.7f)
-                .padding(top = 8.dp)
+                .padding(top = 4.dp)
         ) {
+            val attributes = manga.data.attributes
             Text(
-                getTitle(manga.data.attributes.title),
-                fontSize = 16.sp,
+                getTitle(attributes.title),
                 maxLines = 2,
+                fontSize = 16.sp,
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.SemiBold,
             )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (attributes.status != null) Information(
+                    label = publicationStatus(attributes.status),
+                    background = publicationStatusColor(attributes.status)
+                )
+                if (attributes.publicationDemographic != null) Information(
+                    label = publicationDemographic(attributes.publicationDemographic),
+                    background = publicationDemographicColor(attributes.publicationDemographic)
+                )
+                if (attributes.year != null) Information(
+                    label = attributes.year.toString(),
+                    background = Color.Gray
+                )
+            }
+            Spacer(Modifier.height(0.dp))
+            Text(
+                getDesc(attributes.description),
+                overflow = TextOverflow.Ellipsis,
+                fontSize = 12.sp,
+            )
         }
     }
+}
+
+@Composable
+private fun Information(
+    label: String,
+    background: Color,
+    modifier: Modifier = Modifier
+) {
+    InformationBar(
+        label = label,
+        background = background,
+        fontSize = 10.sp,
+        clip = RoundedCornerShape(2.dp),
+        modifier = modifier
+    )
 }

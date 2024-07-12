@@ -83,8 +83,9 @@ import model.Status
 import screenSize
 import util.APP_BAR_HEIGHT
 import util.BLUR_TINT
-import util.PublicationStatus
 import util.edgeToEdge
+import util.publicationStatus
+import util.publicationStatusColor
 import util.swipeToPop
 import util.toMap
 import view_model.DetailScreenModel
@@ -279,10 +280,7 @@ class DetailScreen : Screen {
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(8.dp))
-                            .hazeChild(state = hazeState, style = HazeStyle(
-                                blurRadius = 15.dp,
-                                tint = BLUR_TINT
-                            ))
+                            .background(Color(230, 230, 230))
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -535,26 +533,6 @@ class DetailScreen : Screen {
         }
     }
 
-    private fun publicationStatus(raw: String): String {
-        return when(raw) {
-            PublicationStatus.ON_GOING -> "On Going"
-            PublicationStatus.COMPLETED -> "Completed"
-            PublicationStatus.HIATUS -> "Hiatus"
-            PublicationStatus.CANCELLED -> "Cancelled"
-            else -> "Unknown"
-        }
-    }
-
-    private fun publicationStatusColor(rawStatus: String): Color {
-        return when(rawStatus) {
-            PublicationStatus.ON_GOING -> Color(0xFF1B663E)
-            PublicationStatus.COMPLETED -> Color( 46, 90, 180)
-            PublicationStatus.HIATUS -> Color.DarkGray
-            PublicationStatus.CANCELLED -> Color(150, 0, 0)
-            else -> Color.LightGray
-        }
-    }
-
     @Composable
     private fun PublicationStatus(
         manga: MangaAttributes,
@@ -565,26 +543,14 @@ class DetailScreen : Screen {
             modifier = modifier
         ) {
             if (manga.year != null) {
-                Text(
-                    manga.year.toString(),
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = modifier
-                        .clip(RoundedCornerShape(5.dp))
-                        .background(Color.Gray)
-                        .padding(horizontal = 4.dp, vertical = 2.dp)
+                InformationBar(
+                    label = manga.year.toString(),
+                    background = Color.Gray,
                 )
             }
-            Text(
-                publicationStatus(manga.status),
-                color = Color.White,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(5.dp))
-                    .background(publicationStatusColor(manga.status))
-                    .padding(horizontal = 4.dp, vertical = 2.dp)
+            InformationBar(
+                label = publicationStatus(manga.status),
+                background = publicationStatusColor(manga.status)
             )
         }
     }
