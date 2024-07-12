@@ -58,6 +58,7 @@ import mangarealm.composeapp.generated.resources.no_image
 import model.session.Session
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import util.Log
 import util.session_handler.SessionHandler
 
 @Composable
@@ -170,7 +171,7 @@ fun PainterLoader(
             is ImageAction.Success -> {
                 onPainterLoaded(rememberImageSuccessPainter(action))
             }
-            else -> Unit
+            else -> Log.v("loading: $url")
         }
     }
 }
@@ -215,7 +216,7 @@ fun <T, ATTR> SessionPagerColumn(
     modifier: Modifier = Modifier,
     content: @Composable (Int) -> Unit
 ) {
-    var block = remember { false }
+    var block by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
     val passThreshold by remember {
         snapshotFlow {
@@ -294,4 +295,17 @@ fun InformationBar(
             .background(background)
             .padding(horizontal = 4.dp, vertical = 2.dp)
     )
+}
+
+@Composable
+fun PaintersLoader(
+    urls: List<String>,
+    modifier: Modifier = Modifier,
+    onPainterLoaded: (Int, Painter) -> Unit
+) {
+    for ((i, url) in urls.withIndex()) {
+        PainterLoader(url) {
+            onPainterLoaded(i, it)
+        }
+    }
 }
