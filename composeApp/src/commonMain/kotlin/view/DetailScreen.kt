@@ -56,6 +56,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
+import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTagList
 import api.mangadex.util.getTitle
@@ -213,16 +214,20 @@ class DetailScreen : Screen {
         val coverArtHeight = totalHeight / 1.5f
         val coverArtWidth = (coverArtHeight * 2) / 3
         val remainingWidth = screenSize.width - (coverArtWidth + 16.dp)
-        val attributes = sm.manga.data.attributes
+        val data = sm.manga.data
+        val attributes = data.attributes
         Box(
             modifier = modifier
                 .height(totalHeight)
                 .fillMaxWidth()
         ) {
+            val painter = remember { mutableStateOf(SharedObject.detailCover) }
             Box(modifier = Modifier.haze(hazeState)) {
-                BrowseImageNullable(
-                    painter = SharedObject.detailCover,
+                ImageLoader(
+                    url = getCoverUrl(data),
+                    painter = painter.value,
                     contentScale = ContentScale.FillWidth,
+                    loading = {},
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(backgroundHeight)
@@ -230,7 +235,10 @@ class DetailScreen : Screen {
                             blurRadius = 8.dp,
                             tint = BLUR_TINT
                         ))
-                )
+                ) {
+                    painter.value = it
+                    SharedObject.detailCover = it
+                }
             }
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -255,7 +263,7 @@ class DetailScreen : Screen {
             ) {
                 PublicationStatus(attributes, modifier = Modifier.align(Alignment.End))
                 BrowseImageNullable(
-                    painter = SharedObject.detailCover,
+                    painter = painter.value,
                     contentScale = ContentScale.FillBounds,
                     modifier = Modifier
                         .width(coverArtWidth)
