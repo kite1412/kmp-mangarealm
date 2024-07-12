@@ -11,6 +11,8 @@ import api.mangadex.util.generateQuery
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import model.Manga
+import model.MangaStatus
+import model.Status
 import model.session.MangaSession
 import model.session.Session
 import model.toMangaList
@@ -56,4 +58,7 @@ class DiscoveryState(
     fun onSessionLoaded(newSession: Session<Manga, MangaAttributes>) {
         cache.latestMangaSearch[q]!!.from(newSession)
     }
+
+    fun checkStatus(manga: Manga): Status? = if (manga.status != MangaStatus.None) manga.status
+        else null
 }

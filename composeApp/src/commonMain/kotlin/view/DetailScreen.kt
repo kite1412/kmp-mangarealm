@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
@@ -209,8 +210,8 @@ class DetailScreen : Screen {
     ) {
         val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val hazeState = remember { HazeState() }
-        val totalHeight = (screenSize.height / 3) - statusBarsHeight
-        val backgroundHeight = totalHeight / 1.3f
+        val totalHeight = (screenSize.height / 2.5f) - statusBarsHeight
+        val backgroundHeight = totalHeight / 1.25f
         val coverArtHeight = totalHeight / 1.5f
         val coverArtWidth = (coverArtHeight * 2) / 3
         val remainingWidth = screenSize.width - (coverArtWidth + 16.dp)
@@ -245,12 +246,16 @@ class DetailScreen : Screen {
                 modifier = Modifier
                     .height(backgroundHeight)
                     .width(remainingWidth)
-                    .padding(top = sm.titleTagsPadding.dp + statusBarsHeight, start = 12.dp, end = 4.dp)
+                    .padding(
+                        top = sm.titleTagsPadding.dp + statusBarsHeight,
+                        start = 12.dp,
+                        end = 4.dp
+                    )
             ) {
                 Title(
                     attributes,
                     textLines = {
-                        if (it > 1) sm.titleTagsPadding = 10
+                        if (it > 1) sm.titleTagsPadding = 18
                     }
                 )
                 Tags(attributes)
@@ -269,7 +274,25 @@ class DetailScreen : Screen {
                         .width(coverArtWidth)
                         .height(coverArtHeight)
                         .clip(RoundedCornerShape(8.dp))
-                )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(8.dp))
+                            .hazeChild(state = hazeState, style = HazeStyle(
+                                blurRadius = 15.dp,
+                                tint = BLUR_TINT
+                            ))
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.align(Alignment.Center)
+                        ) {
+                            CircularProgressIndicator(Modifier.size(16.dp))
+                            Text("Loading cover...", fontSize = 10.sp)
+                        }
+                    }
+                }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -283,7 +306,7 @@ class DetailScreen : Screen {
                     onClick = { sm.onRead(nav) },
                     enabled = !sm.readClicked,
                     modifier = Modifier
-                        .weight(0.6f)
+                        .weight(0.5f)
                         .fillMaxHeight()
                 ) {
                     Row(
@@ -307,8 +330,9 @@ class DetailScreen : Screen {
                 Action(
                     onClick = {},
                     fill = false,
+                    verticalPadding = 2.dp,
                     modifier = Modifier
-                        .weight(0.2f)
+                        .weight(0.25f)
                         .fillMaxHeight()
                 ) {
                     Icon(
@@ -322,12 +346,12 @@ class DetailScreen : Screen {
                     onClick = { sm.onStatus() },
                     fill = sm.manga.status == MangaStatus.None,
                     modifier = Modifier
-                        .weight(0.2f)
+                        .weight(0.25f)
                         .fillMaxHeight()
                 ) {
                     Icon(
                         imageVector = if (sm.manga.status == MangaStatus.None) Assets.`Bookmark-alt`
-                            else Assets.`Bookmark-alt-fill`,
+                        else Assets.`Bookmark-alt-fill`,
                         contentDescription = "udpate status",
                         tint = if (sm.manga.status == MangaStatus.None)
                             actionIconColor(true) else MaterialTheme.colors.secondary,
