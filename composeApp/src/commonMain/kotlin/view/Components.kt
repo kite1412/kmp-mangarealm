@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -36,11 +37,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.ListResponse
 import com.seiko.imageloader.model.ImageAction
 import com.seiko.imageloader.model.ImageRequest
@@ -116,7 +120,9 @@ fun BrowseImageNullable(
     Box(modifier = modifier.fillMaxSize()) {
         if (painter == null) {
             if (loading == null)
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center).size(18.dp)
+                )
             else loading()
         }
         else Image(
@@ -171,7 +177,9 @@ fun PainterLoader(
         this.size(SizeResolver(Size.VisibilityThreshold))
     }) { action ->
         when (action) {
-            is ImageAction.Success -> onPainterLoaded(rememberImageSuccessPainter(action))
+            is ImageAction.Success -> {
+                onPainterLoaded(rememberImageSuccessPainter(action))
+            }
             else -> Unit
         }
     }
@@ -275,4 +283,25 @@ fun Warning(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         )
     }
+}
+
+@Composable
+fun InformationBar(
+    label: String,
+    background: Color,
+    fontSize: TextUnit = 12.sp,
+    fontWeight: FontWeight = FontWeight.Medium,
+    clip: Shape = RoundedCornerShape(5.dp),
+    modifier: Modifier = Modifier
+) {
+    Text(
+        label,
+        color = Color.White,
+        fontSize = fontSize,
+        fontWeight = fontWeight,
+        modifier = modifier
+            .clip(clip)
+            .background(background)
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+    )
 }

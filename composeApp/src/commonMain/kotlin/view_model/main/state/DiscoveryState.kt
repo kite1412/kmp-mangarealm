@@ -1,6 +1,7 @@
 package view_model.main.state
 
 import Cache
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -25,10 +26,11 @@ class DiscoveryState(
     var searchBarValue by mutableStateOf("")
     val session = MangaSession()
     private var q: String = ""
+    val listState = LazyListState()
 
     fun updateSession(queries: Map<String, Any> = mapOf()) {
-        q = generateQuery(queries)
         scope.launch {
+            q = generateQuery(queries)
             session.clear()
             val fromCache = cache.latestMangaSearch[q]
             if (fromCache == null) {
@@ -44,6 +46,7 @@ class DiscoveryState(
                     }
                 }
             } else session.from(fromCache)
+            listState.scrollToItem(0)
         }
     }
 
