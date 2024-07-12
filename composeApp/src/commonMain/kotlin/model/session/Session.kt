@@ -14,14 +14,20 @@ interface Session<T, ATTR> {
     fun clear() {
         response = ListResponse()
         data.clear()
+        queries.clear()
     }
 
     fun from(session: Session<T, ATTR>) {
         response = session.response
-        data.addAll(session.data)
+        data.addAll(session.data.subList(data.size, session.data.size))
     }
 
     fun newResponse(res: ListResponse<ATTR>) { response = res }
 
     fun putAllQueries(queries: Map<String, Any>) = this.queries.putAll(queries)
 }
+
+fun <T, ATTR> Session<T, ATTR>.isEmpty() =
+    response == ListResponse<ATTR>() && queries.isEmpty() && data.isEmpty()
+
+fun <T, ATTR> Session<T, ATTR>.isNotEmpty() = !isEmpty()

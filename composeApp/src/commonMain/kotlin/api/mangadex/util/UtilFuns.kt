@@ -51,7 +51,6 @@ fun constructQuery(vararg queries: String): String {
 
 fun getCoverUrl(mangaId: String, filename: String): String {
     val url = "${ApiConstant.COVER_DISCOVERY_ENDPOINT}/$mangaId/$filename"
-//    Log.v(url)
     return url
 }
 
@@ -60,7 +59,7 @@ fun getCoverUrl(manga: Data<MangaAttributes>): String {
     var filename = ""
     for (r in manga.relationships) {
         if (r.type == DataType.COVER_ART) {
-            r.attributes!!.fileName!!.let {
+            r.attributes?.fileName?.let {
                 filename = it
             }
             break
