@@ -1,6 +1,7 @@
 package view
 
 import Assets
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActionScope
@@ -43,6 +45,7 @@ import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTitle
+import assets.`Arrow-left-solid`
 import assets.Cross
 import assets.Search
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -55,6 +58,7 @@ import util.publicationStatus
 import util.publicationStatusColor
 import util.session_handler.MangaSessionHandler
 import view_model.main.MainViewModel
+import view_model.main.state.DiscoveryState
 
 @Composable
 fun Discovery(
@@ -64,30 +68,42 @@ fun Discovery(
     val state = vm.discoveryState
     val nav = LocalNavigator.currentOrThrow
     Box(modifier = modifier.fillMaxSize()) {
-        val sessionHandler = remember(
-            state.session.data,
-            state.session.response
-        ) { MangaSessionHandler(state.session) }
+        val sessionHandler = remember {
+            MangaSessionHandler(state.session)
+        }
         val keyboardController = LocalSoftwareKeyboardController.current
         val focusManager = LocalFocusManager.current
-        TopBar(
-            textFieldValue = state.searchBarValue,
-            onSearch = {
-                if (state.searchBarValue.isNotEmpty()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            TopBar(
+                state = state,
+                onSearch = {
+                    if (state.searchBarValue.isNotEmpty()) {
+                        keyboardController?.hide()
+                        focusManager.clearFocus()
+                        vm.discoveryState.updateSession(
+                            queries = mapOf(
+                                "title" to state.searchBarValue,
+                                "includes[]" to "cover_art",
+                                "limit" to 50
+                            )
+                        )
+                    }
+                },
+                onBackButtonClick = {
+                    state.session.clear()
+                    state.searchBarValue = ""
                     keyboardController?.hide()
                     focusManager.clearFocus()
-                    vm.discoveryState.updateSession(
-                        queries = mapOf(
-                            "title" to state.searchBarValue,
-                            "includes[]" to "cover_art",
-                            "limit" to 50
-                        )
-                    )
-                }
-            },
-            onClear = { state.searchBarValue = "" },
-            onValueChange = vm.discoveryState::searchBarValueChange
-        )
+                },
+                onClear = { state.searchBarValue = "" },
+                onValueChange = vm.discoveryState::searchBarValueChange,
+                modifier = Modifier
+                    .weight(if (state.session.data.isNotEmpty()) 0.9f else 1f)
+            )
+        }
         if (state.session.data.isNotEmpty()) BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
@@ -106,8 +122,7 @@ fun Discovery(
                 contentPadding = PaddingValues(bottom = APP_BAR_HEIGHT + 16.dp),
                 handler = sessionHandler,
                 onSessionLoaded = state::onSessionLoaded,
-                modifier = Modifier
-                    .fillMaxSize()
+                modifier = Modifier.fillMaxSize()
             ) {
                 val manga = state.session.data[it]
                 Display(
@@ -124,8 +139,9 @@ fun Discovery(
 
 @Composable
 private fun TopBar(
-    textFieldValue: String,
+    state: DiscoveryState,
     onSearch: KeyboardActionScope.() -> Unit,
+    onBackButtonClick: () -> Unit,
     onClear: () -> Unit = {},
     modifier: Modifier = Modifier,
     onValueChange: (String) -> Unit
@@ -135,49 +151,67 @@ private fun TopBar(
             .fillMaxWidth()
             .height(APP_BAR_HEIGHT)
     ) {
-        val showPlaceholder = textFieldValue.isEmpty()
-        Box(
+        val showPlaceholder = state.searchBarValue.isEmpty()
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp, vertical = 8.dp)
-                .clip(RoundedCornerShape(6.dp))
-                .background(MaterialTheme.colors.onBackground)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp)
-            ) {
-                BasicTextField(
-                    value = textFieldValue,
-                    onValueChange = onValueChange,
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.body1.copy(
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    ),
-                    keyboardActions = KeyboardActions(onSearch = onSearch),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    modifier = Modifier.weight(0.9f).padding(start = 8.dp)
-                ) {
-                    Box {
-                        if (textFieldValue.isEmpty()) Text(
-                            "Search...",
-                            fontSize = 16.sp,
-                            fontStyle = FontStyle.Italic,
-                        )
-                        it()
-                    }
-                }
+            AnimatedVisibility(state.session.data.isNotEmpty()) {
                 Icon(
-                    imageVector = if (showPlaceholder) Assets.Search else Assets.Cross,
-                    contentDescription = "search",
+                    imageVector = Assets.`Arrow-left-solid`,
+                    contentDescription = "back",
                     tint = Color.Black,
                     modifier = Modifier
                         .weight(0.1f)
-                        .clickable { if (!showPlaceholder) onClear() }
+                        .size(40.dp)
+                        .clickable(onClick = onBackButtonClick)
                 )
+            }
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(MaterialTheme.colors.onBackground)
+                    .weight(if (state.session.data.isNotEmpty()) 0.9f else 1f)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp)
+                ) {
+                    BasicTextField(
+                        value = state.searchBarValue,
+                        onValueChange = onValueChange,
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.body1.copy(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        keyboardActions = KeyboardActions(onSearch = onSearch),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        modifier = Modifier.weight(0.9f).padding(start = 8.dp)
+                    ) {
+                        Box {
+                            if (state.searchBarValue.isEmpty()) Text(
+                                "Search...",
+                                fontSize = 16.sp,
+                                fontStyle = FontStyle.Italic,
+                            )
+                            it()
+                        }
+                    }
+                    Icon(
+                        imageVector = if (showPlaceholder) Assets.Search else Assets.Cross,
+                        contentDescription = "search",
+                        tint = Color.Black,
+                        modifier = Modifier
+                            .weight(0.1f)
+                            .clickable { if (!showPlaceholder) onClear() }
+                    )
+                }
             }
         }
     }

@@ -10,6 +10,7 @@ import assets.Logo
 import assets.Person
 import assets.Search
 import assets.Width
+import assets.`Arrow-left-solid`
 import assets.`Book-close`
 import assets.`Book-open`
 import assets.`Bookmark-alt-fill`
@@ -36,9 +37,10 @@ public val Assets.AllIcons: ____KtList<ImageVector>
     if (__AllIcons != null) {
       return __AllIcons!!
     }
-    __AllIcons= listOf(`Book-close`, `Book-open`, `Bookmark-alt-fill`, `Bookmark-alt`,
-        `Chevron-right-bold`, `Chevron-right`, Clipboard, `Collapse-solid`, Cross, `Expand-solid`,
-        Eye, Eyeshut, Height, Home, Info, `List-add`, `List-check`, Logo, `Menu-outline`, Person,
-        Search, `Settings-adjust-solid`, `Shelf-outline`, `Shelf-solid`, `Text-align-right`, Width)
+    __AllIcons= listOf(`Arrow-left-solid`, `Book-close`, `Book-open`, `Bookmark-alt-fill`,
+        `Bookmark-alt`, `Chevron-right-bold`, `Chevron-right`, Clipboard, `Collapse-solid`, Cross,
+        `Expand-solid`, Eye, Eyeshut, Height, Home, Info, `List-add`, `List-check`, Logo,
+        `Menu-outline`, Person, Search, `Settings-adjust-solid`, `Shelf-outline`, `Shelf-solid`,
+        `Text-align-right`, Width)
     return __AllIcons!!
   }

@@ -60,16 +60,6 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import util.session_handler.SessionHandler
 
-// painter with default error handler.
-@OptIn(ExperimentalResourceApi::class)
-@Composable
-fun defaultRememberImagePainter(url: String): Painter {
-    return rememberImagePainter(
-        url = url,
-        errorPainter = { painterResource(Res.drawable.no_image) }
-    )
-}
-
 @Composable
 fun BrowseImage(
     painter: Painter,
@@ -256,7 +246,7 @@ fun <T, ATTR> SessionPagerColumn(
     ) {
         items(session.data.size) { content(it) }
         if (!finished) item {
-            CircularProgressIndicator()
+            CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
         }
     }
 }
