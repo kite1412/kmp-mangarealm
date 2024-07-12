@@ -101,20 +101,6 @@ fun Home(
     nav: Navigator,
     modifier: Modifier = Modifier
 ) {
-    val pagerState = rememberPagerState(initialPage = vm.latestUpdatesBarPage) { vm.sessionSize }
-    autoSlideLatestUpdates(
-        autoSlide = vm.enableAutoSlide.value,
-        pagerState = pagerState
-    )
-    LaunchedEffect(pagerState.currentPageOffsetFraction) {
-        vm.adjustLatestUpdatesBar = pagerState.currentPageOffsetFraction != 0.0f
-    }
-    LaunchedEffect(true) {
-        if (vm.adjustLatestUpdatesBar) pagerState.animateScrollToPage(
-            pagerState.currentPage,
-            animationSpec = tween(500)
-        )
-    }
     LazyColumn(
         modifier = Modifier.padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -140,7 +126,6 @@ fun Home(
                     vm = vm,
                     height = latestBarHeight,
                     nav = nav,
-                    pagerState = pagerState,
                 )
             }
         }
@@ -282,9 +267,22 @@ fun LatestUpdatesBar(
     vm: MainViewModel,
     height: Dp,
     nav: Navigator,
-    pagerState: PagerState = rememberPagerState(initialPage = vm.latestUpdatesBarPage) { vm.sessionSize },
     modifier: Modifier = Modifier
 ) {
+    val pagerState = rememberPagerState(initialPage = vm.latestUpdatesBarPage) { vm.sessionSize }
+    autoSlideLatestUpdates(
+        autoSlide = vm.enableAutoSlide.value,
+        pagerState = pagerState
+    )
+    LaunchedEffect(pagerState.currentPageOffsetFraction) {
+        vm.adjustLatestUpdatesBar = pagerState.currentPageOffsetFraction != 0.0f
+    }
+    LaunchedEffect(true) {
+        if (vm.adjustLatestUpdatesBar) pagerState.animateScrollToPage(
+            pagerState.currentPage,
+            animationSpec = tween(500)
+        )
+    }
     LaunchedEffect(pagerState.currentPage) {
         vm.latestUpdatesBarPage = pagerState.currentPage
     }
@@ -484,12 +482,11 @@ private fun ContinueReading(
             items(count = vm.continueReadingData.size) {
                 val painter = vm.continueReadingPainter[it]
                 val data = vm.continueReadingData[it]
-                if (painter == null) PainterLoader(
-                    url = getCoverUrl(data)
-                ) { p -> vm.continueReadingPainter[it] = p }
                 SmallDisplay(
+                    data = data,
                     painter = painter,
                     title = getTitle(data.attributes.title),
+                    onPainterLoaded = { p -> vm.continueReadingPainter[it] = p },
                     modifier = Modifier.width(screenSize.width / 2)
                 ) { vm.navigateToDetailScreen(nav, painter, Manga(data)) }
             }
@@ -499,19 +496,23 @@ private fun ContinueReading(
 
 @Composable
 private fun SmallDisplay(
+    data: Data<MangaAttributes>,
     painter: Painter?,
     title: String,
+    onPainterLoaded: (Painter) -> Unit,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Row(modifier = modifier.clickable(onClick = onClick)) {
-        BrowseImageNullable(
+        ImageLoader(
+            url = getCoverUrl(data),
             painter = painter,
             contentScale = ContentScale.FillBounds,
             modifier = Modifier
                 .width(smallDisplayWidth)
                 .height(smallDisplayHeight)
-                .clip(RoundedCornerShape(5.dp))
+                .clip(RoundedCornerShape(5.dp)),
+            onPainterLoaded = { onPainterLoaded(it) }
         )
         Spacer(Modifier.width(6.dp))
         Text(
