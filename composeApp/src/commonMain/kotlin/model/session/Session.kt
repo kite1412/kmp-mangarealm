@@ -1,26 +1,24 @@
 package model.session
 
-import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import api.mangadex.model.response.ListResponse
 
-interface Session<K, T, ATTR> {
+interface Session<T, ATTR> {
     val url: String
     val queries: MutableMap<String, Any>
     var response: ListResponse<ATTR>
-    var data: SnapshotStateMap<K, T>
+    var data: SnapshotStateList<T>
 
-    fun put(key: K, value: T) { data[key] = value }
-
-    fun putAll(map: Map<K, T>) = data.putAll(map)
+    fun addAll(list: List<T>) = data.addAll(list)
 
     fun clear() {
         response = ListResponse()
         data.clear()
     }
 
-    fun from(session: Session<K, T, ATTR>) {
+    fun from(session: Session<T, ATTR>) {
         response = session.response
-        data.putAll(session.data)
+        data.addAll(session.data)
     }
 
     fun newResponse(res: ListResponse<ATTR>) { response = res }

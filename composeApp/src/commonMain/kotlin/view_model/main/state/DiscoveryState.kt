@@ -5,13 +5,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
+import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import model.Manga
 import model.session.MangaSession
-import model.toMangaMap
+import model.session.Session
+import model.toMangaList
 
 class DiscoveryState(
     private val mangaDex: MangaDex,
@@ -30,13 +32,13 @@ class DiscoveryState(
             if (fromCache == null) {
                 val res = mangaDex.getManga(q)
                 if (res != null) {
-                    val data = res.toMangaMap()
+                    val data = res.toMangaList()
                     session.newResponse(res)
                     session.putAllQueries(queries)
-                    session.putAll(data)
+                    session.addAll(data)
                     cache.latestMangaSearch[q] = MangaSession().apply {
                         newResponse(res)
-                        putAll(data.toMap())
+                        addAll(data)
                     }
                 }
             } else session.from(fromCache)
@@ -45,10 +47,13 @@ class DiscoveryState(
 
     fun searchBarValueChange(new: String) { searchBarValue = new }
 
-    fun updateMangaPainter(manga: Manga, painter: Painter) {
-        val id = manga.data.id
+    fun updateMangaPainter(index: Int, manga: Manga, painter: Painter) {
         val new = manga.copy(painter = painter)
-        session.data[id] = new
-        cache.latestMangaSearch[q]!!.data[id] = new
+        session.data[index] = new
+        cache.latestMangaSearch[q]!!.data[index] = new
+    }
+
+    fun onSessionLoaded(newSession: Session<Manga, MangaAttributes>) {
+        cache.latestMangaSearch[q]!!.from(newSession)
     }
 }

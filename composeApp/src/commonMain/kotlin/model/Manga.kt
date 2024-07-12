@@ -21,3 +21,5 @@ fun ListResponse<MangaAttributes>.toMangaMap(): Map<String, Manga> {
         Manga(it)
     }.associateBy { it.data.id }
 }
+
+fun ListResponse<MangaAttributes>.toMangaList(): List<Manga> = data.map(::Manga)

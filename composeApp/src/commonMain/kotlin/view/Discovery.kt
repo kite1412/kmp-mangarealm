@@ -75,11 +75,12 @@ fun Discovery(
             },
             onValueChange = vm.discoveryState::searchBarValueChange
         )
-        if (state.session.data.isNotEmpty()) SessionPagerColumn<String, Manga, MangaAttributes>(
+        if (state.session.data.isNotEmpty()) SessionPagerColumn<Manga, MangaAttributes>(
             session = state.session,
             verticalArrangement = Arrangement.spacedBy(8.dp),
             state = rememberLazyListState(),
             handler = sessionHandler,
+            onSessionLoaded = state::onSessionLoaded,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
@@ -89,12 +90,13 @@ fun Discovery(
                     end = 8.dp
                 )
         ) {
+            val manga = state.session.data[it]
             Display(
-                manga = it,
+                manga = manga,
                 onClick = {
-                    vm.navigateToDetailScreen(nav, it.painter, it)
+                    vm.navigateToDetailScreen(nav, manga.painter, manga)
                 }
-            ) { p -> vm.discoveryState.updateMangaPainter(it, p) }
+            ) { p -> vm.discoveryState.updateMangaPainter(it, manga, p) }
         }
     }
 }
