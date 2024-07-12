@@ -12,7 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import api.mangadex.model.response.Data
+import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.Status
@@ -21,14 +21,12 @@ import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
 import api.mangadex.util.getCoverUrl
 import cafe.adriel.voyager.navigator.Navigator
-import com.seiko.imageloader.model.ImageAction
-import com.seiko.imageloader.rememberImageSuccessPainter
-import com.seiko.imageloader.ui.AutoSizeBox
 import io.github.irgaly.kottage.KottageStorage
 import io.github.irgaly.kottage.get
 import kotlinx.coroutines.launch
 import model.Manga
 import model.MangaStatus
+import model.toMangaList
 import util.ADVENTURE_TAG
 import util.COMEDY_TAG
 import util.KottageConst
@@ -36,6 +34,7 @@ import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
 import util.retry
+import view.PaintersLoader
 import view_model.DetailNavigator
 import view_model.main.state.DiscoveryState
 
@@ -52,33 +51,22 @@ class MainViewModel(
     var undoEdgeToEdge by mutableStateOf(false)
 
     val enableAutoSlide = derivedStateOf {
-        latestUpdatesData.isNotEmpty() && latestUpdatesPainter.isNotEmpty() && latestUpdatesPainter[0] != null
+        latestUpdates.isNotEmpty() && latestUpdates[0].painter != null
     }
 
     val sessionSize = 10
     var latestUpdatesBarPage = 0
     var adjustLatestUpdatesBar = false
 
-    val latestUpdatesData = mutableStateListOf<Data<MangaAttributes>>()
-    val continueReadingData = mutableStateListOf<Data<MangaAttributes>>()
+    val latestUpdates = mutableStateListOf<Manga>()
+    val continueReading = mutableStateListOf<Manga>()
 
     private var _username = mutableStateOf("")
     val username = _username
 
-    val romComManga = mutableStateListOf<Data<MangaAttributes>>()
-    val advComManga = mutableStateListOf<Data<MangaAttributes>>()
-    val psyMysManga = mutableStateListOf<Data<MangaAttributes>>()
-
-    private var isRomComComplete = false
-    private var isAdvComComplete = false
-    private var isPsyMysComplete = false
-
-    val latestUpdatesPainter = mutableStateListOf<Painter?>()
-    val continueReadingPainter = mutableStateListOf<Painter?>()
-
-    val romComPainter = mutableStateListOf<Painter?>()
-    val advComPainter = mutableStateListOf<Painter?>()
-    val psyMysPainter = mutableStateListOf<Painter?>()
+    val romCom = mutableStateListOf<Manga>()
+    val advCom = mutableStateListOf<Manga>()
+    val psyMys = mutableStateListOf<Manga>()
 
     suspend fun updateUsername() {
         val username = kottageStorage.get<String>(KottageConst.USERNAME)
@@ -94,7 +82,7 @@ class MainViewModel(
         viewModelScope.launch {
             retry(
                 count = 3,
-                predicate = { latestUpdatesData.isEmpty() }
+                predicate = { latestUpdates.isEmpty() }
             ) {
                 val includes = generateArrayQueryParam(
                     name = "includes[]",
@@ -103,10 +91,7 @@ class MainViewModel(
                 val queries = generateQuery(mapOf("limit" to sessionSize), includes)
                 val res = mangaDex.getManga(queries)
                 if (res != null) {
-                    res.data.forEach {
-                        latestUpdatesData.add(it)
-                        latestUpdatesPainter.add(null)
-                    }
+                    latestUpdates.addAll(res.toMangaList())
                 } else {
                     // TODO handle
                 }
@@ -118,7 +103,7 @@ class MainViewModel(
         viewModelScope.launch {
             retry(
                 count = 3,
-                predicate = { continueReadingData.isEmpty() }
+                predicate = { continueReading.isEmpty() }
             ) {
                 // TODO change to all statuses
                 val res = mangaDex.getMangaByStatus(Status.READING)
@@ -134,15 +119,13 @@ class MainViewModel(
                         )
                         val queries = generateQuery(mapOf(Pair("includes[]", "cover_art")), mangaIds)
                         val mangaList = mangaDex.getManga(queries)
-                        mangaList?.data?.let {
-                            it.forEach { d ->
-                                continueReadingData.add(d)
-                                continueReadingPainter.add(null)
-                                cache.mangaStatus[d.id] = Manga(
-                                    data = d,
-                                    status = MangaStatus.Reading
-                                )
+                        mangaList?.let {
+                            val data = it.toMangaList().map { m ->
+                                m.status = MangaStatus.Reading
+                                m
                             }
+                            continueReading.addAll(data)
+                            cache.mangaStatus.putAll(data.associateBy { m -> m.data.id })
                         }
                     }
                 }
@@ -152,17 +135,18 @@ class MainViewModel(
 
     fun syncReadingStatus() {
         val reading = cache.mangaStatus.filter { it.value.status == MangaStatus.Reading }
-        if (SharedObject.detailCover != null && reading.size != continueReadingData.size) {
-            if (continueReadingData.size < reading.size) continueReadingPainter.add(SharedObject.detailCover)
-                else continueReadingPainter.remove(SharedObject.detailCover)
-            continueReadingData.clear()
-            continueReadingData.addAll(reading.values.map { it.data })
+        if (SharedObject.detailCover != null && reading.size != continueReading.size) {
+            // might cause bug while trying to sync if the painter values are different
+            if (continueReading.size < reading.size) continueReading.add(SharedObject.detailManga)
+                else continueReading.remove(SharedObject.detailManga)
+            continueReading.clear()
+            continueReading.addAll(reading.values)
         }
     }
 
     private suspend fun fetchByTags(
         tags: List<String>,
-        onSuccess: (List<Data<MangaAttributes>>) -> Unit,
+        onSuccess: (ListResponse<MangaAttributes>) -> Unit,
         excludedTags: List<String> = listOf()
     ) {
         val tagsParam = generateArrayQueryParam(
@@ -185,7 +169,7 @@ class MainViewModel(
         val res = mangaDex.getManga(queries)
         if (res != null) {
             if (res.data.isNotEmpty()) {
-                onSuccess(res.data)
+                onSuccess(res)
             }
         }
     }
@@ -193,72 +177,53 @@ class MainViewModel(
     suspend fun fetchMangaByTags(tags: Map<String, String>) {
         fetchByTags(
             tags = listOf(tags[ROMANCE_TAG]!!, tags[COMEDY_TAG]!!),
-            onSuccess = romComManga::addAll,
+            onSuccess = {
+                romCom.addAll(it.toMangaList())
+            },
             excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!)
         )
         fetchByTags(
             tags = listOf(tags[ADVENTURE_TAG]!!, tags[COMEDY_TAG]!!),
-            onSuccess = advComManga::addAll,
+            onSuccess = {
+                advCom.addAll(it.toMangaList())
+            },
             excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!, tags[ROMANCE_TAG]!!)
         )
         fetchByTags(
             tags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!),
-            onSuccess = psyMysManga::addAll,
+            onSuccess = {
+                psyMys.addAll(it.toMangaList())
+            },
             excludedTags = listOf(tags[COMEDY_TAG]!!)
         )
     }
 
+
+
     @Composable
     private fun initRomCom() {
-        if (romComManga.isNotEmpty() && !isRomComComplete) {
-            for (i in 0 until romComManga.size) romComPainter.add(null)
-            romComManga.forEachIndexed { i, d ->
-                AutoSizeBox(getCoverUrl(d)) {action ->
-                    when (action) {
-                        is ImageAction.Success -> {
-                            romComPainter[i] = rememberImageSuccessPainter(action)
-                        }
-                        else -> Unit
-                    }
-                }
-            }
-            isRomComComplete = true
+        if (romCom.isNotEmpty()) PaintersLoader(
+            urls = romCom.map { getCoverUrl(it.data) },
+        ) { i, p ->
+            romCom[i] = romCom[i].copy(painter = p)
         }
     }
 
     @Composable
     private fun initAdvCom() {
-        if (advComManga.isNotEmpty() && !isAdvComComplete) {
-            for (i in 0 until advComManga.size) advComPainter.add(null)
-            advComManga.forEachIndexed { i, d ->
-                AutoSizeBox(getCoverUrl(d)) {action ->
-                    when (action) {
-                        is ImageAction.Success -> {
-                            advComPainter[i] = rememberImageSuccessPainter(action)
-                        }
-                        else -> Unit
-                    }
-                }
-            }
-            isAdvComComplete = true
+        if (advCom.isNotEmpty()) PaintersLoader(
+            urls = advCom.map { getCoverUrl(it.data) },
+        ) { i, p ->
+            advCom[i] = advCom[i].copy(painter = p)
         }
     }
 
     @Composable
     private fun initPsyMys() {
-        if (psyMysManga.isNotEmpty() && !isPsyMysComplete) {
-            for (i in 0 until psyMysManga.size) psyMysPainter.add(null)
-            psyMysManga.forEachIndexed { i, d ->
-                AutoSizeBox(getCoverUrl(d)) {action ->
-                    when (action) {
-                        is ImageAction.Success -> {
-                            psyMysPainter[i] = rememberImageSuccessPainter(action)
-                        }
-                        else -> Unit
-                    }
-                }
-            }
-            isPsyMysComplete = true
+        if (psyMys.isNotEmpty()) PaintersLoader(
+            urls = psyMys.map { getCoverUrl(it.data) },
+        ) { i, p ->
+            psyMys[i] = psyMys[i].copy(painter = p)
         }
     }
 
