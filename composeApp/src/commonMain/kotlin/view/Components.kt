@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
@@ -25,10 +24,10 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +46,7 @@ import com.seiko.imageloader.option.SizeResolver
 import com.seiko.imageloader.rememberImagePainter
 import com.seiko.imageloader.rememberImageSuccessPainter
 import com.seiko.imageloader.ui.AutoSizeBox
+import kotlinx.coroutines.flow.distinctUntilChanged
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.no_image
 import model.session.Session
@@ -198,11 +198,11 @@ fun ImageLoader(
 }
 
 @Composable
-fun <K, T, ATTR> SessionPagerColumn(
-    session: Session<K, T, ATTR>,
+fun <T, ATTR> SessionPagerColumn(
+    session: Session<T, ATTR>,
     state: LazyListState,
-    handler: SessionHandler<K, T, ATTR>,
-    thresholdFactor: Int = 2,
+    handler: SessionHandler<T, ATTR>,
+    thresholdFactor: Float = 1.2f,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     reverseLayout: Boolean = false,
     verticalArrangement: Arrangement.Vertical =
@@ -210,14 +210,26 @@ fun <K, T, ATTR> SessionPagerColumn(
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
     userScrollEnabled: Boolean = true,
+    onSessionLoaded: (Session<T, ATTR>) -> Unit = {},
     modifier: Modifier = Modifier,
-    content: @Composable (T) -> Unit
+    content: @Composable (Int) -> Unit
 ) {
-    var finished by remember { mutableStateOf(false) }
-    if (!finished && session.response != ListResponse<ATTR>()) LaunchedEffect(
-        key1 = state.firstVisibleItemIndex >= (session.data.size / thresholdFactor)
+    var block = remember { false }
+    val passThreshold by remember {
+        snapshotFlow {
+            state.firstVisibleItemIndex >= (session.data.size / thresholdFactor)
+        }.distinctUntilChanged()
+    }.collectAsState(false)
+    if (session.response != ListResponse<ATTR>()) LaunchedEffect(
+        key1 = passThreshold,
     ) {
-        handler.updateSession { finished = it }
+        if (!block && passThreshold) {
+            block = true
+            handler.updateSession { done, newSession ->
+                block = done
+                newSession?.let { onSessionLoaded(it) }
+            }
+        }
     }
     if (session.data.isNotEmpty()) LazyColumn(
         state = state,
@@ -229,7 +241,7 @@ fun <K, T, ATTR> SessionPagerColumn(
         userScrollEnabled = userScrollEnabled,
         modifier = modifier.fillMaxSize()
     ) {
-        items(session.data.toList()) { content(it.second) }
+        items(session.data.size) { content(it) }
         item {
             CircularProgressIndicator()
         }

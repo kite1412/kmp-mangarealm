@@ -7,14 +7,14 @@ import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import model.Manga
 import model.session.Session
-import model.toMangaMap
+import model.toMangaList
 import util.retry
 
 class MangaSessionHandler(
-    override val session: Session<String, Manga, MangaAttributes>,
+    override val session: Session<Manga, MangaAttributes>,
     override val mangaDex: MangaDex = Libs.mangaDex
-): SessionHandler<String, Manga, MangaAttributes> {
-    override suspend fun updateSession(finish: (Boolean) -> Unit) {
+): SessionHandler<Manga, MangaAttributes> {
+    override suspend fun updateSession(onFinish: (Boolean, Session<Manga, MangaAttributes>?) -> Unit) {
         val offset = session.response.offset
         val total = session.response.total
         if (offset < total || session.url.isNotEmpty()) {
@@ -26,13 +26,13 @@ class MangaSessionHandler(
                 predicate = { it == null || it.errors != null}
             ) { mangaDex.getManga(generateQuery(session.queries)) }
             if (res != null) {
-                session.putAll(res.toMangaMap())
+                session.addAll(res.toMangaList())
                 session.newResponse(res)
-                finish(false)
+                onFinish(false, session)
                 return
             }
-            finish(true)
+            onFinish(true, null)
         }
-        finish(true)
+        onFinish(true, null)
     }
 }
