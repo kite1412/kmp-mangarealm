@@ -26,7 +26,7 @@ class DetailScreenModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val cache: Cache = Libs.cache
 ) : ScreenModel, ReaderNavigator {
-    var titleTagsPadding by mutableStateOf(16)
+    var titleTagsPadding by mutableStateOf(24)
     var isShowingDetail by mutableStateOf(false)
     var chapterListHeight by mutableStateOf(0)
     var popNoticeWidth: Float by mutableStateOf(-(screenSize.width.value / 2f))

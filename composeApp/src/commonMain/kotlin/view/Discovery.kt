@@ -5,12 +5,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActionScope
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
@@ -75,12 +78,7 @@ fun Discovery(
             },
             onValueChange = vm.discoveryState::searchBarValueChange
         )
-        if (state.session.data.isNotEmpty()) SessionPagerColumn<Manga, MangaAttributes>(
-            session = state.session,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            state = rememberLazyListState(),
-            handler = sessionHandler,
-            onSessionLoaded = state::onSessionLoaded,
+        if (state.session.data.isNotEmpty()) BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
@@ -90,13 +88,25 @@ fun Discovery(
                     end = 8.dp
                 )
         ) {
-            val manga = state.session.data[it]
-            Display(
-                manga = manga,
-                onClick = {
-                    vm.navigateToDetailScreen(nav, manga.painter, manga)
-                }
-            ) { p -> vm.discoveryState.updateMangaPainter(it, manga, p) }
+            SessionPagerColumn<Manga, MangaAttributes>(
+                session = state.session,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                contentPadding = PaddingValues(bottom = APP_BAR_HEIGHT + 16.dp),
+                handler = sessionHandler,
+                onSessionLoaded = state::onSessionLoaded,
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                val manga = state.session.data[it]
+                Display(
+                    manga = manga,
+                    onPainterLoaded = { p ->
+                        vm.discoveryState.updateMangaPainter(it, manga, p)
+                    },
+                    parentHeight = maxHeight
+                ) { vm.navigateToDetailScreen(nav, manga.painter, manga) }
+            }
         }
     }
 }
@@ -164,36 +174,41 @@ private fun TopBar(
 @Composable
 private fun Display(
     manga: Manga,
-    onClick: () -> Unit,
+    parentHeight: Dp,
+    onPainterLoaded: (Painter) -> Unit,
     modifier: Modifier = Modifier,
-    onPainterLoaded: (Painter) -> Unit
+    onClick: () -> Unit
 ) {
-    // TODO change later
+    val height = parentHeight / 5f
     Row(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         modifier = modifier
             .fillMaxWidth()
-            .height(200.dp)
-            .clickable(onClick = {
-                if (manga.painter != null) onClick()
-            })
+            .height(height)
+            .clickable(onClick = onClick)
     ) {
         ImageLoader(
             url = getCoverUrl(manga.data),
             painter = manga.painter,
             contentScale = ContentScale.FillBounds,
-            modifier = Modifier.weight(0.3f),
-            onPainterLoaded = onPainterLoaded
+            onPainterLoaded = onPainterLoaded,
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .weight(0.3f),
         )
-        Text(
-            getTitle(manga.data.attributes.title),
-            fontSize = 24.sp,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            fontWeight = FontWeight.SemiBold,
+        Column(
+            horizontalAlignment = Alignment.Start,
             modifier = Modifier
                 .weight(0.7f)
-                .padding(top = 16.dp)
-        )
+                .padding(top = 8.dp)
+        ) {
+            Text(
+                getTitle(manga.data.attributes.title),
+                fontSize = 16.sp,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
     }
 }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
@@ -26,7 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +41,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.ListResponse
 import com.seiko.imageloader.model.ImageAction
 import com.seiko.imageloader.model.ImageRequest
@@ -134,6 +136,7 @@ fun Action(
     fill: Boolean = true,
     color: Color = MaterialTheme.colors.secondary,
     verticalPadding: Dp = 2.dp,
+    horizontalPadding: Dp = 0.dp,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
@@ -152,7 +155,7 @@ fun Action(
             .clip(corner)
             .clickable(enabled = enabled, onClick = onClick)
             .then(outer)
-            .padding(vertical = verticalPadding),
+            .padding(vertical = verticalPadding, horizontal = horizontalPadding),
         content = content
     )
 }
@@ -200,8 +203,8 @@ fun ImageLoader(
 @Composable
 fun <T, ATTR> SessionPagerColumn(
     session: Session<T, ATTR>,
-    state: LazyListState,
     handler: SessionHandler<T, ATTR>,
+    state: LazyListState = rememberLazyListState(),
     thresholdFactor: Float = 1.2f,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     reverseLayout: Boolean = false,
@@ -215,9 +218,10 @@ fun <T, ATTR> SessionPagerColumn(
     content: @Composable (Int) -> Unit
 ) {
     var block = remember { false }
+    var finished by remember { mutableStateOf(false) }
     val passThreshold by remember {
         snapshotFlow {
-            state.firstVisibleItemIndex >= (session.data.size / thresholdFactor)
+            state.firstVisibleItemIndex + state.layoutInfo.visibleItemsInfo.size >= (session.data.size / thresholdFactor)
         }.distinctUntilChanged()
     }.collectAsState(false)
     if (session.response != ListResponse<ATTR>()) LaunchedEffect(
@@ -227,6 +231,7 @@ fun <T, ATTR> SessionPagerColumn(
             block = true
             handler.updateSession { done, newSession ->
                 block = done
+                finished = done
                 newSession?.let { onSessionLoaded(it) }
             }
         }
@@ -242,7 +247,7 @@ fun <T, ATTR> SessionPagerColumn(
         modifier = modifier.fillMaxSize()
     ) {
         items(session.data.size) { content(it) }
-        item {
+        if (!finished) item {
             CircularProgressIndicator()
         }
     }
@@ -265,8 +270,7 @@ fun Warning(
         Text(
             message,
             color = Color.White,
-            fontWeight = FontWeight.Medium,
-            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         )

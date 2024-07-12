@@ -28,7 +28,7 @@ class MangaSessionHandler(
             if (res != null) {
                 session.addAll(res.toMangaList())
                 session.newResponse(res)
-                onFinish(false, session)
+                onFinish(res.data.isEmpty(), session)
                 return
             }
             onFinish(true, null)
