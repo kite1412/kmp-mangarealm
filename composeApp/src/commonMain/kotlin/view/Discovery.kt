@@ -50,10 +50,13 @@ import api.mangadex.util.getTitle
 import assets.`Arrow-left-solid`
 import assets.Cross
 import assets.Search
+import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.navigator.internal.BackHandler
 import model.Manga
 import model.session.isEmpty
+import model.session.isNotEmpty
 import util.APP_BAR_HEIGHT
 import util.DEFAULT_COLLECTION_SIZE
 import util.publicationDemographic
@@ -64,6 +67,7 @@ import util.session_handler.MangaSessionHandler
 import view_model.main.MainViewModel
 import view_model.main.state.DiscoveryState
 
+@OptIn(InternalVoyagerApi::class)
 @Composable
 fun Discovery(
     vm: MainViewModel,
@@ -71,12 +75,16 @@ fun Discovery(
 ) {
     val state = vm.discoveryState
     val nav = LocalNavigator.currentOrThrow
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     Box(modifier = modifier.fillMaxSize()) {
+        BackHandler(false) {
+
+            if (state.session.isNotEmpty()) state.clearSession()
+        }
         val sessionHandler = remember {
             MangaSessionHandler(state.session)
         }
-        val keyboardController = LocalSoftwareKeyboardController.current
-        val focusManager = LocalFocusManager.current
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth()
@@ -101,7 +109,10 @@ fun Discovery(
                     keyboardController?.hide()
                     focusManager.clearFocus()
                 },
-                onClear = { state.searchBarValue = "" },
+                onClear = {
+                    state.searchBarValue = ""
+                    keyboardController?.show()
+                },
                 onValueChange = vm.discoveryState::searchBarValueChange,
                 modifier = Modifier
                     .weight(if (state.session.data.isNotEmpty()) 0.9f else 1f)
@@ -191,6 +202,7 @@ private fun TopBar(
                         .fillMaxSize()
                         .padding(horizontal = 8.dp)
                 ) {
+                    val fm = LocalFocusManager.current
                     BasicTextField(
                         value = state.searchBarValue,
                         onValueChange = onValueChange,
