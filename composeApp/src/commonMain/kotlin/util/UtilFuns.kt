@@ -85,3 +85,9 @@ fun publicationDemographicColor(raw: String): Color = when(raw) {
     PublicationDemographic.SEINEN -> Color(0xFF7986CB)
     else -> Color.Transparent
 }
+
+fun defaultMangaRequestQueries(queries: Map<String, Any> = mapOf()): Map<String, Any> = mutableMapOf(
+    "limit" to DEFAULT_COLLECTION_SIZE,
+    "includes[]" to listOf("cover_art", "author"),
+).also { it.putAll(queries) }
+

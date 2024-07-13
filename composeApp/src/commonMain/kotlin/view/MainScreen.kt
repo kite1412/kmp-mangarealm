@@ -28,18 +28,20 @@ import assets.Clipboard
 import assets.Home
 import assets.Search
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.navigator.internal.BackHandler
 import theme.selectedButton
 import theme.unselectedButton
 import util.APP_BAR_HEIGHT
 import util.undoEdgeToEdge
-import view_model.main.Page
+import view_model.main.Menu
 
 class MainScreen : Screen {
-    @OptIn(ExperimentalVoyagerApi::class)
+    @OptIn(ExperimentalVoyagerApi::class, InternalVoyagerApi::class)
     @Composable
     override fun Content() {
         val vm = LocalMainViewModel.current
@@ -52,18 +54,17 @@ class MainScreen : Screen {
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) {
+            BackHandler(enabled = vm.menuStack.size > 1) { vm.popMenu() }
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
                 when(vm.currentPage) {
-                    Page.DISCOVERY -> Discovery(vm)
+                    Menu.DISCOVERY -> Discovery(vm)
                     else -> Home(vm, nav)
                 }
                 BottomAppBar(
-                    page = vm.currentPage,
-                    onPageChange = {
-                        vm.currentPage = it
-                    },
+                    page = vm.currentPage!!,
+                    onPageChange = vm::pushMenu,
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
             }
@@ -72,8 +73,8 @@ class MainScreen : Screen {
 
     @Composable
     private fun BottomAppBar(
-        page: Page,
-        onPageChange: (Page) -> Unit,
+        page: Menu,
+        onPageChange: (Menu) -> Unit,
         modifier: Modifier = Modifier
     ) {
         Row(
@@ -89,31 +90,31 @@ class MainScreen : Screen {
             verticalAlignment = Alignment.CenterVertically
         ) {
             BottomAppBarIcon(
-                page = Page.MAIN,
+                page = Menu.HOME,
                 imageVector = Assets.Home,
                 contentDescription = "main page",
-                selected = page == Page.MAIN,
+                selected = page == Menu.HOME,
                 onClick = onPageChange
             )
             BottomAppBarIcon(
-                page = Page.FEED,
+                page = Menu.FEED,
                 imageVector = Assets.Clipboard,
                 contentDescription = "feed page",
-                selected = page == Page.FEED,
+                selected = page == Menu.FEED,
                 onClick = onPageChange
             )
             BottomAppBarIcon(
-                page = Page.DISCOVERY,
+                page = Menu.DISCOVERY,
                 imageVector = Assets.Search,
                 contentDescription = "discovery page",
-                selected = page == Page.DISCOVERY,
+                selected = page == Menu.DISCOVERY,
                 onClick = onPageChange
             )
             BottomAppBarIcon(
-                page = Page.USER_LIST,
+                page = Menu.USER_LIST,
                 imageVector = Assets.`Book-close`,
                 contentDescription = "your list page",
-                selected = page == Page.USER_LIST,
+                selected = page == Menu.USER_LIST,
                 onClick = onPageChange
             )
         }
@@ -121,11 +122,11 @@ class MainScreen : Screen {
 
     @Composable
     fun BottomAppBarIcon(
-        page: Page,
+        page: Menu,
         imageVector: ImageVector,
         contentDescription: String,
         selected: Boolean,
-        onClick: (Page) -> Unit,
+        onClick: (Menu) -> Unit,
         modifier: Modifier = Modifier
     ) {
         Icon(

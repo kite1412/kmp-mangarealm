@@ -18,6 +18,7 @@ import api.mangadex.util.Status
 import api.mangadex.util.constructQuery
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
+import cafe.adriel.voyager.core.stack.mutableStateStackOf
 import cafe.adriel.voyager.navigator.Navigator
 import io.github.irgaly.kottage.KottageStorage
 import io.github.irgaly.kottage.get
@@ -40,10 +41,10 @@ class MainViewModel(
     private val kottageStorage: KottageStorage = Libs.kottageStorage,
     private val cache: Cache = Libs.cache
 ) : ViewModel(), DetailNavigator {
-    var currentPage by mutableStateOf(Page.MAIN)
-    val discoveryState = DiscoveryState(mangaDex, cache, viewModelScope)
+    val menuStack = mutableStateStackOf(Menu.HOME)
+    val currentPage by derivedStateOf { menuStack.lastItemOrNull }
 
-    var mangaTagsLabelHeight = mutableStateOf(0)
+    val discoveryState = DiscoveryState(mangaDex, cache, viewModelScope)
 
     var undoEdgeToEdge by mutableStateOf(false)
 
@@ -64,6 +65,11 @@ class MainViewModel(
     val romCom = mutableStateListOf<Manga>()
     val advCom = mutableStateListOf<Manga>()
     val psyMys = mutableStateListOf<Manga>()
+
+    fun popMenu() { menuStack.pop() }
+
+    fun pushMenu(menu: Menu) = if (menu != Menu.HOME) menuStack.push(menu)
+        else menuStack.replaceAll(Menu.HOME)
 
     suspend fun updateUsername() {
         val username = kottageStorage.get<String>(KottageConst.USERNAME)
@@ -201,6 +207,6 @@ class MainViewModel(
     }
 }
 
-enum class Page {
-    MAIN, FEED, DISCOVERY, USER_LIST
+enum class Menu {
+    HOME, FEED, DISCOVERY, USER_LIST
 }

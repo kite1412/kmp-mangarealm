@@ -7,7 +7,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class DynamicAttributes(
     // general
-    val description: Description? = null,
     val version: Int? = null,
     val createdAt: String? = null,
     val updatedAt: String? = null,
@@ -15,6 +14,7 @@ data class DynamicAttributes(
     // manga
     val title: Map<String, String>? = null,
     val altTitles: List<Map<String, String>>? = null,
+    val description: Description? = null,
     val isLocked: Boolean? = null,
     val links: Map<String, String>? = null,
     val originalLanguage: String? = null,
@@ -34,4 +34,23 @@ data class DynamicAttributes(
     val volume: String? = null,
     val fileName: String? = null,
     val locale: String? = null,
+
+    // author
+    val name: String? = null,
+    val imageUrl: String? = null,
+    val biography: Map<String, String> = mapOf(),
+    val twitter: String? = null,
+    val pixiv: String? = null,
+    val melonBook: String? = null,
+    val fanBox: String? = null,
+    val booth: String? = null,
+    val namicomi: String? = null,
+    val nicoVideo: String? = null,
+    val skeb: String? = null,
+    val fantia: String? = null,
+    val tumblr: String? = null,
+    val youtube: String? = null,
+    val weibo: String? = null,
+    val naver: String? = null,
+    val website: String? = null,
 )
