@@ -1,6 +1,7 @@
 package view
 
 import Assets
+import LocalScreenSize
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -69,7 +70,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import screenSize
 import shared.ZoomableImage
 import shared.adjustStatusBarColor
 import shared.disableEdgeToEdge
@@ -108,6 +108,7 @@ class ReaderScreen : Screen {
                     modifier = Modifier
                         .fillMaxSize()
                 ) {
+                    val screenSize = LocalScreenSize.current
                     PagesView(
                         sm = sm,
                         modifier = Modifier
@@ -225,6 +226,7 @@ class ReaderScreen : Screen {
             visible = sm.showChapterList,
             modifier = modifier
         ) {
+            val screenSize = LocalScreenSize.current
             val listHeight = screenSize.height / 3.dp
             val lazyListState = rememberLazyListState(
                 initialFirstVisibleItemIndex = sm.currentChapterIndex,
@@ -484,6 +486,7 @@ class ReaderScreen : Screen {
             modifier = modifier
                 .offset(y = offset)
         ) {
+            val screenSize = LocalScreenSize.current
             AnimatedVisibility(
                 visible = sm.showPageNavigator,
                 modifier = Modifier.height(height)

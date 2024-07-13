@@ -52,6 +52,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import model.Manga
 import util.APP_BAR_HEIGHT
+import util.DEFAULT_COLLECTION_SIZE
 import util.publicationDemographic
 import util.publicationDemographicColor
 import util.publicationStatus
@@ -87,7 +88,7 @@ fun Discovery(
                             queries = mapOf(
                                 "title" to state.searchBarValue,
                                 "includes[]" to "cover_art",
-                                "limit" to 50
+                                "limit" to DEFAULT_COLLECTION_SIZE
                             )
                         )
                     }

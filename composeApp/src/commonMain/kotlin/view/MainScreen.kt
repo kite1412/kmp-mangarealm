@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import api.mangadex.util.getCoverUrl
 import assets.`Book-close`
 import assets.Clipboard
 import assets.Home
@@ -50,20 +49,6 @@ class MainScreen : Screen {
         if (vm.undoEdgeToEdge) undoEdgeToEdge()
         vm.syncReadingStatus()
         val nav = LocalNavigator.currentOrThrow
-        val latestUpdatesData = vm.latestUpdates
-        if (latestUpdatesData.isNotEmpty()) {
-            PaintersLoader(
-                urls = latestUpdatesData.map { getCoverUrl(it.data) },
-            ) { i, p ->
-                vm.latestUpdates[i] = latestUpdatesData[i].copy(painter = p)
-            }
-        }
-        val continueReadingData = vm.continueReading
-        if (continueReadingData.isNotEmpty()) PaintersLoader(
-            urls = continueReadingData.map { getCoverUrl(it.data) },
-        ) { i, p ->
-            vm.continueReading[i] = continueReadingData[i].copy(painter = p)
-        }
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) {

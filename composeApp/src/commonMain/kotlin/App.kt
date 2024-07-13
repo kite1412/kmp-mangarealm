@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import api.mangadex.service.MangaDex
 import api.mangadex.service.MangaDexImpl
 import cafe.adriel.voyager.navigator.Navigator
@@ -38,7 +39,7 @@ data class ScreenSize(
     val width: Dp
 )
 
-lateinit var screenSize: ScreenSize
+val LocalScreenSize = compositionLocalOf { ScreenSize(0.dp, 0.dp) }
 val LocalMainViewModel = compositionLocalOf { MainViewModel() }
 
 object Libs {
@@ -100,20 +101,21 @@ fun App() {
     }
     AppTheme {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            screenSize = ScreenSize(height = this.maxHeight, width = this.maxWidth)
-            if (!isLoggedIn.value) {
-                LoginScreen(onSuccess = {
-                    isLoggedIn.value = true
-                })
-            } else {
-                CompositionLocalProvider(LocalMainViewModel provides mainViewModel) {
-                    Navigator(MainScreen())
+            CompositionLocalProvider(LocalScreenSize provides ScreenSize(height = this.maxHeight, width = this.maxWidth)) {
+                if (!isLoggedIn.value) {
+                    LoginScreen(onSuccess = {
+                        isLoggedIn.value = true
+                    })
+                } else {
+                    CompositionLocalProvider(LocalMainViewModel provides mainViewModel) {
+                        Navigator(MainScreen())
+                    }
                 }
-            }
-            if (isShowingSplash.value) {
-                SplashScreen()
-            } else {
-                if (isLoggedIn.value) adjustStatusBarColor(MaterialTheme.colors.background)
+                if (isShowingSplash.value) {
+                    SplashScreen()
+                } else {
+                    if (isLoggedIn.value) adjustStatusBarColor(MaterialTheme.colors.background)
+                }
             }
         }
     }

@@ -1,6 +1,7 @@
 package view
 
 import Assets
+import LocalScreenSize
 import SharedObject
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -54,6 +55,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
@@ -70,6 +72,7 @@ import assets.`List-add`
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.model.rememberScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -78,9 +81,10 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import model.MangaStatus
 import model.Status
-import screenSize
 import util.APP_BAR_HEIGHT
 import util.BLUR_TINT
 import util.edgeToEdge
@@ -94,10 +98,17 @@ class DetailScreen : Screen {
     @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
+        val sm = rememberScreenModel { DetailScreenModel() }
+        val screenSize = LocalScreenSize.current
+        val popAnimation by animateDpAsState(if (sm.showPopNotice) 0f.dp else -(screenSize.width.value / 2f).dp)
         LifecycleEffectOnce {
             SharedObject.popNotifierCount--
+            sm.screenModelScope.launch {
+                sm.showPopNotice = true
+                delay(2000)
+                sm.showPopNotice = false
+            }
         }
-        val sm = rememberScreenModel { DetailScreenModel() }
         edgeToEdge()
         val nav = LocalNavigator.currentOrThrow
         Scaffold {
@@ -149,7 +160,7 @@ class DetailScreen : Screen {
                         .fillMaxWidth()
                         .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                 )
-                if (SharedObject.popNotifierCount >= 0) Pop(sm, modifier = Modifier.align(Alignment.CenterStart))
+                if (SharedObject.popNotifierCount >= 0) Pop(sm, popAnimation, modifier = Modifier.align(Alignment.CenterStart))
                 if (sm.showUpdateStatus) UpdateStatus(sm)
                 Warning(
                     message = sm.warning,
@@ -164,26 +175,18 @@ class DetailScreen : Screen {
     @Composable
     private fun Pop(
         sm: DetailScreenModel,
+        offset: Dp,
         modifier: Modifier = Modifier
     ) {
-        val density = LocalDensity.current
-        val popAnimation by animateDpAsState(sm.popNoticeWidth.dp)
         val startPadding = 4.dp
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = modifier
-                .offset(x = popAnimation)
+                .offset(x = offset)
                 .padding(start = startPadding)
                 .clip(CircleShape)
                 .background(Color.Black.copy(alpha = 0.5f))
                 .padding(start = 8.dp, end = 4.dp, top = 2.dp, bottom = 2.dp)
-                .onGloballyPositioned {
-                    with(density) {
-                        val width = it.size.width.toDp().value
-                        val additionalWidth = startPadding + 12.dp
-                        sm.animatePopNotice(width, additionalWidth)
-                    }
-                }
         ) {
             Text(
                 "Swipe to pop",
@@ -209,6 +212,7 @@ class DetailScreen : Screen {
         nav: Navigator,
         modifier: Modifier = Modifier
     ) {
+        val screenSize = LocalScreenSize.current
         val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         val hazeState = remember { HazeState() }
         val totalHeight = (screenSize.height / 2.5f) - statusBarsHeight
@@ -557,6 +561,7 @@ class DetailScreen : Screen {
 
     @Composable
     private fun Background(modifier: Modifier = Modifier) {
+        val screenSize = LocalScreenSize.current
         Box(modifier = modifier.fillMaxSize()) {
             Icon(
                 imageVector = Assets.`Book-open`,

@@ -1,6 +1,7 @@
 package view
 
 import Assets
+import LocalScreenSize
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -61,7 +62,6 @@ import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.white_textured_concrete
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import screenSize
 import util.APP_BAR_HEIGHT
 import util.ASCENDING
 import util.DESCENDING
@@ -241,6 +241,7 @@ class ChapterScreen : Screen {
         sm: ChapterScreenModel,
         modifier: Modifier = Modifier
     ) {
+        val screenSize = LocalScreenSize.current
         val settingHeight = screenSize.height / 2
         AnimatedVisibility(sm.showSettings) {
             Box(
