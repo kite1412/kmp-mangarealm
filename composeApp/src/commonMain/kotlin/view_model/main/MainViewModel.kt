@@ -8,7 +8,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import api.mangadex.model.response.ListResponse
@@ -138,12 +137,9 @@ class MainViewModel(
 
     fun syncReadingStatus() {
         val reading = cache.mangaStatus.filter { it.value.status == MangaStatus.Reading }
-        if (SharedObject.detailCover != null && reading.size != continueReading.size) {
-            // might cause bug while trying to sync if the painter values are different
+        if (reading.size != continueReading.size) {
             if (continueReading.size < reading.size) continueReading.add(SharedObject.detailManga)
-                else continueReading.remove(SharedObject.detailManga)
-            continueReading.clear()
-            continueReading.addAll(reading.values)
+                else continueReading.removeAll { SharedObject.detailManga.data.id == it.data.id }
         }
     }
 
@@ -201,9 +197,9 @@ class MainViewModel(
         )
     }
 
-    fun navigateToDetailScreen(nav: Navigator, painter: Painter?, manga: Manga) {
+    fun navigateToDetailScreen(nav: Navigator, manga: Manga) {
         val m = cache.mangaStatus[manga.data.id] ?: manga
-        navigateToDetail(nav, painter, m)
+        navigateToDetail(nav, m)
     }
 }
 

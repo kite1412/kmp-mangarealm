@@ -311,7 +311,7 @@ fun LatestUpdatesBar(
                     .padding(horizontal = 4.dp)
                     .clip(RoundedCornerShape(15.dp))
                     .clickable {
-                        vm.navigateToDetailScreen(nav, manga.painter, manga)
+                        vm.navigateToDetailScreen(nav, manga)
                     }
             ) {
                 val hazeState = remember { HazeState() }
@@ -498,7 +498,7 @@ private fun ContinueReading(
                         vm.continueReading[it] = vm.continueReading[it].copy(painter = p)
                     },
                     modifier = Modifier.width(screenSize.width / 2)
-                ) { vm.navigateToDetailScreen(nav, manga.painter, manga) }
+                ) { vm.navigateToDetailScreen(nav, manga) }
             }
         }
     }
@@ -608,7 +608,7 @@ private fun MangaTags (
                         parentHeight = maxHeight,
                         isSelected = pagerState.currentPage == it,
                         onClick = { p ->
-                            vm.navigateToDetailScreen(nav, p, manga)
+                            vm.navigateToDetailScreen(nav, manga)
                         },
                         onPainterLoaded = { p -> mangaList[it] = mangaList[it].copy(painter = p) },
                         modifier = Modifier.wrapContentHeight()
