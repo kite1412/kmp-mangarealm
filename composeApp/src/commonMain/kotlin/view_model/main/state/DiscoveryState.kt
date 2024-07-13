@@ -62,6 +62,11 @@ class DiscoveryState(
         cache.latestMangaSearch[q]!!.from(newSession)
     }
 
+    fun clearSession() {
+        session.clear()
+        searchBarValue = ""
+    }
+
     fun checkStatus(manga: Manga): Status? = if (manga.status != MangaStatus.None) manga.status
         else null
 }

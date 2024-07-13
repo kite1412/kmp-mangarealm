@@ -18,8 +18,14 @@ interface Session<T, ATTR> {
     }
 
     fun from(session: Session<T, ATTR>) {
-        response = session.response
-        data.addAll(session.data.subList(data.size, session.data.size))
+        newResponse(session.response)
+        addAll(session.data.subList(data.size, session.data.size))
+        putAllQueries(session.queries)
+    }
+
+    fun clearFrom(session: Session<T, ATTR>) {
+        clear()
+        from(session)
     }
 
     fun newResponse(res: ListResponse<ATTR>) { response = res }

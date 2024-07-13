@@ -2,6 +2,7 @@ package view
 
 import Assets
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +26,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +53,7 @@ import assets.Search
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import model.Manga
+import model.session.isEmpty
 import util.APP_BAR_HEIGHT
 import util.DEFAULT_COLLECTION_SIZE
 import util.publicationDemographic
@@ -94,8 +97,7 @@ fun Discovery(
                     }
                 },
                 onBackButtonClick = {
-                    state.session.clear()
-                    state.searchBarValue = ""
+                    state.clearSession()
                     keyboardController?.hide()
                     focusManager.clearFocus()
                 },
@@ -153,12 +155,18 @@ private fun TopBar(
             .height(APP_BAR_HEIGHT)
     ) {
         val showPlaceholder = state.searchBarValue.isEmpty()
+        val startPadding by animateDpAsState(if (state.session.isEmpty()) 24.dp else 8.dp)
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 8.dp)
+                .padding(
+                    start = startPadding,
+                    end = 24.dp,
+                    top = 8.dp,
+                    bottom = 8.dp,
+                )
         ) {
             AnimatedVisibility(state.session.data.isNotEmpty()) {
                 Icon(

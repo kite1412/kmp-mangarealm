@@ -17,8 +17,8 @@ class MangaSessionHandler(
     override suspend fun updateSession(onFinish: (Boolean, Session<Manga, MangaAttributes>?) -> Unit) {
         val offset = session.response.offset
         val total = session.response.total
-        if (offset < total || session.url.isNotEmpty()) {
-            val limit = session.response.limit
+        val limit = session.response.limit
+        if (offset < total && limit < total) {
             session.queries["offset"] = offset + limit
             session.queries["limit"] = limit
             val res = retry<ListResponse<MangaAttributes>?>(
