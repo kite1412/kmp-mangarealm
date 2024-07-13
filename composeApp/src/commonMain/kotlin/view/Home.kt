@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,7 +40,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -254,6 +257,8 @@ private fun Header(
     }
 }
 
+// TODO(find a way to adjust the auto-slide bar and limit the scope of
+//  composables that read the pager state as small as possible)
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LatestUpdatesBar(
@@ -263,31 +268,6 @@ fun LatestUpdatesBar(
     modifier: Modifier = Modifier
 ) {
     Log.d("recomposed")
-    val pagerState = rememberPagerState(initialPage = vm.latestUpdatesBarPage) { vm.sessionSize }
-//    autoSlideLatestUpdates(
-//        autoSlide = vm.enableAutoSlide.value,
-//        pagerState = pagerState
-//    )
-    val adjustBar by remember {
-        derivedStateOf {
-            pagerState.currentPageOffsetFraction != 0.0f
-        }
-    }
-    LaunchedEffect(adjustBar) {
-        vm.adjustLatestUpdatesBar = adjustBar
-    }
-    LaunchedEffect(true) {
-        if (vm.adjustLatestUpdatesBar) pagerState.animateScrollToPage(
-            pagerState.currentPage,
-            animationSpec = tween(500)
-        )
-    }
-    val currentPage by remember {
-        derivedStateOf { pagerState.currentPage }
-    }
-    LaunchedEffect(currentPage) {
-        vm.latestUpdatesBarPage = currentPage
-    }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -296,9 +276,33 @@ fun LatestUpdatesBar(
             .background(Color.Transparent)
     ) {
         val data = vm.latestUpdates
+        val pagerState = rememberPagerState(initialPage = vm.latestUpdatesBarPage) { vm.sessionSize }
+        autoSlideLatestUpdates(
+            autoSlide = vm.enableAutoSlide.value,
+            pagerState = pagerState
+        )
+        val adjustBar by remember {
+            derivedStateOf {
+                pagerState.currentPageOffsetFraction != 0.0f
+            }
+        }
+        LaunchedEffect(adjustBar) {
+            vm.adjustLatestUpdatesBar = adjustBar
+        }
+        LaunchedEffect(true) {
+            if (vm.adjustLatestUpdatesBar) pagerState.animateScrollToPage(
+                pagerState.currentPage,
+                animationSpec = tween(500)
+            )
+        }
+        val currentPage by remember {
+            derivedStateOf { pagerState.currentPage }
+        }
+        LaunchedEffect(currentPage) {
+            vm.latestUpdatesBarPage = currentPage
+        }
         if (data.isNotEmpty()) HorizontalPager(
             state = pagerState,
-            beyondBoundsPageCount = vm.sessionSize / 2,
             modifier = Modifier.fillMaxSize()
         ) {
             val imageHeight = height / 1.5f
@@ -456,6 +460,7 @@ private fun ContinueReading(
     val screenSize = LocalScreenSize.current
     val smallDisplayHeight = height / 2
     val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp
+    Log.e("continue reading recomposed")
     if (data.isNotEmpty()) Column(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -545,19 +550,20 @@ private fun MangaTags (
     unselectedDotColor: Color = Color(0xFFDEDEDE),
     modifier: Modifier = Modifier
 ) {
-    val pagerState = rememberPagerState { mangaList.size }
+    Log.w("tags: $label recomposed")
+    val screenSize = LocalScreenSize.current
+    val height = screenSize.height / 3.5f
     Box(
         modifier = modifier
             .fillMaxWidth()
-//            .height(labelHeight + (tagsDisplayWidth * imageRatio))
+            .height(height)
             .background(brush = backgroundGradient)
             .padding(top = 16.dp, start = 16.dp)
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            val screenSize = LocalScreenSize.current
-            val tagsDisplayWidth = (screenSize.width / 1.3f)
+            var currentPage by remember { mutableStateOf(0) }
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
@@ -572,32 +578,44 @@ private fun MangaTags (
                     color = Color.White
                 )
                 IndicatorDots(
-                    n = pagerState.pageCount,
-                    selected = (pagerState.currentPage + 1),
+                    n = mangaList.size,
+                    selected = currentPage + 1,
                     dotSize = 6.dp,
                     spacing = 1.dp,
                     unselectedColor = unselectedDotColor
                 )
             }
-            if (mangaList.isNotEmpty()) HorizontalPager(
-                state = pagerState,
+            if (mangaList.isNotEmpty()) BoxWithConstraints(
                 modifier = Modifier
+                    .fillMaxSize()
                     .padding(bottom = 16.dp),
-                pageSize = PageSize.Fixed(tagsDisplayWidth),
-                pageSpacing = 16.dp,
-                verticalAlignment = Alignment.Bottom
             ) {
-                val manga = mangaList[it]
-                TagsDisplay(
-                    manga = manga,
-                    painter = manga.painter,
-                    contentWidth = tagsDisplayWidth,
-                    isSelected = it == pagerState.currentPage,
-                    onClick = { p ->
-                        vm.navigateToDetailScreen(nav, p, manga)
-                    },
-                    modifier = Modifier.wrapContentHeight()
-                )
+                val pagerState = rememberPagerState { mangaList.size }
+                val pagerCurrentPage by remember {
+                    derivedStateOf { pagerState.currentPage }
+                }
+                LaunchedEffect(pagerCurrentPage) { currentPage = pagerCurrentPage }
+                val tagsDisplayWidth = maxWidth / 1.2f
+                HorizontalPager(
+                    state = pagerState,
+                    pageSize = PageSize.Fixed(tagsDisplayWidth),
+                    pageSpacing = 16.dp,
+                    verticalAlignment = Alignment.Bottom,
+                    contentPadding = PaddingValues(end = maxWidth - tagsDisplayWidth),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val manga = mangaList[it]
+                    TagsDisplay(
+                        manga = manga,
+                        painter = manga.painter,
+                        parentHeight = maxHeight,
+                        isSelected = pagerState.currentPage == it,
+                        onClick = { p ->
+                            vm.navigateToDetailScreen(nav, p, manga)
+                        },
+                        modifier = Modifier.wrapContentHeight()
+                    )
+                }
             } else Box(modifier = Modifier.fillMaxSize()) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
@@ -609,20 +627,18 @@ private fun MangaTags (
 private fun TagsDisplay(
     manga: Manga,
     painter: Painter?,
-    contentWidth: Dp,
+    parentHeight: Dp,
     isSelected: Boolean,
     onClick: (Painter?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val width = contentWidth - (contentWidth / 8)
-    val imageWidth by animateDpAsState(if (isSelected) width / 2.4f else width / 2.8f)
-    val imageHeight = (imageWidth * 3) / 2
-    val height = width / 2
+    val imageHeight by animateDpAsState(if (isSelected) parentHeight else parentHeight - (parentHeight / 8))
+    val imageWidth = imageHeight * imageRatio
     val obstructColor by animateColorAsState(if (!isSelected) Color.Black else Color.Transparent)
     BoxWithConstraints(
         modifier = modifier
-            .height(height)
-            .width(width)
+            .height(imageHeight)
+            .fillMaxWidth()
             .clickable {
                 onClick(painter)
             }
