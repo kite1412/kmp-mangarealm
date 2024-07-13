@@ -3,7 +3,6 @@ package view_model.main
 import Cache
 import Libs
 import SharedObject
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -19,7 +18,6 @@ import api.mangadex.util.Status
 import api.mangadex.util.constructQuery
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
-import api.mangadex.util.getCoverUrl
 import cafe.adriel.voyager.navigator.Navigator
 import io.github.irgaly.kottage.KottageStorage
 import io.github.irgaly.kottage.get
@@ -34,7 +32,6 @@ import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
 import util.retry
-import view.PaintersLoader
 import view_model.DetailNavigator
 import view_model.main.state.DiscoveryState
 
@@ -196,42 +193,6 @@ class MainViewModel(
             },
             excludedTags = listOf(tags[COMEDY_TAG]!!)
         )
-    }
-
-
-
-    @Composable
-    private fun initRomCom() {
-        if (romCom.isNotEmpty()) PaintersLoader(
-            urls = romCom.map { getCoverUrl(it.data) },
-        ) { i, p ->
-            romCom[i] = romCom[i].copy(painter = p)
-        }
-    }
-
-    @Composable
-    private fun initAdvCom() {
-        if (advCom.isNotEmpty()) PaintersLoader(
-            urls = advCom.map { getCoverUrl(it.data) },
-        ) { i, p ->
-            advCom[i] = advCom[i].copy(painter = p)
-        }
-    }
-
-    @Composable
-    private fun initPsyMys() {
-        if (psyMys.isNotEmpty()) PaintersLoader(
-            urls = psyMys.map { getCoverUrl(it.data) },
-        ) { i, p ->
-            psyMys[i] = psyMys[i].copy(painter = p)
-        }
-    }
-
-    @Composable
-    fun initMangaTagsPainter() {
-        initRomCom()
-        initAdvCom()
-        initPsyMys()
     }
 
     fun navigateToDetailScreen(nav: Navigator, painter: Painter?, manga: Manga) {

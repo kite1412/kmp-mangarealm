@@ -85,7 +85,6 @@ fun App() {
             mainViewModel.fetchMangaByTags(it)
         })
     }
-    mainViewModel.initMangaTagsPainter()
     // check for login info
     LaunchedEffect(true) {
         isLoggedIn.value = isLoggedIn()

@@ -43,6 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,7 +76,6 @@ import model.Manga
 import util.APP_BAR_HEIGHT
 import util.BLUR_TINT
 import util.LATEST_UPDATE_SLIDE_TIME
-import util.Log
 import view_model.main.MainViewModel
 
 private const val imageRatio = 2f / 3f
@@ -267,7 +267,6 @@ fun LatestUpdatesBar(
     nav: Navigator,
     modifier: Modifier = Modifier
 ) {
-    Log.d("recomposed")
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -460,7 +459,6 @@ private fun ContinueReading(
     val screenSize = LocalScreenSize.current
     val smallDisplayHeight = height / 2
     val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp
-    Log.e("continue reading recomposed")
     if (data.isNotEmpty()) Column(modifier = modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -542,7 +540,7 @@ private fun SmallDisplay(
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MangaTags (
-    mangaList: List<Manga>,
+    mangaList: SnapshotStateList<Manga>,
     label: String,
     nav: Navigator,
     backgroundGradient: Brush,
@@ -550,7 +548,6 @@ private fun MangaTags (
     unselectedDotColor: Color = Color(0xFFDEDEDE),
     modifier: Modifier = Modifier
 ) {
-    Log.w("tags: $label recomposed")
     val screenSize = LocalScreenSize.current
     val height = screenSize.height / 3.5f
     Box(
@@ -613,6 +610,7 @@ private fun MangaTags (
                         onClick = { p ->
                             vm.navigateToDetailScreen(nav, p, manga)
                         },
+                        onPainterLoaded = { p -> mangaList[it] = mangaList[it].copy(painter = p) },
                         modifier = Modifier.wrapContentHeight()
                     )
                 }
@@ -630,6 +628,7 @@ private fun TagsDisplay(
     parentHeight: Dp,
     isSelected: Boolean,
     onClick: (Painter?) -> Unit,
+    onPainterLoaded: (Painter) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val imageHeight by animateDpAsState(if (isSelected) parentHeight else parentHeight - (parentHeight / 8))
@@ -656,11 +655,13 @@ private fun TagsDisplay(
                     .background(Color.White)
                     .align(Alignment.Bottom)
             ) {
-                BrowseImageNullable(
+                ImageLoader(
+                    url = getCoverUrl(manga.data),
                     painter = painter,
                     contentDescription = "cover art",
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.FillBounds
+                    contentScale = ContentScale.FillBounds,
+                    onPainterLoaded = onPainterLoaded,
+                    modifier = Modifier.fillMaxSize()
                 )
                 Box(
                     modifier = Modifier
