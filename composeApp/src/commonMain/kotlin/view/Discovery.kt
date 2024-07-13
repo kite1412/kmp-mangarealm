@@ -22,12 +22,12 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActionScope
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,7 +55,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.internal.BackHandler
 import model.Manga
-import model.session.isEmpty
 import model.session.isNotEmpty
 import util.APP_BAR_HEIGHT
 import util.DEFAULT_COLLECTION_SIZE
@@ -78,12 +77,8 @@ fun Discovery(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     Box(modifier = modifier.fillMaxSize()) {
-        BackHandler(false) {
-
+        BackHandler(state.session.isNotEmpty()) {
             if (state.session.isNotEmpty()) state.clearSession()
-        }
-        val sessionHandler = remember {
-            MangaSessionHandler(state.session)
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -134,7 +129,7 @@ fun Discovery(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 contentPadding = PaddingValues(bottom = APP_BAR_HEIGHT + 16.dp),
-                handler = sessionHandler,
+                handler = MangaSessionHandler(state.session),
                 onSessionLoaded = state::onSessionLoaded,
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -145,7 +140,7 @@ fun Discovery(
                         vm.discoveryState.updateMangaPainter(it, manga, p)
                     },
                     parentHeight = maxHeight
-                ) { vm.navigateToDetailScreen(nav, manga.painter, manga) }
+                ) { vm.navigateToDetailScreen(nav, manga) }
             }
         }
     }
@@ -166,7 +161,7 @@ private fun TopBar(
             .height(APP_BAR_HEIGHT)
     ) {
         val showPlaceholder = state.searchBarValue.isEmpty()
-        val startPadding by animateDpAsState(if (state.session.isEmpty()) 24.dp else 8.dp)
+        val startPadding by animateDpAsState(if (state.session.data.isEmpty()) 24.dp else 8.dp)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -202,7 +197,6 @@ private fun TopBar(
                         .fillMaxSize()
                         .padding(horizontal = 8.dp)
                 ) {
-                    val fm = LocalFocusManager.current
                     BasicTextField(
                         value = state.searchBarValue,
                         onValueChange = onValueChange,
@@ -248,21 +242,34 @@ private fun Display(
 ) {
     val height = parentHeight / 5f
     Row(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier
             .fillMaxWidth()
             .height(height)
             .clickable(onClick = onClick)
     ) {
-        ImageLoader(
-            url = getCoverUrl(manga.data),
-            painter = manga.painter,
-            contentScale = ContentScale.FillBounds,
-            onPainterLoaded = onPainterLoaded,
+        Box(
             modifier = Modifier
+                .weight(0.3f)
+                .fillMaxSize()
                 .clip(RoundedCornerShape(8.dp))
-                .weight(0.3f),
-        )
+        ) {
+            ImageLoader(
+                url = getCoverUrl(manga.data),
+                painter = manga.painter,
+                contentScale = ContentScale.FillBounds,
+                onPainterLoaded = onPainterLoaded,
+                loading = {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color.LightGray.copy(alpha = 0.6f))
+                    ) {
+                        CircularProgressIndicator(Modifier.size(18.dp).align(Alignment.Center))
+                    }
+                }
+            )
+        }
         Column(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(4.dp),

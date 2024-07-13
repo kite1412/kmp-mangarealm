@@ -220,18 +220,19 @@ class DetailScreen : Screen {
         val coverArtHeight = totalHeight / 1.5f
         val coverArtWidth = (coverArtHeight * 2) / 3
         val remainingWidth = screenSize.width - (coverArtWidth + 16.dp)
-        val data = sm.manga.data
+        val manga = sm.manga
+        val data = manga.data
         val attributes = data.attributes
         Box(
             modifier = modifier
                 .height(totalHeight)
                 .fillMaxWidth()
         ) {
-            val painter = remember { mutableStateOf(SharedObject.detailCover) }
+            val painter = manga.painter
             Box(modifier = Modifier.haze(hazeState)) {
                 ImageLoader(
                     url = getCoverUrl(data),
-                    painter = painter.value,
+                    painter = painter,
                     contentScale = ContentScale.FillWidth,
                     loading = {},
                     modifier = Modifier
@@ -241,10 +242,7 @@ class DetailScreen : Screen {
                             blurRadius = 8.dp,
                             tint = BLUR_TINT
                         ))
-                ) {
-                    painter.value = it
-                    SharedObject.detailCover = it
-                }
+                ) { sm.manga = sm.manga.copy(painter = it) }
             }
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -273,7 +271,7 @@ class DetailScreen : Screen {
             ) {
                 PublicationStatus(attributes, modifier = Modifier.align(Alignment.End))
                 BrowseImageNullable(
-                    painter = painter.value,
+                    painter = painter,
                     contentScale = ContentScale.FillBounds,
                     modifier = Modifier
                         .width(coverArtWidth)

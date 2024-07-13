@@ -112,7 +112,7 @@ fun BrowseImageNullable(
         if (painter == null) {
             if (loading == null)
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center).size(18.dp)
+                    modifier = Modifier.size(18.dp).align(Alignment.Center)
                 )
             else loading()
         }
