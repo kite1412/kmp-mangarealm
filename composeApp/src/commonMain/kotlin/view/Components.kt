@@ -245,7 +245,10 @@ fun <T, ATTR> SessionPagerColumn(
         userScrollEnabled = userScrollEnabled,
         modifier = modifier.fillMaxSize()
     ) {
-        items(session.data.size) { content(it) }
+        items(
+            count = session.data.size,
+            key = { it }
+        ) { content(it) }
         if (!finished) item {
             CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
         }
