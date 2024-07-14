@@ -2,10 +2,11 @@ package view
 
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
@@ -127,6 +128,7 @@ fun BrowseImageNullable(
 
 
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Action(
     onClick: () -> Unit,
@@ -137,6 +139,7 @@ fun Action(
     enabled: Boolean = true,
     borderWidth: Dp = 2.dp,
     corner: Shape = RoundedCornerShape(8.dp),
+    onDoubleClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -145,13 +148,17 @@ fun Action(
     )
     else Modifier.border(
         width = borderWidth,
-        color = MaterialTheme.colors.secondary,
+        color = color,
         shape = corner
     )
     Box(
         modifier = modifier
             .clip(corner)
-            .clickable(enabled = enabled, onClick = onClick)
+            .combinedClickable(
+                enabled = enabled,
+                onClick = onClick,
+                onDoubleClick = onDoubleClick
+            )
             .then(outer)
             .padding(vertical = verticalPadding, horizontal = horizontalPadding),
         content = content

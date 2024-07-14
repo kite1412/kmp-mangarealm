@@ -3,6 +3,7 @@ package view
 import Assets
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,7 +65,6 @@ import model.Manga
 import model.session.SessionState
 import model.session.isNotEmpty
 import util.APP_BAR_HEIGHT
-import util.DEFAULT_COLLECTION_SIZE
 import util.publicationDemographic
 import util.publicationDemographicColor
 import util.publicationStatus
@@ -93,19 +93,7 @@ fun Discovery(
         ) {
             TopBar(
                 state = state,
-                onSearch = {
-                    if (state.searchBarValue.isNotEmpty()) {
-                        keyboardController?.hide()
-                        focusManager.clearFocus()
-                        vm.discoveryState.updateSession(
-                            queries = mapOf(
-                                "title" to state.searchBarValue,
-                                "includes[]" to "cover_art",
-                                "limit" to DEFAULT_COLLECTION_SIZE
-                            )
-                        )
-                    }
-                },
+                onSearch = { state.beginSession(keyboardController, focusManager) },
                 onBackButtonClick = {
                     state.clearSession()
                     keyboardController?.hide()
@@ -272,7 +260,7 @@ private fun Content(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun Histories(
     state: DiscoveryState,
@@ -297,18 +285,22 @@ private fun Histories(
         FlowRow(
             verticalArrangement = Arrangement.spacedBy(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 4.dp)
         ) {
-//            val color = MaterialTheme.colors.secondary
+            val keyboardController = LocalSoftwareKeyboardController.current
+            val focusManager = LocalFocusManager.current
             for (i in 0 until size) {
                 val history = histories[i]
                 Action(
-                    onClick = {},
+                    onClick = { state.beginSession(keyboardController, focusManager, history) },
                     fill = false,
                     horizontalPadding = 10.dp,
                     verticalPadding = 8.dp,
-                    borderWidth = 1.dp,
-                    corner = CircleShape
+                    color = MaterialTheme.colors.onBackground,
+                    corner = CircleShape,
+                    onDoubleClick = { state.deleteHistory(history) }
                 ) {
                     Text(
                         history,
