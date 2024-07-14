@@ -257,8 +257,6 @@ private fun Header(
     }
 }
 
-// TODO(find a way to adjust the auto-slide bar and limit the scope of
-//  composables that read the pager state as small as possible)
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LatestUpdatesBar(
@@ -361,8 +359,8 @@ fun LatestUpdatesBar(
             )
         }
         IndicatorDots(
-            n = pagerState.pageCount,
-            selected = pagerState.currentPage + 1,
+            n = vm.sessionSize,
+            selected = currentPage + 1,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 8.dp)

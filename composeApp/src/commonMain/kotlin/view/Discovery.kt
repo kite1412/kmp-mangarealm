@@ -55,6 +55,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.internal.BackHandler
 import model.Manga
+import model.session.SessionState
 import model.session.isNotEmpty
 import util.APP_BAR_HEIGHT
 import util.DEFAULT_COLLECTION_SIZE
@@ -105,44 +106,15 @@ fun Discovery(
                     focusManager.clearFocus()
                 },
                 onClear = {
-                    state.searchBarValue = ""
                     keyboardController?.show()
+                    state.searchBarValue = ""
                 },
                 onValueChange = vm.discoveryState::searchBarValueChange,
                 modifier = Modifier
                     .weight(if (state.session.data.isNotEmpty()) 0.9f else 1f)
             )
         }
-        if (state.session.data.isNotEmpty()) BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    top = APP_BAR_HEIGHT + 8.dp,
-                    bottom = 8.dp,
-                    start = 8.dp,
-                    end = 16.dp
-                )
-        ) {
-            SessionPagerColumn<Manga, MangaAttributes>(
-                session = state.session,
-                state = state.listState,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                contentPadding = PaddingValues(bottom = APP_BAR_HEIGHT + 16.dp),
-                handler = MangaSessionHandler(state.session),
-                onSessionLoaded = state::onSessionLoaded,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                val manga = state.session.data[it]
-                Display(
-                    manga = manga,
-                    onPainterLoaded = { p ->
-                        vm.discoveryState.updateMangaPainter(it, manga, p)
-                    },
-                    parentHeight = maxHeight
-                ) { vm.navigateToDetailScreen(nav, manga) }
-            }
-        }
+        Content(vm, state)
     }
 }
 
@@ -228,6 +200,53 @@ private fun TopBar(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun Content(
+    vm: MainViewModel,
+    state: DiscoveryState,
+    modifier: Modifier = Modifier
+) {
+    val nav = LocalNavigator.currentOrThrow
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(
+                top = APP_BAR_HEIGHT + 8.dp,
+                start = 8.dp,
+                end = 16.dp
+            )
+    ) {
+        val sessionState = state.session.state.value
+        when (sessionState) {
+            SessionState.FETCHING -> CircularProgressIndicator(
+                Modifier
+                    .align(Alignment.Center)
+                    .padding(bottom = APP_BAR_HEIGHT)
+            )
+            SessionState.ACTIVE -> SessionPagerColumn<Manga, MangaAttributes>(
+                session = state.session,
+                state = state.listState,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                contentPadding = PaddingValues(bottom = APP_BAR_HEIGHT + 16.dp),
+                handler = MangaSessionHandler(state.session),
+                onSessionLoaded = state::onSessionLoaded,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                val manga = state.session.data[it]
+                Display(
+                    manga = manga,
+                    onPainterLoaded = { p ->
+                        vm.discoveryState.updateMangaPainter(it, manga, p)
+                    },
+                    parentHeight = maxHeight
+                ) { vm.navigateToDetailScreen(nav, manga) }
+            }
+            SessionState.IDLE -> Unit
         }
     }
 }

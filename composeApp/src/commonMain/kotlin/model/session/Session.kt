@@ -1,5 +1,6 @@
 package model.session
 
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import api.mangadex.model.response.ListResponse
 
@@ -8,6 +9,7 @@ interface Session<T, ATTR> {
     val queries: MutableMap<String, Any>
     var response: ListResponse<ATTR>
     var data: SnapshotStateList<T>
+    var state: MutableState<SessionState>
 
     fun addAll(list: List<T>) = data.addAll(list)
 
@@ -15,12 +17,15 @@ interface Session<T, ATTR> {
         response = ListResponse()
         data.clear()
         queries.clear()
+        state.value = SessionState.IDLE
     }
 
-    fun from(session: Session<T, ATTR>) {
+    fun from(session: Session<T, ATTR>): Session<T, ATTR> {
         newResponse(session.response)
         addAll(session.data.subList(data.size, session.data.size))
         putAllQueries(session.queries)
+        state.value = session.state.value
+        return this
     }
 
     fun clearFrom(session: Session<T, ATTR>) {
@@ -37,3 +42,9 @@ fun <T, ATTR> Session<T, ATTR>.isEmpty() =
     response == ListResponse<ATTR>() && queries.isEmpty() && data.isEmpty()
 
 fun <T, ATTR> Session<T, ATTR>.isNotEmpty() = !isEmpty()
+
+enum class SessionState {
+    IDLE,
+    FETCHING,
+    ACTIVE
+}
