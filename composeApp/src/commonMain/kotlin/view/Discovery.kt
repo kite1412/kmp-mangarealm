@@ -2,6 +2,7 @@ package view
 
 import Assets
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -300,9 +301,14 @@ private fun Histories(
                 }
             }
             Text(
-                "Your latest searches",
+                if (!state.historyEditing) "Your latest searches" else "Select histories...",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
+                color = animateColorAsState(
+                    if (state.historyEditing) MaterialTheme.colors.secondary
+                    else Color.Black
+                ).value,
+                fontStyle = if (state.historyEditing) FontStyle.Italic else FontStyle.Normal,
                 modifier = Modifier.padding(start = 4.dp)
             )
             FlowRow(
@@ -327,13 +333,20 @@ private fun Histories(
                         fill = state.selectedHistory.contains(history),
                         horizontalPadding = 12.dp,
                         verticalPadding = 8.dp,
-                        color = MaterialTheme.colors.onBackground,
+                        color = animateColorAsState(
+                            if (state.historyEditing) MaterialTheme.colors.secondary
+                            else MaterialTheme.colors.onBackground
+                        ).value,
                         corner = CircleShape,
-                        onDoubleClick = { state.deleteHistory(history) }
                     ) {
                         Text(
                             history,
                             fontWeight = FontWeight.Medium,
+                            color =  animateColorAsState(
+                                if (state.historyEditing)
+                                    if (!state.selectedHistory.contains(history)) MaterialTheme.colors.secondary
+                                else Color.White else Color.Black
+                            ).value,
                             modifier = Modifier.align(Alignment.Center)
                         )
                     }
