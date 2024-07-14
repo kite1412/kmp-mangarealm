@@ -17,6 +17,7 @@ object KottageConst {
     const val PSYCHOLOGICAL_TAG_ID = "tags:psy"
     const val MYSTERY_TAG_ID = "tags:mys"
     const val TAGS_LIST = "api:tags"
+    const val HISTORY_LIST = "local:history"
 }
 
 const val SPLASH_TIME = 2000

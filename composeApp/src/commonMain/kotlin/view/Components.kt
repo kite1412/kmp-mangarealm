@@ -135,15 +135,16 @@ fun Action(
     verticalPadding: Dp = 2.dp,
     horizontalPadding: Dp = 0.dp,
     enabled: Boolean = true,
+    borderWidth: Dp = 2.dp,
+    corner: Shape = RoundedCornerShape(8.dp),
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val corner = RoundedCornerShape(8.dp)
     val outer: Modifier = if (fill) Modifier.background(
         color = if (enabled) color else Color.Gray
     )
     else Modifier.border(
-        width = 2.dp,
+        width = borderWidth,
         color = MaterialTheme.colors.secondary,
         shape = corner
     )

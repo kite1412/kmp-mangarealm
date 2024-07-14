@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActionScope
@@ -27,7 +30,10 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -74,9 +80,9 @@ fun Discovery(
     modifier: Modifier = Modifier
 ) {
     val state = vm.discoveryState
-    val nav = LocalNavigator.currentOrThrow
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    LaunchedEffect(true) { state.init() }
     Box(modifier = modifier.fillMaxSize()) {
         BackHandler(state.session.isNotEmpty()) {
             if (state.session.isNotEmpty()) state.clearSession()
@@ -133,7 +139,9 @@ private fun TopBar(
             .height(APP_BAR_HEIGHT)
     ) {
         val showPlaceholder = state.searchBarValue.isEmpty()
-        val startPadding by animateDpAsState(if (state.session.data.isEmpty()) 24.dp else 8.dp)
+        val sessionState = state.session.state.value
+        val sessionActive = sessionState == SessionState.ACTIVE
+        val startPadding by animateDpAsState(if (!sessionActive) 24.dp else 8.dp)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -146,7 +154,7 @@ private fun TopBar(
                     bottom = 8.dp,
                 )
         ) {
-            AnimatedVisibility(state.session.data.isNotEmpty()) {
+            AnimatedVisibility(sessionActive) {
                 Icon(
                     imageVector = Assets.`Arrow-left-solid`,
                     contentDescription = "back",
@@ -220,14 +228,21 @@ private fun Content(
                 end = 16.dp
             )
     ) {
-        val sessionState = state.session.state.value
+        val session = state.session
+        val sessionState = session.state.value
         when (sessionState) {
+            SessionState.IDLE -> Column(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Histories(state)
+            }
             SessionState.FETCHING -> CircularProgressIndicator(
                 Modifier
                     .align(Alignment.Center)
                     .padding(bottom = APP_BAR_HEIGHT)
             )
-            SessionState.ACTIVE -> SessionPagerColumn<Manga, MangaAttributes>(
+            SessionState.ACTIVE -> if (session.data.isNotEmpty()) SessionPagerColumn<Manga, MangaAttributes>(
                 session = state.session,
                 state = state.listState,
                 verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -245,8 +260,63 @@ private fun Content(
                     },
                     parentHeight = maxHeight
                 ) { vm.navigateToDetailScreen(nav, manga) }
+            } else Text(
+                "No results found",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(bottom = APP_BAR_HEIGHT),
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Histories(
+    state: DiscoveryState,
+    modifier: Modifier = Modifier
+) {
+    val histories = state.histories
+    if (histories.isNotEmpty()) Column(
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 8.dp)
+    ) {
+        val size by remember {
+            derivedStateOf { if (histories.size > 10) 10 else histories.size }
+        }
+        Text(
+            "Your latest searches",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(start = 4.dp)
+        )
+        FlowRow(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+//            val color = MaterialTheme.colors.secondary
+            for (i in 0 until size) {
+                val history = histories[i]
+                Action(
+                    onClick = {},
+                    fill = false,
+                    horizontalPadding = 10.dp,
+                    verticalPadding = 8.dp,
+                    borderWidth = 1.dp,
+                    corner = CircleShape
+                ) {
+                    Text(
+                        history,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
             }
-            SessionState.IDLE -> Unit
         }
     }
 }
