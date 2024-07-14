@@ -3,15 +3,17 @@ package view
 import Assets
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -30,6 +33,7 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -38,8 +42,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -55,8 +61,11 @@ import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTitle
 import assets.`Arrow-left-solid`
+import assets.`Chevron-right-bold`
 import assets.Cross
+import assets.`Other-1-solid`
 import assets.Search
+import assets.`Trash-solid`
 import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -83,7 +92,15 @@ fun Discovery(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     LaunchedEffect(true) { state.init() }
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .pointerInput(true) {
+                detectTapGestures {
+                    if (state.showHistoryOptions) state.showHistoryOptions = false
+                }
+            }
+    ) {
         BackHandler(state.session.isNotEmpty()) {
             if (state.session.isNotEmpty()) state.clearSession()
         }
@@ -260,53 +277,222 @@ private fun Content(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Histories(
     state: DiscoveryState,
     modifier: Modifier = Modifier
 ) {
     val histories = state.histories
-    if (histories.isNotEmpty()) Column(
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+    if (histories.isNotEmpty()) Box(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 8.dp)
     ) {
-        val size by remember {
-            derivedStateOf { if (histories.size > 10) 10 else histories.size }
-        }
-        Text(
-            "Your latest searches",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(start = 4.dp)
-        )
-        FlowRow(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 4.dp)
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            val keyboardController = LocalSoftwareKeyboardController.current
-            val focusManager = LocalFocusManager.current
-            for (i in 0 until size) {
-                val history = histories[i]
-                Action(
-                    onClick = { state.beginSession(keyboardController, focusManager, history) },
-                    fill = false,
-                    horizontalPadding = 10.dp,
-                    verticalPadding = 8.dp,
-                    color = MaterialTheme.colors.onBackground,
-                    corner = CircleShape,
-                    onDoubleClick = { state.deleteHistory(history) }
-                ) {
-                    Text(
-                        history,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.align(Alignment.Center)
+            val maxSize by remember {
+                derivedStateOf {
+                    if (state.showAllHistories) histories.size
+                    else if (histories.size > 10) 10 else histories.size
+                }
+            }
+            Text(
+                "Your latest searches",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 4.dp)
+            )
+            FlowRow(
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 4.dp)
+            ) {
+                val keyboardController = LocalSoftwareKeyboardController.current
+                val focusManager = LocalFocusManager.current
+                for (i in 0 until maxSize) {
+                    val history = histories[i]
+                    Action(
+                        onClick = {
+                            state.handleHistoryClick(
+                                keyboardController = keyboardController,
+                                focusManager = focusManager,
+                                history = history
+                            )
+                        },
+                        fill = state.selectedHistory.contains(history),
+                        horizontalPadding = 12.dp,
+                        verticalPadding = 8.dp,
+                        color = MaterialTheme.colors.onBackground,
+                        corner = CircleShape,
+                        onDoubleClick = { state.deleteHistory(history) }
+                    ) {
+                        Text(
+                            history,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                }
+                val showAll = state.showAllHistories
+                val rotate by animateFloatAsState(if (showAll) 180f else 0f)
+                if (histories.size > maxSize || showAll) Icon(
+                    imageVector = Assets.`Chevron-right-bold`,
+                    contentDescription = "more",
+                    tint = MaterialTheme.colors.onBackground,
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .padding(start = 6.dp)
+                        .rotate(rotate)
+                        .clip(CircleShape)
+                        .clickable {
+                            state.showAllHistories = !showAll
+                        }
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+        ) {
+            Column(horizontalAlignment = Alignment.End) {
+                AnimatedVisibility(!state.historyEditing) {
+                    Icon(
+                        imageVector = Assets.`Other-1-solid`,
+                        contentDescription = "options",
+                        tint = Color.Black,
+                        modifier = Modifier
+                            .width(26.dp)
+                            .clip(CircleShape)
+                            .clickable { state.showHistoryOptions = !state.showHistoryOptions }
                     )
+                }
+                AnimatedVisibility(state.historyEditing) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AnimatedVisibility(state.selectedHistory.isNotEmpty()) {
+                            Icon(
+                                imageVector = Assets.`Trash-solid`,
+                                contentDescription = "options",
+                                tint = Color(180, 0, 0),
+                                modifier = Modifier
+                                    .width(26.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        state.showDeletionWarning(
+                                            message = "Delete selected histories?",
+                                            action = state::deleteSelectedHistories
+                                        )
+                                    }
+                            )
+                        }
+                        Icon(
+                            imageVector = Assets.Cross,
+                            contentDescription = "cancel",
+                            tint = Color.Black,
+                            modifier = Modifier
+                                .width(26.dp)
+                                .clip(CircleShape)
+                                .clickable { state.clearSelectedHistory() }
+                        )
+                    }
+                }
+                AnimatedVisibility(
+                    visible = state.showHistoryOptions,
+                    modifier = Modifier.clickable {}
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .width(IntrinsicSize.Max)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color.White)
+                            .padding(8.dp)
+                    ) {
+                        HistoryOption("Edit", modifier = Modifier.fillMaxWidth()) {
+                            state.onEditClick()
+                        }
+                        HistoryOption("Clear", color = Color.Red) {
+
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoryOption(
+    option: String,
+    color: Color = Color.Black,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Text(
+        option,
+        color = color,
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(16.dp)
+    )
+}
+
+@Composable
+fun DeletionWarning(
+    state: DiscoveryState,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.4f))
+            .pointerInput(true) {
+                detectTapGestures { state.cancelDeletion() }
+            }
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .background(MaterialTheme.colors.background)
+                .padding(16.dp)
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    state.deletionMessage,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    TextButton(
+                        onClick = { state.cancelDeletion() }
+                    ) {
+                        Text(
+                            "Cancel",
+                            fontSize = 16.sp
+                        )
+                    }
+                    TextButton(
+                        onClick = { state.deletionAction() }
+                    ) {
+                        Text(
+                            state.deletionLabel,
+                            fontSize = 16.sp,
+                            color = Color(160, 0, 0)
+                        )
+                    }
                 }
             }
         }

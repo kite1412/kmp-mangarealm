@@ -13,7 +13,6 @@ import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import io.github.irgaly.kottage.KottageList
-import io.github.irgaly.kottage.KottageListDirection
 import io.github.irgaly.kottage.KottageListPage
 import io.github.irgaly.kottage.KottageStorage
 import io.github.irgaly.kottage.add
@@ -39,10 +38,18 @@ class DiscoveryState(
 
     var searchBarValue by mutableStateOf("")
     val session = MangaSession()
+    val listState = LazyListState()
     var histories = mutableStateListOf<String>()
+    var showAllHistories by mutableStateOf(false)
+    var showHistoryOptions by mutableStateOf(false)
+    var historyEditing by mutableStateOf(false)
+    val selectedHistory = mutableStateListOf<String>()
+    var showDeletionWarning by mutableStateOf(false)
+    var deletionMessage = ""
+    var deletionAction = {}
+    var deletionLabel = ""
     private var q: String = ""
     private var initialized = false
-    val listState = LazyListState()
     private val historyList = kottageStorage.list(KottageConst.HISTORY_LIST)
 
     fun init() {
@@ -69,10 +76,10 @@ class DiscoveryState(
                     cache.latestMangaSearch[q] = MangaSession().apply { from(session) }
                 }
             } else session.from(fromCache)
+            listState.scrollToItem(0)
             queries["title"]?.let {
                 saveHistory(it as String)
             }
-            listState.scrollToItem(0)
         }
     }
 
@@ -95,8 +102,8 @@ class DiscoveryState(
 
     private fun initHistory() {
         scope.launch {
-            val pageSize = 100L
-            val page0 = historyList.getPageFrom(null, pageSize, direction = KottageListDirection.Backward)
+            val pageSize = maxHistory.toLong()
+            val page0 = historyList.getPageFrom(null, pageSize)
             loadHistories(histories = historyList, initialPage = page0, pageSize = pageSize)
         }
     }
@@ -152,6 +159,56 @@ class DiscoveryState(
                 )
             )
         }
+    }
+
+    fun onEditClick() {
+        showHistoryOptions = false
+        historyEditing = true
+    }
+
+    fun handleHistoryClick(
+        keyboardController: SoftwareKeyboardController?,
+        focusManager: FocusManager,
+        history: String = ""
+    ) {
+        if (!historyEditing) beginSession(
+            keyboardController = keyboardController,
+            focusManager = focusManager,
+            search = history
+        ) else {
+            if (!selectedHistory.contains(history)) selectedHistory.add(history)
+                else selectedHistory.remove(history)
+        }
+    }
+
+    fun clearSelectedHistory() {
+        selectedHistory.clear()
+        historyEditing = false
+    }
+
+    fun showDeletionWarning(message: String, deletionLabel: String = "Delete", action: () -> Unit) {
+        deletionMessage = message
+        deletionAction = action
+        this.deletionLabel = deletionLabel
+        showDeletionWarning = true
+    }
+
+    fun deleteSelectedHistories() {
+        scope.launch {
+            selectedHistory.apply {
+                histories.removeAll(this)
+                forEach {
+                    kottageStorage.remove(it)
+                }
+                clear()
+            }
+            showDeletionWarning = false
+            clearSelectedHistory()
+        }
+    }
+
+    fun cancelDeletion() {
+        showDeletionWarning = false
     }
 
     fun checkStatus(manga: Manga): Status? = if (manga.status != MangaStatus.None) manga.status
