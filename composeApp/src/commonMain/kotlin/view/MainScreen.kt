@@ -67,6 +67,7 @@ class MainScreen : Screen {
                     onPageChange = vm::pushMenu,
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
+                if (vm.discoveryState.showDeletionWarning) DeletionWarning(vm.discoveryState)
             }
         }
     }
