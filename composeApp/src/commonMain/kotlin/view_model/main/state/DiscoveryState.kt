@@ -202,13 +202,20 @@ class DiscoveryState(
                 }
                 clear()
             }
-            showDeletionWarning = false
+            cancelDeletion()
             clearSelectedHistory()
         }
     }
 
-    fun cancelDeletion() {
-        showDeletionWarning = false
+    fun cancelDeletion() { showDeletionWarning = false }
+
+    fun clearHistories() {
+        scope.launch {
+            historyList.removeAll(true)
+            histories.clear()
+            cancelDeletion()
+            showHistoryOptions = false
+        }
     }
 
     fun checkStatus(manga: Manga): Status? = if (manga.status != MangaStatus.None) manga.status
