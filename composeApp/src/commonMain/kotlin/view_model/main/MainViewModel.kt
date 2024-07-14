@@ -43,7 +43,12 @@ class MainViewModel(
     val menuStack = mutableStateStackOf(Menu.HOME)
     val currentPage by derivedStateOf { menuStack.lastItemOrNull }
 
-    val discoveryState = DiscoveryState(mangaDex, cache, viewModelScope)
+    val discoveryState = DiscoveryState(
+        mangaDex = mangaDex,
+        cache = cache,
+        scope = viewModelScope,
+        kottageStorage = kottageStorage
+    )
 
     var undoEdgeToEdge by mutableStateOf(false)
 

@@ -33,9 +33,9 @@ class Initializer(
     ): String? {
         if (kl.isNotEmpty()) {
             for (i in 0 until kl.getSize()) {
-                val now = kl.getByIndex(i)!!.value<Tag>()
-                if (now.name == name) {
-                    return now.tagId
+                val it = kl.getByIndex(i)!!.value<Tag>()
+                if (it.name == name) {
+                    return it.tagId
                 }
             }
         }
