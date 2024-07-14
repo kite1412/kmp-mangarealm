@@ -419,7 +419,11 @@ private fun Histories(
                             state.onEditClick()
                         }
                         HistoryOption("Clear", color = Color.Red) {
-
+                            state.showDeletionWarning(
+                                message = "Clear all histories?",
+                                action = state::clearHistories,
+                                deletionLabel = "Yes"
+                            )
                         }
                     }
                 }
