@@ -16,6 +16,7 @@ import model.MangaStatus
 import model.Status
 import model.session.MangaSession
 import model.session.Session
+import model.session.SessionState
 import model.toMangaList
 
 class DiscoveryState(
@@ -34,16 +35,15 @@ class DiscoveryState(
             session.clear()
             val fromCache = cache.latestMangaSearch[q]
             if (fromCache == null) {
+                session.state.value = SessionState.FETCHING
                 val res = mangaDex.getManga(q)
                 if (res != null) {
                     val data = res.toMangaList()
                     session.newResponse(res)
                     session.putAllQueries(queries)
                     session.addAll(data)
-                    cache.latestMangaSearch[q] = MangaSession().apply {
-                        newResponse(res)
-                        addAll(data)
-                    }
+                    session.state.value = SessionState.ACTIVE
+                    cache.latestMangaSearch[q] = MangaSession().apply { from(session) }
                 }
             } else session.from(fromCache)
             listState.scrollToItem(0)
