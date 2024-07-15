@@ -34,13 +34,11 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,7 +60,6 @@ import com.seiko.imageloader.option.SizeResolver
 import com.seiko.imageloader.rememberImagePainter
 import com.seiko.imageloader.rememberImageSuccessPainter
 import com.seiko.imageloader.ui.AutoSizeBox
-import kotlinx.coroutines.flow.distinctUntilChanged
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.no_image
 import model.session.Session
@@ -221,6 +218,7 @@ fun <T, ATTR> SessionPagerColumn(
     handler: SessionHandler<T, ATTR>,
     state: LazyListState = rememberLazyListState(),
     thresholdFactor: Float = 1.2f,
+    enableLoadNew: Boolean = true,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     reverseLayout: Boolean = false,
     verticalArrangement: Arrangement.Vertical =
@@ -232,25 +230,28 @@ fun <T, ATTR> SessionPagerColumn(
     modifier: Modifier = Modifier,
     content: @Composable (Int) -> Unit
 ) {
-    var block by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
-    val passThreshold by remember {
-        snapshotFlow {
-            state.firstVisibleItemIndex + state.layoutInfo.visibleItemsInfo.size >= (session.data.size / thresholdFactor)
-        }.distinctUntilChanged()
-    }.collectAsState(false)
-    if (session.response != ListResponse<ATTR>()) LaunchedEffect(
-        key1 = passThreshold,
-    ) {
-        if (!block && passThreshold) {
-            block = true
-            handler.updateSession { done, newSession ->
-                block = done
-                finished = done
-                newSession?.let { onSessionLoaded(it) }
+    // TODO handle the cancellation
+    if (enableLoadNew) {
+        var block by remember { mutableStateOf(false) }
+        val passThreshold by remember {
+            derivedStateOf {
+                state.firstVisibleItemIndex + state.layoutInfo.visibleItemsInfo.size >= (session.data.size / thresholdFactor)
             }
         }
-    }
+        if (session.response != ListResponse<ATTR>()) LaunchedEffect(
+            key1 = passThreshold,
+        ) {
+            if (!block && passThreshold) {
+                block = true
+                handler.updateSession { done, newSession ->
+                    block = done
+                    finished = done
+                    newSession?.let { onSessionLoaded(it) }
+                }
+            }
+        }
+    } else finished = true
     if (session.data.isNotEmpty()) LazyColumn(
         state = state,
         verticalArrangement = verticalArrangement,
@@ -270,6 +271,7 @@ fun <T, ATTR> SessionPagerColumn(
         }
     }
 }
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun <T, ATTR> SessionPagerVerticalPager(

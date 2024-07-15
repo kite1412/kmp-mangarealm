@@ -26,8 +26,10 @@ fun generateQuery(queryParams: Map<String, Any>, otherParams: String = ""): Stri
         var final = "?"
         queryParams.entries.forEachIndexed { i, e ->
             if (e.value is List<*>) {
-                (e.value as List<*>).forEach {
+                val l = e.value as List<*>
+                l.forEachIndexed { index, it ->
                     final += "${e.key}=${it.toString().replace(" ", "%20")}"
+                    if ((index + 1) != l.size) final += "&"
                 }
             } else {
                 final += "${e.key}=${e.value.toString().replace(" ", "%20")}"

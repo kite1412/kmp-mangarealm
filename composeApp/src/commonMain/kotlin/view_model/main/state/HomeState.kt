@@ -5,6 +5,8 @@ import Libs
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.graphics.painter.Painter
+import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.Status
 import api.mangadex.util.generateArrayQueryParam
@@ -16,6 +18,7 @@ import kotlinx.coroutines.launch
 import model.Manga
 import model.MangaStatus
 import model.session.MangaSession
+import model.session.Session
 import model.toMangaList
 import util.ADVENTURE_TAG
 import util.COMEDY_TAG
@@ -48,6 +51,7 @@ class HomeState(
     var advComTags = listOf<String>() to listOf<String>()
     var psyMysTags = listOf<String>() to listOf<String>()
     val session = MangaSession()
+    private var sessionQueries = ""
 
     suspend fun updateUsername() {
         val username = kottageStorage.get<String>(KottageConst.USERNAME)
@@ -123,6 +127,7 @@ class HomeState(
                 val fromCache = cache.latestMangaSearch[q]
                 session.clear()
                 if (fromCache == null) {
+                    sessionQueries = q
                     session.init(queries)
                     val res = mangaDex.getManga(q)
                     if (res != null) {
@@ -149,28 +154,14 @@ class HomeState(
         "limit" to sessionSize
     )
 
-//    suspend fun fetchMangaByTags(tags: Map<String, String>) {
-//        fetchByTags(
-//            tags = listOf(tags[ROMANCE_TAG]!!, tags[COMEDY_TAG]!!),
-//            onSuccess = {
-//                romCom.addAll(it.toMangaList())
-//            },
-//            excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!)
-//        )
-//        fetchByTags(
-//            tags = listOf(tags[ADVENTURE_TAG]!!, tags[COMEDY_TAG]!!),
-//            onSuccess = {
-//                advCom.addAll(it.toMangaList())
-//            },
-//            excludedTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!, tags[ROMANCE_TAG]!!)
-//        )
-//        fetchByTags(
-//            tags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!),
-//            onSuccess = {
-//                psyMys.addAll(it.toMangaList())
-//            },
-//            excludedTags = listOf(tags[COMEDY_TAG]!!)
-//        )
-//    }
+    fun onSessionLoaded(new: Session<Manga, MangaAttributes>) {
+        cache.latestMangaSearch[sessionQueries]!!.from(new)
+    }
+
+    fun onPainterLoaded(i: Int, p: Painter) {
+        val new = session.data[i].copy(painter = p)
+        session.data[i] = new
+        cache.latestMangaSearch[sessionQueries]!!.data[i] = new
+    }
 }
 

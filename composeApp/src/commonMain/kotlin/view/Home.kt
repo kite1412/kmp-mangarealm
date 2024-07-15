@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,7 +36,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -65,11 +65,11 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.times
+import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTags
 import api.mangadex.util.getTitle
-import assets.`Arrow-left-solid`
 import assets.`Chevron-right`
 import assets.`Heart-outline`
 import assets.`Magnifying-glass`
@@ -83,11 +83,13 @@ import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
 import model.Manga
+import model.session.MangaSession
+import model.session.Session
 import model.session.SessionState
 import util.APP_BAR_HEIGHT
 import util.BLUR_TINT
 import util.LATEST_UPDATE_SLIDE_TIME
-import util.Log
+import util.session_handler.MangaSessionHandler
 import view_model.main.MainViewModel
 import view_model.main.state.HomeState
 
@@ -110,9 +112,10 @@ fun Home(
     val screenSize = LocalScreenSize.current
     val latestBarHeight = (screenSize.height.value / 4.2).dp
     val pagerState = rememberPagerState { 2 }
+    val session = state.session
     val sessionState by remember {
-        derivedStateOf { state.session.state }
-    }.value
+        derivedStateOf { session.state.value }
+    }
     LaunchedEffect(sessionState) {
         when(sessionState) {
             SessionState.IDLE -> pagerState.animateScrollToPage(0)
@@ -230,7 +233,11 @@ fun Home(
                     Spacer(modifier = Modifier.height(bottomBarTotalHeight - 16.dp))
                 }
             }
-            else -> MangaPage(onClick = { state.clearSession() })
+            else -> MangaPage(
+                session = session,
+                onSessionLoaded = state::onSessionLoaded,
+                onPainterLoaded = state::onPainterLoaded
+            )
         }
     }
 }
@@ -317,7 +324,6 @@ fun LatestUpdatesBar(
     nav: Navigator,
     modifier: Modifier = Modifier
 ) {
-    Log.w("latest updates bar")
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -925,17 +931,62 @@ fun PsyMysTag(
 
 @Composable
 fun MangaPage(
-    onClick: () -> Unit,
+    session: MangaSession,
+    onSessionLoaded: (Session<Manga, MangaAttributes>) -> Unit,
+    onPainterLoaded: (Int, Painter) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
+    val screenSize = LocalScreenSize.current
     Box(modifier = modifier.fillMaxSize()) {
-        Box(modifier = Modifier.fillMaxWidth().height(APP_BAR_HEIGHT)) {
-            IconButton(onClick = onClick) {
-                Icon(
-                    imageVector = Assets.`Arrow-left-solid`,
-                    contentDescription = "back",
-                    tint = Color.Black
-                )
+        when(session.state.value) {
+            SessionState.FETCHING -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color.Black.copy(alpha = 0.8f))
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(24.dp),
+                        )
+                    }
+                }
+            }
+            else -> {
+                // TODO change to SessionPagerVerticalPager
+                SessionPagerColumn(
+                    session = session,
+                    handler = MangaSessionHandler(session),
+                    onSessionLoaded = onSessionLoaded,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = APP_BAR_HEIGHT + 8.dp)
+                ) {
+                    val manga = session.data[it]
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(200.dp)
+                    ) {
+                        ImageLoader(
+                            url = getCoverUrl(manga.data),
+                            painter = manga.painter,
+                            contentScale = ContentScale.FillBounds,
+                            modifier = Modifier.fillMaxHeight().weight(0.3f)
+                        ) { p -> onPainterLoaded(it, p) }
+                        Text(
+                            getTitle(manga.data.attributes.title),
+                            fontSize = 16.sp,
+                            modifier = Modifier.weight(0.7f)
+                        )
+                    }
+                }
             }
         }
     }
