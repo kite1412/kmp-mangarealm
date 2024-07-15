@@ -48,6 +48,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -59,15 +60,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
 import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTags
 import api.mangadex.util.getTitle
 import assets.`Chevron-right`
+import assets.`Heart-outline`
+import assets.`Magnifying-glass`
 import assets.Person
 import assets.`Text-align-right`
+import assets.`Treasure-map`
 import cafe.adriel.voyager.navigator.Navigator
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazeStyle
@@ -86,8 +92,8 @@ private const val imageRatio = 2f / 3f
 private val bottomBarTotalHeight = APP_BAR_HEIGHT + 8.dp
 private val parentHorizontalPadding = 16.dp
 private val tagsHorizontalPadding = 8.dp
-private val tagsRowCount = 2
-private val tagsColumnCount = 1
+private const val tagsRowCount = 2
+private const val tagsColumnCount = 2
 
 // TODO make its own state
 @Composable
@@ -716,30 +722,33 @@ fun tagBoxSize(): Dp = LocalScreenSize.current.width / 2 - parentHorizontalPaddi
 @Composable
 private fun Tags(modifier: Modifier = Modifier) {
     val tagBoxSize = tagBoxSize()
-    SubcomposeLayout(modifier = modifier.fillMaxWidth()) { constraints ->
-           val measurable = subcompose("grid") {
-               LazyHorizontalGrid(
-                   horizontalArrangement = Arrangement.spacedBy(8.dp),
-                   rows = GridCells.Fixed(1),
-                   modifier = Modifier.fillMaxWidth()
-               ) {
-                   item {
-                       RomComTag()
-                   }
-                   item {
-                       RomComTag()
-                   }
-               }
-           }
-        val placeable = measurable.map { it.measure(constraints.copy(
-            maxHeight = (tagBoxSize * tagsColumnCount).roundToPx()
-        )) }
+    SubcomposeLayout(modifier = modifier) { constraints ->
+        val verticalArrangement = 8.dp
+        val measurable = subcompose("grid") {
+            LazyHorizontalGrid(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(verticalArrangement),
+                rows = GridCells.Fixed(2),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                item { RomComTag() }
+                item { PsyMysTag() }
+                item { AdvComTag() }
+            }
+        }
+        val placeable = measurable.map {
+            it.measure(
+                constraints.copy(
+                    maxHeight = ((tagBoxSize * tagsColumnCount + ((tagsColumnCount - 1) * verticalArrangement))).roundToPx()
+                )
+            )
+        }
         val totalHeight = placeable.sumOf { it.height }
         layout(constraints.maxWidth, totalHeight) {
             var nextHeight = 0
             placeable.forEach {
                 it.placeRelative(0, nextHeight)
-                nextHeight += it.height
+                nextHeight += (it.height + verticalArrangement.roundToPx())
             }
         }
     }
@@ -750,42 +759,45 @@ private fun Tag(
     tag: String,
     backgroundGradient: Pair<Color, Color>,
     onClick: () -> Unit,
+    fontSize: TextUnit = 24.sp,
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit,
+    content: @Composable BoxScope.(Dp) -> Unit,
 ) {
+    val size = tagBoxSize()
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .size(tagBoxSize())
+            .size(size)
             .background(
                 brush = Brush.linearGradient(
                     listOf(backgroundGradient.first, backgroundGradient.second)
                 )
             )
             .clickable(onClick = onClick)
-            .padding(12.dp)
         ,
     ) {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            content()
+        content(size)
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp)
+        ) {
             Text(
                 tag,
                 color = Color.White,
                 fontStyle = FontStyle.Italic,
-                fontSize = 24.sp,
+                fontSize = fontSize,
                 fontWeight = FontWeight.Bold,
                 maxLines = 3,
                 overflow = TextOverflow.Clip,
-                modifier = Modifier.padding(top = maxWidth / 4)
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }
 }
 
 @Composable
-private fun RomComTag(
-    modifier: Modifier = Modifier
-) {
+private fun RomComTag(modifier: Modifier = Modifier) {
     Tag(
         tag = "Rom-Com",
         backgroundGradient = Color(0xFFADD8E6) to Color(0xFFFFB6C1),
@@ -793,6 +805,57 @@ private fun RomComTag(
 
         }
     ) {
+        Icon(
+            imageVector = Assets.`Heart-outline`,
+            contentDescription = "rom-com",
+            tint = Color(0xFFEEA8B2),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(it / 1.2f)
+                .rotate(-30f)
+                .offset(y = it / 4f)
+        )
+    }
+}
 
+@Composable
+private fun AdvComTag(modifier: Modifier = Modifier) {
+    Tag(
+        tag = "Adventure Comedy",
+        backgroundGradient = Color(0xFFFFA07A) to Color(0xFFFFC48C),
+        onClick = {
+
+        }
+    ) {
+        Icon(
+            imageVector = Assets.`Treasure-map`,
+            contentDescription = "adventure comedy",
+            tint = Color(0xFFFFAA6E),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(y = it / 4f, x = it / 10f)
+                .size(it / 1.5f)
+                .rotate(30f)
+        )
+    }
+}
+
+@Composable
+fun PsyMysTag(modifier: Modifier = Modifier) {
+    Tag(
+        tag = "Psychological Mystery",
+        backgroundGradient = Color(0xFF191970) to Color(0xFF2F4F4F),
+        onClick = {},
+        fontSize = 22.sp
+    ) {
+        Icon(
+            imageVector = Assets.`Magnifying-glass`,
+            contentDescription = "psychological mystery",
+            tint = Color(0xFF373785),
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .offset(x = -(it / 11f), y = it / 10f)
+                .size(it / 1.5f)
+        )
     }
 }
