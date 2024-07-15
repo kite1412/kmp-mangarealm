@@ -3,6 +3,7 @@ import assets.Clipboard
 import assets.Cross
 import assets.Eye
 import assets.Eyeshut
+import assets.Flower
 import assets.Height
 import assets.Home
 import assets.Info
@@ -19,8 +20,10 @@ import assets.`Chevron-right-bold`
 import assets.`Chevron-right`
 import assets.`Collapse-solid`
 import assets.`Expand-solid`
+import assets.`Heart-outline`
 import assets.`List-add`
 import assets.`List-check`
+import assets.`Magnifying-glass`
 import assets.`Menu-outline`
 import assets.`Other-1-solid`
 import assets.`Settings-adjust-solid`
@@ -28,6 +31,7 @@ import assets.`Shelf-outline`
 import assets.`Shelf-solid`
 import assets.`Text-align-right`
 import assets.`Trash-solid`
+import assets.`Treasure-map`
 import kotlin.collections.List as ____KtList
 
 public object Assets
@@ -41,8 +45,9 @@ public val Assets.Assets: ____KtList<ImageVector>
     }
     __Assets= listOf(`Arrow-left-solid`, `Book-close`, `Book-open`, `Bookmark-alt-fill`,
         `Bookmark-alt`, `Chevron-right-bold`, `Chevron-right`, Clipboard, `Collapse-solid`, Cross,
-        `Expand-solid`, Eye, Eyeshut, Height, Home, Info, `List-add`, `List-check`, Logo,
-        `Menu-outline`, `Other-1-solid`, Person, Search, `Settings-adjust-solid`, `Shelf-outline`,
-        `Shelf-solid`, `Text-align-right`, `Trash-solid`, Width)
+        `Expand-solid`, Eye, Eyeshut, Flower, `Heart-outline`, Height, Home, Info, `List-add`,
+        `List-check`, Logo, `Magnifying-glass`, `Menu-outline`, `Other-1-solid`, Person, Search,
+        `Settings-adjust-solid`, `Shelf-outline`, `Shelf-solid`, `Text-align-right`, `Trash-solid`,
+        `Treasure-map`, Width)
     return __Assets!!
   }
