@@ -75,6 +75,7 @@ import model.Manga
 import model.session.SessionState
 import model.session.isNotEmpty
 import util.APP_BAR_HEIGHT
+import util.Log
 import util.publicationDemographic
 import util.publicationDemographicColor
 import util.publicationStatus

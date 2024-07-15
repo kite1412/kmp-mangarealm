@@ -76,7 +76,9 @@ import model.Manga
 import util.APP_BAR_HEIGHT
 import util.BLUR_TINT
 import util.LATEST_UPDATE_SLIDE_TIME
+import util.Log
 import view_model.main.MainViewModel
+import view_model.main.state.HomeState
 
 private const val imageRatio = 2f / 3f
 private val bottomBarTotalHeight = APP_BAR_HEIGHT + 8.dp
@@ -85,6 +87,7 @@ private val bottomBarTotalHeight = APP_BAR_HEIGHT + 8.dp
 @Composable
 fun Home(
     vm: MainViewModel,
+    state: HomeState,
     nav: Navigator,
     modifier: Modifier = Modifier
 ) {
@@ -96,7 +99,7 @@ fun Home(
     ) {
         item {
             Header(
-                username = vm.username.value,
+                username = state.username.value,
                 modifier = Modifier.padding(top = 24.dp)
             )
         }
@@ -113,13 +116,14 @@ fun Home(
                 )
                 LatestUpdatesBar(
                     vm = vm,
+                    state = state,
                     height = latestBarHeight,
                     nav = nav,
                 )
             }
         }
         item {
-            ContinueReading(vm = vm, nav = nav, height = latestBarHeight)
+            ContinueReading(vm = vm, state = state, nav = nav, height = latestBarHeight)
         }
         item {
             Column(
@@ -142,7 +146,7 @@ fun Home(
                     fontWeight = FontWeight.Bold
                 )
                 MangaTags(
-                    mangaList = vm.romCom,
+                    mangaList = state.romCom,
                     label = "Rom-Com",
                     nav = nav,
                     vm = vm,
@@ -153,7 +157,7 @@ fun Home(
                     modifier = mangaTagsModifier
                 )
                 MangaTags(
-                    mangaList = vm.advCom,
+                    mangaList = state.advCom,
                     label = "Adventure-Comedy",
                     nav = nav,
                     vm = vm,
@@ -164,7 +168,7 @@ fun Home(
                     modifier = mangaTagsModifier
                 )
                 MangaTags(
-                    mangaList = vm.psyMys,
+                    mangaList = state.psyMys,
                     label = "Psychological-Mystery",
                     nav = nav,
                     vm = vm,
@@ -204,7 +208,7 @@ private fun autoSlideLatestUpdates(
                 pagerState.animateScrollToPage(
                     pagerState.currentPage + 1,
                     pageOffsetFraction = 0f,
-                    animationSpec = tween(1000)
+                    animationSpec = tween(500)
                 )
             }
         }
@@ -261,42 +265,37 @@ private fun Header(
 @Composable
 fun LatestUpdatesBar(
     vm: MainViewModel,
+    state: HomeState,
     height: Dp,
     nav: Navigator,
     modifier: Modifier = Modifier
 ) {
+    Log.w("latest updates bar")
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
             .clip(RoundedCornerShape(15.dp))
             .background(Color.Transparent)
+            .background(Color.Transparent)
     ) {
-        val data = vm.latestUpdates
-        val pagerState = rememberPagerState(initialPage = vm.latestUpdatesBarPage) { vm.sessionSize }
+        val data = state.latestUpdates
+        val pagerState = rememberPagerState(initialPage = state.latestUpdatesBarPage) { state.sessionSize }
         autoSlideLatestUpdates(
-            autoSlide = vm.enableAutoSlide.value,
+            autoSlide = state.enableAutoSlide.value,
             pagerState = pagerState
         )
-        val adjustBar by remember {
-            derivedStateOf {
-                pagerState.currentPageOffsetFraction != 0.0f
-            }
-        }
-        LaunchedEffect(adjustBar) {
-            vm.adjustLatestUpdatesBar = adjustBar
-        }
         LaunchedEffect(true) {
-            if (vm.adjustLatestUpdatesBar) pagerState.animateScrollToPage(
-                pagerState.currentPage,
-                animationSpec = tween(500)
+            pagerState.animateScrollToPage(
+                state.latestUpdatesBarPage,
+                animationSpec = tween(300)
             )
         }
         val currentPage by remember {
             derivedStateOf { pagerState.currentPage }
         }
         LaunchedEffect(currentPage) {
-            vm.latestUpdatesBarPage = currentPage
+            state.latestUpdatesBarPage = currentPage
         }
         if (data.isNotEmpty()) HorizontalPager(
             state = pagerState,
@@ -332,7 +331,7 @@ fun LatestUpdatesBar(
                                 )
                             )
                     ) { p ->
-                        vm.latestUpdates[it] = vm.latestUpdates[it].copy(painter = p)
+                        state.latestUpdates[it] = state.latestUpdates[it].copy(painter = p)
                     }
                 }
                 LatestUpdateDisplay(
@@ -359,7 +358,7 @@ fun LatestUpdatesBar(
             )
         }
         IndicatorDots(
-            n = vm.sessionSize,
+            n = state.sessionSize,
             selected = currentPage + 1,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -449,11 +448,12 @@ private fun LatestUpdateDisplay(
 @Composable
 private fun ContinueReading(
     vm: MainViewModel,
+    state: HomeState,
     nav: Navigator,
     height: Dp,
     modifier: Modifier = Modifier
 ) {
-    val data = vm.continueReading
+    val data = state.continueReading
     val screenSize = LocalScreenSize.current
     val smallDisplayHeight = height / 2
     val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp
@@ -493,7 +493,7 @@ private fun ContinueReading(
                     imageWidth = smallDisplayWidth,
                     imageHeight = smallDisplayHeight,
                     onPainterLoaded = { p ->
-                        vm.continueReading[it] = vm.continueReading[it].copy(painter = p)
+                        state.continueReading[it] = state.continueReading[it].copy(painter = p)
                     },
                     modifier = Modifier.width(screenSize.width / 2)
                 ) { vm.navigateToDetailScreen(nav, manga) }
