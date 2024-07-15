@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -51,6 +52,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -82,6 +84,10 @@ import view_model.main.state.HomeState
 
 private const val imageRatio = 2f / 3f
 private val bottomBarTotalHeight = APP_BAR_HEIGHT + 8.dp
+private val parentHorizontalPadding = 16.dp
+private val tagsHorizontalPadding = 8.dp
+private val tagsRowCount = 2
+private val tagsColumnCount = 1
 
 // TODO make its own state
 @Composable
@@ -94,7 +100,7 @@ fun Home(
     val screenSize = LocalScreenSize.current
     val latestBarHeight = (screenSize.height.value / 4.2).dp
     LazyColumn(
-        modifier = Modifier.padding(horizontal = 16.dp),
+        modifier = Modifier.padding(horizontal = parentHorizontalPadding),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         item {
@@ -145,40 +151,41 @@ fun Home(
                     fontStyle = FontStyle.Italic,
                     fontWeight = FontWeight.Bold
                 )
-                MangaTags(
-                    mangaList = state.romCom,
-                    label = "Rom-Com",
-                    nav = nav,
-                    vm = vm,
-                    backgroundGradient = Brush.linearGradient(colors = listOf(
-                        Color(0xFFADD8E6),
-                        Color(0xFFFFB6C1)
-                    )),
-                    modifier = mangaTagsModifier
-                )
-                MangaTags(
-                    mangaList = state.advCom,
-                    label = "Adventure-Comedy",
-                    nav = nav,
-                    vm = vm,
-                    backgroundGradient = Brush.linearGradient(colors = listOf(
-                        Color(0xFFFFA07A),
-                        Color(0xFFFFC48C)
-                    )),
-                    modifier = mangaTagsModifier
-                )
-                MangaTags(
-                    mangaList = state.psyMys,
-                    label = "Psychological-Mystery",
-                    nav = nav,
-                    vm = vm,
-                    backgroundGradient = Brush.linearGradient(colors = listOf(
-                        Color(0xFF191970),
-                        Color(0xFF2F4F4F)
-                    )),
-                    unselectedDotColor = Color(0xFF949494),
-                    modifier = mangaTagsModifier
-                )
+//                MangaTags(
+//                    mangaList = state.romCom,
+//                    label = "Rom-Com",
+//                    nav = nav,
+//                    vm = vm,
+//                    backgroundGradient = Brush.linearGradient(colors = listOf(
+//                        Color(0xFFADD8E6),
+//                        Color(0xFFFFB6C1)
+//                    )),
+//                    modifier = mangaTagsModifier
+//                )
+//                MangaTags(
+//                    mangaList = state.advCom,
+//                    label = "Adventure-Comedy",
+//                    nav = nav,
+//                    vm = vm,
+//                    backgroundGradient = Brush.linearGradient(colors = listOf(
+//                        Color(0xFFFFA07A),
+//                        Color(0xFFFFC48C)
+//                    )),
+//                    modifier = mangaTagsModifier
+//                )
+//                MangaTags(
+//                    mangaList = state.psyMys,
+//                    label = "Psychological-Mystery",
+//                    nav = nav,
+//                    vm = vm,
+//                    backgroundGradient = Brush.linearGradient(colors = listOf(
+//                        Color(0xFF191970),
+//                        Color(0xFF2F4F4F)
+//                    )),
+//                    unselectedDotColor = Color(0xFF949494),
+//                    modifier = mangaTagsModifier
+//                )
+                Tags(modifier = Modifier.fillMaxWidth())
             }
         }
         // to prevent contents being obstructed by bottom bar.
@@ -699,5 +706,93 @@ private fun TagsDisplay(
                 )
             }
         }
+    }
+}
+
+@Composable
+fun tagBoxSize(): Dp = LocalScreenSize.current.width / 2 - parentHorizontalPadding - (tagsHorizontalPadding / tagsRowCount)
+
+
+@Composable
+private fun Tags(modifier: Modifier = Modifier) {
+    val tagBoxSize = tagBoxSize()
+    SubcomposeLayout(modifier = modifier.fillMaxWidth()) { constraints ->
+           val measurable = subcompose("grid") {
+               LazyHorizontalGrid(
+                   horizontalArrangement = Arrangement.spacedBy(8.dp),
+                   rows = GridCells.Fixed(1),
+                   modifier = Modifier.fillMaxWidth()
+               ) {
+                   item {
+                       RomComTag()
+                   }
+                   item {
+                       RomComTag()
+                   }
+               }
+           }
+        val placeable = measurable.map { it.measure(constraints.copy(
+            maxHeight = (tagBoxSize * tagsColumnCount).roundToPx()
+        )) }
+        val totalHeight = placeable.sumOf { it.height }
+        layout(constraints.maxWidth, totalHeight) {
+            var nextHeight = 0
+            placeable.forEach {
+                it.placeRelative(0, nextHeight)
+                nextHeight += it.height
+            }
+        }
+    }
+}
+
+@Composable
+private fun Tag(
+    tag: String,
+    backgroundGradient: Pair<Color, Color>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .size(tagBoxSize())
+            .background(
+                brush = Brush.linearGradient(
+                    listOf(backgroundGradient.first, backgroundGradient.second)
+                )
+            )
+            .clickable(onClick = onClick)
+            .padding(12.dp)
+        ,
+    ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            content()
+            Text(
+                tag,
+                color = Color.White,
+                fontStyle = FontStyle.Italic,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 3,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.padding(top = maxWidth / 4)
+            )
+        }
+    }
+}
+
+@Composable
+private fun RomComTag(
+    modifier: Modifier = Modifier
+) {
+    Tag(
+        tag = "Rom-Com",
+        backgroundGradient = Color(0xFFADD8E6) to Color(0xFFFFB6C1),
+        onClick = {
+
+        }
+    ) {
+
     }
 }
