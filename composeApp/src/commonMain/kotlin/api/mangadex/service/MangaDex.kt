@@ -36,7 +36,7 @@ interface MangaDex {
 
     interface Paging {
         fun <R> nextPageExists(r: ListResponse<R>): Boolean =
-            r.offset >= r.total
+            r.offset < r.total
 
         suspend fun manga(prevResponse: ListResponse<MangaAttributes>, queries: Queries = ""): ListResponse<MangaAttributes>?
 

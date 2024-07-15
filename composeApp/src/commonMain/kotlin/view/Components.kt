@@ -319,3 +319,10 @@ fun PaintersLoader(
         }
     }
 }
+
+@Composable
+fun SessionPagerVerticalPager(
+    modifier: Modifier = Modifier
+) {
+
+}
