@@ -9,7 +9,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import api.mangadex.service.MangaDex
@@ -81,7 +80,7 @@ fun App() {
     // init for utilities that are not bound by whether is logged in or not
     LaunchedEffect(true) {
         Initializer()(postTagSetup = {
-            mainViewModel.fetchMangaByTags(it)
+            mainViewModel.homeState.fetchMangaByTags(it)
         })
     }
     // check for login info
@@ -94,7 +93,7 @@ fun App() {
     // perform actions after logged in
     LaunchedEffect(isLoggedIn.value) {
         if (isLoggedIn.value) {
-            mainViewModel.updateUsername()
+            mainViewModel.homeState.updateUsername()
         }
     }
     AppTheme {

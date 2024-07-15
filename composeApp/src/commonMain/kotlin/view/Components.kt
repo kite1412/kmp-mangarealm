@@ -59,7 +59,6 @@ import mangarealm.composeapp.generated.resources.no_image
 import model.session.Session
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import util.Log
 import util.session_handler.SessionHandler
 
 @Composable
@@ -179,7 +178,7 @@ fun PainterLoader(
             is ImageAction.Success -> {
                 onPainterLoaded(rememberImageSuccessPainter(action))
             }
-            else -> Log.v("loading: $url")
+            else -> Unit
         }
     }
 }
