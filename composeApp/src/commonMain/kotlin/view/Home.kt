@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -68,6 +69,7 @@ import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTags
 import api.mangadex.util.getTitle
+import assets.`Arrow-left-solid`
 import assets.`Chevron-right`
 import assets.`Heart-outline`
 import assets.`Magnifying-glass`
@@ -81,6 +83,7 @@ import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
 import model.Manga
+import model.session.SessionState
 import util.APP_BAR_HEIGHT
 import util.BLUR_TINT
 import util.LATEST_UPDATE_SLIDE_TIME
@@ -96,6 +99,7 @@ private const val tagsRowCount = 2
 private const val tagsColumnCount = 2
 
 // TODO make its own state
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Home(
     vm: MainViewModel,
@@ -105,58 +109,82 @@ fun Home(
 ) {
     val screenSize = LocalScreenSize.current
     val latestBarHeight = (screenSize.height.value / 4.2).dp
-    LazyColumn(
-        modifier = Modifier.padding(horizontal = parentHorizontalPadding),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+    val pagerState = rememberPagerState { 2 }
+    val sessionState by remember {
+        derivedStateOf { state.session.state }
+    }.value
+    LaunchedEffect(sessionState) {
+        when(sessionState) {
+            SessionState.IDLE -> pagerState.animateScrollToPage(0)
+            else -> pagerState.animateScrollToPage(1)
+        }
+    }
+    val settledPage by remember {
+        derivedStateOf { pagerState.settledPage }
+    }
+    LaunchedEffect(settledPage) {
+        if (settledPage == 0) state.clearSession()
+    }
+    HorizontalPager(
+        state = pagerState,
+        userScrollEnabled = sessionState != SessionState.IDLE
     ) {
-        item {
-            Header(
-                username = state.username.value,
-                modifier = Modifier.padding(top = 24.dp)
-            )
-        }
-        item {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 8.dp)
+        when(it) {
+            0 -> LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = parentHorizontalPadding),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                Text(
-                    "Latest Updates",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    modifier = Modifier.padding(start = 10.dp)
-                )
-                LatestUpdatesBar(
-                    vm = vm,
-                    state = state,
-                    height = latestBarHeight,
-                    nav = nav,
-                )
-            }
-        }
-        item {
-            ContinueReading(vm = vm, state = state, nav = nav, height = latestBarHeight)
-        }
-        item {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                val mangaTagsModifier = Modifier.fillMaxWidth()
-                    .layout { measurable, constraints ->
-                        val placeable = measurable.measure(constraints.copy(
-                            maxWidth = constraints.maxWidth + 4.dp.roundToPx() * 2
-                        ))
-                        layout(placeable.width, placeable.height) {
-                            placeable.place(0, 0)
-                        }
+                item {
+                    Header(
+                        username = state.username.value,
+                        modifier = Modifier.padding(top = 24.dp)
+                    )
+                }
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        Text(
+                            "Latest Updates",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(start = 10.dp)
+                        )
+                        LatestUpdatesBar(
+                            vm = vm,
+                            state = state,
+                            height = latestBarHeight,
+                            nav = nav,
+                        )
                     }
-                    .clip(RoundedCornerShape(8.dp))
-                Text(
-                    "Suggestions",
-                    fontSize = 24.sp,
-                    fontStyle = FontStyle.Italic,
-                    fontWeight = FontWeight.Bold
-                )
+                }
+                item {
+                    ContinueReading(vm = vm, state = state, nav = nav, height = latestBarHeight)
+                }
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        val mangaTagsModifier = Modifier.fillMaxWidth()
+                            .layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints.copy(
+                                    maxWidth = constraints.maxWidth + 4.dp.roundToPx() * 2
+                                ))
+                                layout(placeable.width, placeable.height) {
+                                    placeable.place(0, 0)
+                                }
+                            }
+                            .clip(RoundedCornerShape(8.dp))
+                        Text(
+                            "Suggestions",
+                            fontSize = 24.sp,
+                            fontStyle = FontStyle.Italic,
+                            fontWeight = FontWeight.Bold
+                        )
+                        // REMOVE LATER
 //                MangaTags(
 //                    mangaList = state.romCom,
 //                    label = "Rom-Com",
@@ -191,12 +219,18 @@ fun Home(
 //                    unselectedDotColor = Color(0xFF949494),
 //                    modifier = mangaTagsModifier
 //                )
-                Tags(modifier = Modifier.fillMaxWidth())
+                        Tags(
+                            state = state,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                // to prevent contents being obstructed by bottom bar.
+                item {
+                    Spacer(modifier = Modifier.height(bottomBarTotalHeight - 16.dp))
+                }
             }
-        }
-        // to prevent contents being obstructed by bottom bar.
-        item {
-            Spacer(modifier = Modifier.height(bottomBarTotalHeight - 16.dp))
+            else -> MangaPage(onClick = { state.clearSession() })
         }
     }
 }
@@ -720,7 +754,10 @@ fun tagBoxSize(): Dp = LocalScreenSize.current.width / 2 - parentHorizontalPaddi
 
 
 @Composable
-private fun Tags(modifier: Modifier = Modifier) {
+private fun Tags(
+    state: HomeState,
+    modifier: Modifier = Modifier
+) {
     val tagBoxSize = tagBoxSize()
     SubcomposeLayout(modifier = modifier) { constraints ->
         val verticalArrangement = 8.dp
@@ -731,9 +768,9 @@ private fun Tags(modifier: Modifier = Modifier) {
                 rows = GridCells.Fixed(2),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                item { RomComTag() }
-                item { PsyMysTag() }
-                item { AdvComTag() }
+                item { RomComTag(state) }
+                item { PsyMysTag(state) }
+                item { AdvComTag(state) }
             }
         }
         val placeable = measurable.map {
@@ -797,12 +834,20 @@ private fun Tag(
 }
 
 @Composable
-private fun RomComTag(modifier: Modifier = Modifier) {
+private fun RomComTag(
+    state: HomeState,
+    modifier: Modifier = Modifier
+) {
     Tag(
         tag = "Rom-Com",
         backgroundGradient = Color(0xFFADD8E6) to Color(0xFFFFB6C1),
         onClick = {
-
+            state.beginSession(
+                queries = state.setIncludedExcludedTags(
+                    tags = state.romComTags.first,
+                    excludedTags = state.romComTags.second
+                )
+            )
         }
     ) {
         Icon(
@@ -819,12 +864,20 @@ private fun RomComTag(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun AdvComTag(modifier: Modifier = Modifier) {
+private fun AdvComTag(
+    state: HomeState,
+    modifier: Modifier = Modifier
+) {
     Tag(
         tag = "Adventure Comedy",
         backgroundGradient = Color(0xFFFFA07A) to Color(0xFFFFC48C),
         onClick = {
-
+            state.beginSession(
+                queries = state.setIncludedExcludedTags(
+                    tags = state.advComTags.first,
+                    excludedTags = state.advComTags.second
+                )
+            )
         }
     ) {
         Icon(
@@ -841,11 +894,21 @@ private fun AdvComTag(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun PsyMysTag(modifier: Modifier = Modifier) {
+fun PsyMysTag(
+    state: HomeState,
+    modifier: Modifier = Modifier
+) {
     Tag(
         tag = "Psychological Mystery",
         backgroundGradient = Color(0xFF191970) to Color(0xFF2F4F4F),
-        onClick = {},
+        onClick = {
+            state.beginSession(
+                queries = state.setIncludedExcludedTags(
+                    tags = state.psyMysTags.first,
+                    excludedTags = state.psyMysTags.second
+                )
+            )
+        },
         fontSize = 22.sp
     ) {
         Icon(
@@ -857,5 +920,23 @@ fun PsyMysTag(modifier: Modifier = Modifier) {
                 .offset(x = -(it / 11f), y = it / 10f)
                 .size(it / 1.5f)
         )
+    }
+}
+
+@Composable
+fun MangaPage(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxWidth().height(APP_BAR_HEIGHT)) {
+            IconButton(onClick = onClick) {
+                Icon(
+                    imageVector = Assets.`Arrow-left-solid`,
+                    contentDescription = "back",
+                    tint = Color.Black
+                )
+            }
+        }
     }
 }

@@ -23,7 +23,6 @@ import model.MangaStatus
 import model.Status
 import model.session.MangaSession
 import model.session.Session
-import model.session.SessionState
 import model.toMangaList
 import util.DEFAULT_COLLECTION_SIZE
 import util.KottageConst
@@ -65,14 +64,11 @@ class DiscoveryState(
             session.clear()
             val fromCache = cache.latestMangaSearch[q]
             if (fromCache == null) {
-                session.state.value = SessionState.FETCHING
+                session.init(queries)
                 val res = mangaDex.getManga(q)
                 if (res != null) {
                     val data = res.toMangaList()
-                    session.newResponse(res)
-                    session.putAllQueries(queries)
-                    session.addAll(data)
-                    session.state.value = SessionState.ACTIVE
+                    session.setActive(res, data)
                     cache.latestMangaSearch[q] = MangaSession().apply { from(session) }
                 }
             } else session.from(fromCache)

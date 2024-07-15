@@ -8,7 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.FlingBehavior
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.snapping.SnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -20,6 +22,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.pager.PagerScope
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
@@ -28,6 +35,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +48,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -261,6 +270,59 @@ fun <T, ATTR> SessionPagerColumn(
         }
     }
 }
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun <T, ATTR> SessionPagerVerticalPager(
+    session: Session<T, ATTR>,
+    handler: SessionHandler<T, ATTR>,
+    state: PagerState,
+    subtrahend: Int = 2,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    pageSize: PageSize = PageSize.Fill,
+    beyondBoundsPageCount: Int = PagerDefaults.BeyondBoundsPageCount,
+    pageSpacing: Dp = 0.dp,
+    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    flingBehavior: SnapFlingBehavior = PagerDefaults.flingBehavior(state = state),
+    userScrollEnabled: Boolean = true,
+    reverseLayout: Boolean = false,
+    key: ((index: Int) -> Any)? = null,
+    pageNestedScrollConnection: NestedScrollConnection = remember(state) {
+        PagerDefaults.pageNestedScrollConnection(state, Orientation.Vertical)
+    },
+    onSessionLoaded: (Session<T, ATTR>?) -> Unit,
+    modifier: Modifier = Modifier,
+    pageContent: @Composable PagerScope.(page: Int) -> Unit
+) {
+    val currentPage by remember {
+        derivedStateOf { state.currentPage }
+    }
+    var finished by remember { mutableStateOf(false) }
+    if (!finished) LaunchedEffect(currentPage) {
+        if (currentPage >= session.data.size - subtrahend) {
+            finished = true
+            handler.updateSession { isFinished, session ->
+                onSessionLoaded(session)
+                finished = isFinished
+            }
+        }
+    }
+    VerticalPager(
+        state = state,
+        contentPadding = contentPadding,
+        pageSize = pageSize,
+        beyondBoundsPageCount = beyondBoundsPageCount,
+        pageSpacing = pageSpacing,
+        horizontalAlignment = horizontalAlignment,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        reverseLayout = reverseLayout,
+        key = key,
+        pageNestedScrollConnection = pageNestedScrollConnection,
+        modifier = modifier,
+        pageContent = pageContent
+    )
+}
+
 
 @Composable
 fun Warning(
@@ -318,11 +380,4 @@ fun PaintersLoader(
             onPainterLoaded(i, it)
         }
     }
-}
-
-@Composable
-fun SessionPagerVerticalPager(
-    modifier: Modifier = Modifier
-) {
-
 }
