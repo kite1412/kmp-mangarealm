@@ -24,7 +24,7 @@ interface Session<T, ATTR> {
         newResponse(session.response)
         addAll(session.data.subList(data.size, session.data.size))
         putAllQueries(session.queries)
-        state.value = session.state.value
+        setState(session.state.value)
         return this
     }
 
@@ -36,6 +36,19 @@ interface Session<T, ATTR> {
     fun newResponse(res: ListResponse<ATTR>) { response = res }
 
     fun putAllQueries(queries: Map<String, Any>) = this.queries.putAll(queries)
+
+    fun setState(state: SessionState) { this.state.value = state }
+
+    fun init(queries: Map<String, Any>) {
+        setState(SessionState.FETCHING)
+        putAllQueries(queries)
+    }
+
+    fun setActive(response: ListResponse<ATTR>, data: List<T>) {
+        newResponse(response)
+        addAll(data)
+        setState(SessionState.ACTIVE)
+    }
 }
 
 fun <T, ATTR> Session<T, ATTR>.isEmpty() =

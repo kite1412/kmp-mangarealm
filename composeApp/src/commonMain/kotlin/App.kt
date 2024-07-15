@@ -79,9 +79,7 @@ fun App() {
     val mainViewModel = remember { MainViewModel() }
     // init for utilities that are not bound by whether is logged in or not
     LaunchedEffect(true) {
-        Initializer()(postTagSetup = {
-            mainViewModel.homeState.fetchMangaByTags(it)
-        })
+        Initializer()(postTagSetup = mainViewModel.homeState::setTags)
     }
     // check for login info
     LaunchedEffect(true) {
