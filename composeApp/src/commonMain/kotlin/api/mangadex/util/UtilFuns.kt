@@ -1,6 +1,7 @@
 package api.mangadex.util
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import api.mangadex.model.request.ImageQuality
@@ -140,4 +141,4 @@ fun getChapterImageUrls(
     }
 }
 
-fun Modifier.obstruct(color: Color = Color.Gray.copy(alpha = 0.6f)): Modifier = background(color)
+fun Modifier.obstruct(color: Color = Color.Gray.copy(alpha = 0.6f)): Modifier = fillMaxSize().background(color)

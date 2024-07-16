@@ -27,6 +27,7 @@ class MainViewModel(
     val menuStack = mutableStateStackOf(Menu.HOME)
     val currentPage by derivedStateOf { menuStack.lastItemOrNull }
     var undoEdgeToEdge by mutableStateOf(false)
+    var hideBottomBar by mutableStateOf(false)
 
     val discoveryState = DiscoveryState(
         mangaDex = mangaDex,
@@ -36,6 +37,7 @@ class MainViewModel(
     )
 
     val homeState = HomeState(
+        vm = this,
         mangaDex = mangaDex,
         cache = cache,
         scope = viewModelScope,

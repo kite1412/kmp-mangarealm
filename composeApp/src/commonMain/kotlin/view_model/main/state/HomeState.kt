@@ -6,6 +6,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.lifecycle.viewModelScope
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.Status
@@ -28,9 +29,11 @@ import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
 import util.retry
+import view_model.main.MainViewModel
 
 class HomeState(
-    private val scope: CoroutineScope,
+    private val vm: MainViewModel,
+    private val scope: CoroutineScope = vm.viewModelScope,
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val kottageStorage: KottageStorage = Libs.kottageStorage,
     private val cache: Cache = Libs.cache
@@ -127,6 +130,7 @@ class HomeState(
                 val q = generateQuery(queries)
                 val fromCache = cache.latestMangaSearch[q]
                 session.clear()
+                vm.hideBottomBar = true
                 if (fromCache == null) {
                     sessionQueries = q
                     session.init(queries)

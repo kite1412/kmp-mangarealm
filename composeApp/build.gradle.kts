@@ -48,7 +48,6 @@ kotlin {
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation(libs.kottage)
-            implementation(libs.haze)
             implementation(libs.image.loader)
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.screenmodel)

@@ -16,19 +16,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
@@ -56,7 +58,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.SubcomposeLayout
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -79,7 +80,6 @@ import assets.Person
 import assets.`Text-align-right`
 import assets.`Treasure-map`
 import cafe.adriel.voyager.navigator.Navigator
-import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.delay
 import model.Manga
 import model.session.MangaSession
@@ -87,7 +87,9 @@ import model.session.Session
 import model.session.SessionState
 import util.APP_BAR_HEIGHT
 import util.LATEST_UPDATE_SLIDE_TIME
+import util.edgeToEdge
 import util.session_handler.MangaSessionHandler
+import util.undoEdgeToEdge
 import view_model.main.MainViewModel
 import view_model.main.state.HomeState
 
@@ -98,7 +100,6 @@ private val tagsHorizontalPadding = 8.dp
 private const val tagsRowCount = 2
 private const val tagsColumnCount = 2
 
-// TODO make its own state
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun Home(
@@ -116,15 +117,21 @@ fun Home(
     }
     LaunchedEffect(sessionState) {
         when(sessionState) {
-            SessionState.IDLE -> pagerState.animateScrollToPage(0)
+            SessionState.IDLE -> {
+                pagerState.animateScrollToPage(0)
+            }
             else -> pagerState.animateScrollToPage(1)
         }
     }
     val settledPage by remember {
         derivedStateOf { pagerState.settledPage }
     }
+    if (vm.undoEdgeToEdge && settledPage == 0) undoEdgeToEdge()
     LaunchedEffect(settledPage) {
-        if (settledPage == 0) state.clearSession()
+        if (settledPage == 0) {
+            vm.hideBottomBar = false
+            state.clearSession()
+        }
     }
     HorizontalPager(
         state = pagerState,
@@ -169,58 +176,13 @@ fun Home(
                     Column(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        val mangaTagsModifier = Modifier.fillMaxWidth()
-                            .layout { measurable, constraints ->
-                                val placeable = measurable.measure(constraints.copy(
-                                    maxWidth = constraints.maxWidth + 4.dp.roundToPx() * 2
-                                ))
-                                layout(placeable.width, placeable.height) {
-                                    placeable.place(0, 0)
-                                }
-                            }
-                            .clip(RoundedCornerShape(8.dp))
                         Text(
                             "Suggestions",
                             fontSize = 24.sp,
                             fontStyle = FontStyle.Italic,
                             fontWeight = FontWeight.Bold
                         )
-                        // REMOVE LATER
-//                MangaTags(
-//                    mangaList = state.romCom,
-//                    label = "Rom-Com",
-//                    nav = nav,
-//                    vm = vm,
-//                    backgroundGradient = Brush.linearGradient(colors = listOf(
-//                        Color(0xFFADD8E6),
-//                        Color(0xFFFFB6C1)
-//                    )),
-//                    modifier = mangaTagsModifier
-//                )
-//                MangaTags(
-//                    mangaList = state.advCom,
-//                    label = "Adventure-Comedy",
-//                    nav = nav,
-//                    vm = vm,
-//                    backgroundGradient = Brush.linearGradient(colors = listOf(
-//                        Color(0xFFFFA07A),
-//                        Color(0xFFFFC48C)
-//                    )),
-//                    modifier = mangaTagsModifier
-//                )
-//                MangaTags(
-//                    mangaList = state.psyMys,
-//                    label = "Psychological-Mystery",
-//                    nav = nav,
-//                    vm = vm,
-//                    backgroundGradient = Brush.linearGradient(colors = listOf(
-//                        Color(0xFF191970),
-//                        Color(0xFF2F4F4F)
-//                    )),
-//                    unselectedDotColor = Color(0xFF949494),
-//                    modifier = mangaTagsModifier
-//                )
-                        Tags(
+                        Suggestions(
                             state = state,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -232,7 +194,7 @@ fun Home(
                 }
             }
             else -> MangaPage(
-                session = session,
+                session = state.session,
                 onSessionLoaded = state::onSessionLoaded,
                 onPainterLoaded = state::onPainterLoaded
             )
@@ -371,7 +333,7 @@ fun LatestUpdatesBar(
                 ) { p ->
                     state.latestUpdates[it] = state.latestUpdates[it].copy(painter = p)
                 }
-                Box(modifier = Modifier.fillMaxSize().obstruct())
+                Box(modifier = Modifier.obstruct())
                 LatestUpdateDisplay(
                     manga = manga,
                     imageHeight = imageHeight,
@@ -745,7 +707,7 @@ fun tagBoxSize(): Dp = LocalScreenSize.current.width / 2 - parentHorizontalPaddi
 
 
 @Composable
-private fun Tags(
+private fun Suggestions(
     state: HomeState,
     modifier: Modifier = Modifier
 ) {
@@ -914,6 +876,7 @@ fun PsyMysTag(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MangaPage(
     session: MangaSession,
@@ -921,10 +884,17 @@ fun MangaPage(
     onPainterLoaded: (Int, Painter) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
-    val screenSize = LocalScreenSize.current
-    val state = rememberLazyListState()
-    if (session.state.value == SessionState.ACTIVE) LaunchedEffect(true) { state.scrollToItem(0) }
-    Box(modifier = modifier.fillMaxSize()) {
+    edgeToEdge()
+    val pagerState = rememberPagerState { session.data.size }
+    if (session.data.isNotEmpty()) LaunchedEffect(true) {
+        pagerState.scrollToPage(0)
+    }
+    val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(bottom = navBarHeight)
+    ) {
         when(session.state.value) {
             SessionState.FETCHING -> {
                 Box(
@@ -948,32 +918,15 @@ fun MangaPage(
                 }
             }
             else -> {
-                // TODO change to SessionPagerVerticalPager
-                SessionPagerColumn(
+                SessionPagerVerticalPager(
                     session = session,
-                    state = state,
+                    state = pagerState,
                     handler = MangaSessionHandler(session),
                     onSessionLoaded = onSessionLoaded,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = APP_BAR_HEIGHT + 8.dp)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     val manga = session.data[it]
-                    Row(
-                        modifier = Modifier.fillMaxWidth().height(200.dp)
-                    ) {
-                        ImageLoader(
-                            url = getCoverUrl(manga.data),
-                            painter = manga.painter,
-                            contentScale = ContentScale.FillBounds,
-                            modifier = Modifier.fillMaxHeight().weight(0.3f)
-                        ) { p -> onPainterLoaded(it, p) }
-                        Text(
-                            getTitle(manga.data.attributes.title),
-                            fontSize = 16.sp,
-                            modifier = Modifier.weight(0.7f)
-                        )
-                    }
+                    MangaPageDisplay(manga, onPainterLoaded = { p -> onPainterLoaded(it, p) })
                 }
             }
         }
@@ -982,9 +935,62 @@ fun MangaPage(
 
 @Composable
 fun MangaPageDisplay(
-    modifier: Modifier = Modifier
+    manga: Manga,
+    modifier: Modifier = Modifier,
+    onPainterLoaded: (Painter) -> Unit
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize()
+    ) {
+        ImageLoader(
+            url = getCoverUrl(manga.data),
+            painter = manga.painter,
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize(),
+            onPainterLoaded = onPainterLoaded
+        )
+        Box(Modifier.obstruct(color = Color.Black.copy(alpha = 0.8f)))
+        val statusBarHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    top = statusBarHeight + 16.dp,
+                    start = 16.dp,
+                    end = 16.dp
+                )
+        ) {
+            val coverWidth = this@BoxWithConstraints.maxWidth / 2.2f
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                BrowseImageNullable(
+                    painter = manga.painter,
+                    contentScale = ContentScale.FillBounds,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .width(coverWidth)
+                        .height(coverWidth * (3f / 2f))
+                        .clip(RoundedCornerShape(16.dp))
+                )
+                Tags(
+                    data = manga.data.attributes,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    fontColor = Color.White,
+                    fontSize = 14.sp,
+                    horizontalPadding = 4.dp,
+                    cornerRadius = 6.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                )
+                Title(
+                    manga = manga.data.attributes,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
     }
 }

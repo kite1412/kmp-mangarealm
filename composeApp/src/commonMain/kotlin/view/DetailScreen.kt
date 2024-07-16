@@ -40,9 +40,6 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,14 +51,12 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
-import api.mangadex.util.getTagList
 import api.mangadex.util.getTitle
 import api.mangadex.util.obstruct
 import assets.`Book-open`
@@ -78,10 +73,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.haze
-import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.MangaStatus
@@ -119,20 +110,8 @@ class DetailScreen : Screen {
                     .padding(bottom = bottomPadding)
                     .swipeToPop(nav)
             ) {
-                val hazeState = remember { HazeState() }
                 val aboveBottomBar = APP_BAR_HEIGHT + 16.dp
-                Box(modifier = Modifier.fillMaxSize().haze(hazeState)) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .hazeChild(
-                                hazeState,
-                                style = HazeStyle(blurRadius = 6.dp)
-                            )
-                    ) {
-                        Background()
-                    }
-                }
+                Background()
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize().padding(bottom = sm.chapterListHeight.dp)
@@ -237,12 +216,7 @@ class DetailScreen : Screen {
                     .fillMaxWidth()
                     .height(backgroundHeight)
             ) { sm.manga = sm.manga.copy(painter = it) }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(backgroundHeight)
-                    .obstruct()
-            )
+            Box(Modifier.height(backgroundHeight).obstruct())
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
@@ -359,64 +333,6 @@ class DetailScreen : Screen {
                 }
             }
         }
-    }
-
-    @Composable
-    private fun Title(
-        manga: MangaAttributes,
-        textLines: (Int) -> Unit = {},
-        modifier: Modifier = Modifier
-    ) {
-        var fontSize by remember { mutableStateOf(28) }
-        var maxLines by remember { mutableStateOf(2) }
-        var isOverflow by remember { mutableStateOf(false) }
-        if (isOverflow) {
-            fontSize--
-            if (fontSize <= 20) {
-                maxLines = 3
-            }
-        }
-        Text(
-            getTitle(manga.title),
-            maxLines = maxLines,
-            overflow = TextOverflow.Ellipsis,
-            fontSize = fontSize.sp,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            onTextLayout = {
-                isOverflow = it.hasVisualOverflow
-                textLines(it.lineCount)
-            }
-        )
-    }
-
-    @OptIn(ExperimentalLayoutApi::class)
-    @Composable
-    private fun Tags(
-        data: MangaAttributes,
-        modifier: Modifier = Modifier
-    ) {
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            getTagList(data).forEach(action = { TagBar(it) })
-        }
-    }
-
-    @Composable
-    private fun TagBar(
-        tag: String,
-        modifier: Modifier = Modifier
-    ) {
-        Text(
-            tag,
-            fontSize = 10.sp,
-            modifier = modifier
-                .clip(RoundedCornerShape(3.dp))
-                .background(Color(229, 228, 226, 100))
-                .padding(vertical = 1.dp, horizontal = 2.dp)
-        )
     }
 
     @Composable
