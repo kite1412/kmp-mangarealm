@@ -229,7 +229,8 @@ class DetailScreen : Screen {
                     )
             ) {
                 Title(
-                    attributes,
+                    manga = attributes,
+                    titleLines = 4,
                     textLines = {
                         if (it > 1) sm.titleTagsPadding = 18
                     }
