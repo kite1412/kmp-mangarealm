@@ -30,7 +30,7 @@ const val PSYCHOLOGICAL_TAG = "Psychological"
 const val MYSTERY_TAG = "Mystery"
 const val ASCENDING = "asc"
 const val DESCENDING = "desc"
-const val DEFAULT_COLLECTION_SIZE = 50
+const val DEFAULT_COLLECTION_SIZE = 20
 
 val BLUR_TINT = Color.LightGray.copy(alpha = 0.4f)
 

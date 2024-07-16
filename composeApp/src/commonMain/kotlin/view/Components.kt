@@ -14,6 +14,8 @@ import androidx.compose.foundation.gestures.snapping.SnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -49,11 +51,16 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.ListResponse
+import api.mangadex.model.response.attribute.MangaAttributes
+import api.mangadex.util.getTagList
+import api.mangadex.util.getTitle
 import com.seiko.imageloader.model.ImageAction
 import com.seiko.imageloader.model.ImageRequest
 import com.seiko.imageloader.option.SizeResolver
@@ -233,7 +240,6 @@ fun <T, ATTR> SessionPagerColumn(
     var finished by remember { mutableStateOf(false) }
     var triggerLoad by remember { mutableStateOf(false) }
     if (enableLoadNew && !finished) {
-        var block by remember { mutableStateOf(false) }
         val passThreshold by remember {
             derivedStateOf {
                 state.firstVisibleItemIndex + state.layoutInfo.visibleItemsInfo.size >= (session.data.size / thresholdFactor)
@@ -242,10 +248,8 @@ fun <T, ATTR> SessionPagerColumn(
         if (session.response != ListResponse<ATTR>()) LaunchedEffect(
             keys = arrayOf(passThreshold, triggerLoad)
         ) {
-            if (!block && passThreshold) {
-                block = true
+            if (passThreshold) {
                 handler.updateSession { done, newSession ->
-                    block = done
                     finished = done
                     triggerLoad = !triggerLoad
                     newSession?.let { onSessionLoaded(it) }
@@ -279,7 +283,7 @@ fun <T, ATTR> SessionPagerVerticalPager(
     session: Session<T, ATTR>,
     handler: SessionHandler<T, ATTR>,
     state: PagerState,
-    subtrahend: Int = 2,
+    subtrahend: Int = if (session.data.size / 2 >= 10) 5 else 2,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     pageSize: PageSize = PageSize.Fill,
     beyondBoundsPageCount: Int = PagerDefaults.BeyondBoundsPageCount,
@@ -292,20 +296,23 @@ fun <T, ATTR> SessionPagerVerticalPager(
     pageNestedScrollConnection: NestedScrollConnection = remember(state) {
         PagerDefaults.pageNestedScrollConnection(state, Orientation.Vertical)
     },
-    onSessionLoaded: (Session<T, ATTR>?) -> Unit,
+    onSessionLoaded: (Session<T, ATTR>) -> Unit,
     modifier: Modifier = Modifier,
     pageContent: @Composable PagerScope.(page: Int) -> Unit
 ) {
-    val currentPage by remember {
-        derivedStateOf { state.currentPage }
-    }
     var finished by remember { mutableStateOf(false) }
-    if (!finished) LaunchedEffect(currentPage) {
-        if (currentPage >= session.data.size - subtrahend) {
-            finished = true
-            handler.updateSession { isFinished, session ->
-                onSessionLoaded(session)
+    if (!finished) {
+        val loadNew by remember {
+            derivedStateOf {
+                state.settledPage >= ((session.data.size - 1) - subtrahend)
+            }
+        }
+        var triggerLoad by remember { mutableStateOf(false) }
+        if (loadNew) LaunchedEffect(triggerLoad) {
+            handler.updateSession { isFinished, newSession ->
                 finished = isFinished
+                triggerLoad = !triggerLoad
+                newSession?.let(onSessionLoaded)
             }
         }
     }
@@ -383,4 +390,93 @@ fun PaintersLoader(
             onPainterLoaded(i, it)
         }
     }
+}
+
+@Composable
+fun Title(
+    manga: MangaAttributes,
+    textAlign: TextAlign? = null,
+    textLines: (Int) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    var fontSize by remember { mutableStateOf(28) }
+    var maxLines by remember { mutableStateOf(2) }
+    var isOverflow by remember { mutableStateOf(false) }
+    if (isOverflow) {
+        fontSize--
+        if (fontSize <= 20) {
+            maxLines = 3
+        }
+    }
+    Text(
+        getTitle(manga.title),
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+        fontSize = fontSize.sp,
+        color = Color.White,
+        fontWeight = FontWeight.Bold,
+        textAlign = textAlign,
+        onTextLayout = {
+            isOverflow = it.hasVisualOverflow
+            textLines(it.lineCount)
+        },
+        modifier = modifier
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun Tags(
+    data: MangaAttributes,
+    horizontalAlignment: Alignment.Horizontal? = null,
+    verticalAlignment: Alignment.Vertical? = null,
+    fontColor: Color = Color.Black,
+    fontSize: TextUnit = 10.sp,
+    horizontalPadding: Dp = 2.dp,
+    verticalPadding: Dp = 1.dp,
+    cornerRadius: Dp = 3.dp,
+    modifier: Modifier = Modifier
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(
+            space = 2.dp,
+            alignment = horizontalAlignment ?: Alignment.Start
+        ),
+        verticalArrangement = Arrangement.spacedBy(
+            space = 2.dp,
+            alignment = verticalAlignment ?: Alignment.Top
+        ),
+    ) {
+        getTagList(data).forEach {
+            TagBar(
+                tag = it,
+                fontColor = fontColor,
+                fontSize = fontSize,
+                horizontalPadding = horizontalPadding,
+                verticalPadding = verticalPadding,
+                cornerRadius = cornerRadius
+            )
+        }
+    }
+}
+
+@Composable
+fun TagBar(
+    tag: String,
+    fontColor: Color = Color.Black,
+    fontSize: TextUnit = 10.sp,
+    horizontalPadding: Dp = 2.dp,
+    verticalPadding: Dp = 1.dp,
+    cornerRadius: Dp = 3.dp,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        tag,
+        fontSize = fontSize,
+        color = fontColor,
+        modifier = modifier
+            .clip(RoundedCornerShape(cornerRadius))
+            .background(Color(229, 228, 226, 100))
+            .padding(vertical = verticalPadding, horizontal = horizontalPadding)
+    )
 }
