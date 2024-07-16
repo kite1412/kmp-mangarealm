@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
@@ -937,6 +938,8 @@ fun MangaPage(
     modifier: Modifier = Modifier
 ) {
     val screenSize = LocalScreenSize.current
+    val state = rememberLazyListState()
+    if (session.state.value == SessionState.ACTIVE) LaunchedEffect(true) { state.scrollToItem(0) }
     Box(modifier = modifier.fillMaxSize()) {
         when(session.state.value) {
             SessionState.FETCHING -> {
@@ -964,6 +967,7 @@ fun MangaPage(
                 // TODO change to SessionPagerVerticalPager
                 SessionPagerColumn(
                     session = session,
+                    state = state,
                     handler = MangaSessionHandler(session),
                     onSessionLoaded = onSessionLoaded,
                     modifier = Modifier

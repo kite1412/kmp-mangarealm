@@ -231,8 +231,8 @@ fun <T, ATTR> SessionPagerColumn(
     content: @Composable (Int) -> Unit
 ) {
     var finished by remember { mutableStateOf(false) }
-    // TODO handle the cancellation
-    if (enableLoadNew) {
+    var triggerLoad by remember { mutableStateOf(false) }
+    if (enableLoadNew && !finished) {
         var block by remember { mutableStateOf(false) }
         val passThreshold by remember {
             derivedStateOf {
@@ -240,13 +240,14 @@ fun <T, ATTR> SessionPagerColumn(
             }
         }
         if (session.response != ListResponse<ATTR>()) LaunchedEffect(
-            key1 = passThreshold,
+            keys = arrayOf(passThreshold, triggerLoad)
         ) {
             if (!block && passThreshold) {
                 block = true
                 handler.updateSession { done, newSession ->
                     block = done
                     finished = done
+                    triggerLoad = !triggerLoad
                     newSession?.let { onSessionLoaded(it) }
                 }
             }
