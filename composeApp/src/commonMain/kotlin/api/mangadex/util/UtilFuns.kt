@@ -1,5 +1,8 @@
 package api.mangadex.util
 
+import androidx.compose.foundation.background
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import api.mangadex.model.request.ImageQuality
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.HomeUrl
@@ -136,3 +139,5 @@ fun getChapterImageUrls(
         this
     }
 }
+
+fun Modifier.obstruct(color: Color = Color.Gray.copy(alpha = 0.6f)): Modifier = background(color)

@@ -71,6 +71,7 @@ import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTags
 import api.mangadex.util.getTitle
+import api.mangadex.util.obstruct
 import assets.`Chevron-right`
 import assets.`Heart-outline`
 import assets.`Magnifying-glass`
@@ -79,16 +80,12 @@ import assets.`Text-align-right`
 import assets.`Treasure-map`
 import cafe.adriel.voyager.navigator.Navigator
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.haze
-import dev.chrisbanes.haze.hazeChild
 import kotlinx.coroutines.delay
 import model.Manga
 import model.session.MangaSession
 import model.session.Session
 import model.session.SessionState
 import util.APP_BAR_HEIGHT
-import util.BLUR_TINT
 import util.LATEST_UPDATE_SLIDE_TIME
 import util.session_handler.MangaSessionHandler
 import view_model.main.MainViewModel
@@ -365,29 +362,16 @@ fun LatestUpdatesBar(
                         vm.navigateToDetailScreen(nav, manga)
                     }
             ) {
-                val hazeState = remember { HazeState() }
-                Box(
-                    modifier = Modifier
-                        .haze(hazeState)
-                ) {
-                    ImageLoader(
-                        url = getCoverUrl(manga.data),
-                        painter = manga.painter,
-                        contentScale = ContentScale.FillWidth,
-                        loading = {},
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .hazeChild(
-                                hazeState,
-                                style = HazeStyle(
-                                    blurRadius = 8.dp,
-                                    tint = BLUR_TINT
-                                )
-                            )
-                    ) { p ->
-                        state.latestUpdates[it] = state.latestUpdates[it].copy(painter = p)
-                    }
+                ImageLoader(
+                    url = getCoverUrl(manga.data),
+                    painter = manga.painter,
+                    contentScale = ContentScale.FillWidth,
+                    loading = {},
+                    modifier = Modifier.fillMaxSize()
+                ) { p ->
+                    state.latestUpdates[it] = state.latestUpdates[it].copy(painter = p)
                 }
+                Box(modifier = Modifier.fillMaxSize().obstruct())
                 LatestUpdateDisplay(
                     manga = manga,
                     imageHeight = imageHeight,
@@ -993,5 +977,14 @@ fun MangaPage(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun MangaPageDisplay(
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxSize()) {
+
     }
 }
