@@ -396,18 +396,12 @@ fun PaintersLoader(
 fun Title(
     manga: MangaAttributes,
     textAlign: TextAlign? = null,
+    titleLines: Int = 0,
     textLines: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var fontSize by remember { mutableStateOf(28) }
     var maxLines by remember { mutableStateOf(2) }
-    var isOverflow by remember { mutableStateOf(false) }
-    if (isOverflow) {
-        fontSize--
-        if (fontSize <= 20) {
-            maxLines = 3
-        }
-    }
     Text(
         getTitle(manga.title),
         maxLines = maxLines,
@@ -417,7 +411,12 @@ fun Title(
         fontWeight = FontWeight.Bold,
         textAlign = textAlign,
         onTextLayout = {
-            isOverflow = it.hasVisualOverflow
+            if (it.hasVisualOverflow) {
+                fontSize--
+                if (fontSize <= 24) {
+                    if (titleLines > 0) maxLines = titleLines else maxLines++
+                }
+            }
             textLines(it.lineCount)
         },
         modifier = modifier
