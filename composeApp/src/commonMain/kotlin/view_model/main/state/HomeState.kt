@@ -22,6 +22,7 @@ import model.session.Session
 import model.toMangaList
 import util.ADVENTURE_TAG
 import util.COMEDY_TAG
+import util.DEFAULT_COLLECTION_SIZE
 import util.KottageConst
 import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
@@ -151,7 +152,7 @@ class HomeState(
         "includedTags[]" to tags,
         "excludedTags[]" to excludedTags,
         "includes[]" to "cover_art",
-        "limit" to sessionSize
+        "limit" to DEFAULT_COLLECTION_SIZE
     )
 
     fun onSessionLoaded(new: Session<Manga, MangaAttributes>) {

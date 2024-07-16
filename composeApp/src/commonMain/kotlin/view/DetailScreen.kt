@@ -63,6 +63,7 @@ import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTagList
 import api.mangadex.util.getTitle
+import api.mangadex.util.obstruct
 import assets.`Book-open`
 import assets.`Bookmark-alt`
 import assets.`Bookmark-alt-fill`
@@ -86,7 +87,6 @@ import kotlinx.coroutines.launch
 import model.MangaStatus
 import model.Status
 import util.APP_BAR_HEIGHT
-import util.BLUR_TINT
 import util.edgeToEdge
 import util.publicationStatus
 import util.publicationStatusColor
@@ -214,7 +214,6 @@ class DetailScreen : Screen {
     ) {
         val screenSize = LocalScreenSize.current
         val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val hazeState = remember { HazeState() }
         val totalHeight = (screenSize.height / 2.5f) - statusBarsHeight
         val backgroundHeight = totalHeight / 1.25f
         val coverArtHeight = totalHeight / 1.5f
@@ -229,21 +228,21 @@ class DetailScreen : Screen {
                 .fillMaxWidth()
         ) {
             val painter = manga.painter
-            Box(modifier = Modifier.haze(hazeState)) {
-                ImageLoader(
-                    url = getCoverUrl(data),
-                    painter = painter,
-                    contentScale = ContentScale.FillWidth,
-                    loading = {},
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(backgroundHeight)
-                        .hazeChild(state = hazeState, style = HazeStyle(
-                            blurRadius = 8.dp,
-                            tint = BLUR_TINT
-                        ))
-                ) { sm.manga = sm.manga.copy(painter = it) }
-            }
+            ImageLoader(
+                url = getCoverUrl(data),
+                painter = painter,
+                contentScale = ContentScale.FillWidth,
+                loading = {},
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(backgroundHeight)
+            ) { sm.manga = sm.manga.copy(painter = it) }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(backgroundHeight)
+                    .obstruct()
+            )
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier

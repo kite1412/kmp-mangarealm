@@ -60,6 +60,13 @@ class MangaDexImpl(
                 url("$url$queries")
                 if (auth) authHeader()
             }.body<R>()
+                .also {
+                    if (it is EntityResponse<*>) {
+                        it.errors?.forEach { m ->
+                            Log.e("($methodName) $m")
+                        }
+                    }
+                }
         } catch (e: Exception) {
             e.message?.let {
                 Log.e("($methodName) $it")
@@ -174,15 +181,20 @@ class MangaDexImpl(
         )
 
     override suspend fun getHomeUrl(chapterId: String): HomeUrl? =
-        get<HomeUrl?>(
-            url = ApiConstant.chapterImagesUrl(chapterId),
-            methodName = "getHomeUrl"
-        ).also {
-            Log.d("GET (getHomeUrl) data length: ${it?.chapter?.data?.size}, " +
-                    "dataSaver length: ${it?.chapter?.dataSaver?.size}")
+        ApiConstant.chapterImagesUrl(chapterId).run {
+            get<HomeUrl?>(
+                url = this,
+                methodName = "getHomeUrl"
+            ).also {
+                if (it?.errors != null) it.errors.forEach { m ->
+                    Log.e("(getHomeUrl: $this) $m")
+                }
+                Log.d("GET (getHomeUrl) data length: ${it?.chapter?.data?.size}, " +
+                        "dataSaver length: ${it?.chapter?.dataSaver?.size}")
+            }
         }
 
-    suspend fun updateMangaStatus(
+    private suspend fun updateMangaStatus(
         mangaId: String,
         status: String,
         auth: Boolean = true,
