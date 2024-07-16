@@ -38,6 +38,7 @@ class ReaderScreenModel(
     val images = mutableStateListOf<ChapterImage>()
     private var index by mutableStateOf("")
     var showChapterList by mutableStateOf(false)
+    var showWarning by mutableStateOf(false)
 
     init {
         screenModelScope.launch {
@@ -53,6 +54,7 @@ class ReaderScreenModel(
             val res = mangaDex.getHomeUrl(chapters[currentChapterIndex].id)
             if (images == null) {
                 if (res != null) {
+                    if (res.chapter.data.isEmpty()) showWarning = true
                     val imageFiles = if (imageQuality == ImageQuality.HIGH) res.chapter.data
                         else res.chapter.dataSaver
                     totalPages = imageFiles.size
