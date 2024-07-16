@@ -109,7 +109,7 @@ fun App() {
                 if (isShowingSplash.value) {
                     SplashScreen()
                 } else {
-                    if (isLoggedIn.value) adjustStatusBarColor(MaterialTheme.colors.background)
+                    adjustStatusBarColor(MaterialTheme.colors.background)
                 }
             }
         }

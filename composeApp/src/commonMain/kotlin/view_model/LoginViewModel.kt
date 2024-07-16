@@ -16,6 +16,7 @@ import io.github.irgaly.kottage.put
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import util.KottageConst
+import util.retry
 import kotlin.reflect.KClass
 
 class LoginViewModel : ViewModel() {
@@ -100,14 +101,19 @@ class LoginViewModel : ViewModel() {
         _loading.value = true
         _enableTap.value = false
         viewModelScope.launch {
-            val token = mangaDex.login(
-                TokenRequest(
-                    username = username.value,
-                    password = password.value,
-                    clientId = clientId.value,
-                    clientSecret = clientSecret.value
+            val token = retry<Token?>(
+                count = 3,
+                predicate = { it == null || it.error != null }
+            ) {
+                mangaDex.login(
+                    TokenRequest(
+                        username = username.value,
+                        password = password.value,
+                        clientId = clientId.value,
+                        clientSecret = clientSecret.value
+                    )
                 )
-            )
+            }
             _loading.value = false
             if (token != null) {
                 _success.value = true

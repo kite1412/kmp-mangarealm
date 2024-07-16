@@ -14,6 +14,8 @@ import androidx.compose.foundation.gestures.snapping.SnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -478,4 +480,27 @@ fun TagBar(
             .background(Color(229, 228, 226, 100))
             .padding(vertical = verticalPadding, horizontal = horizontalPadding)
     )
+}
+
+@Composable
+fun LoadingIndicator(
+    modifier: Modifier = Modifier,
+    message: @Composable (ColumnScope.() -> Unit)? = null
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Black.copy(alpha = 0.8f))
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(24.dp)
+        ) {
+            CircularProgressIndicator(color = Color.White)
+            message?.invoke(this)
+        }
+    }
 }

@@ -34,7 +34,6 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
@@ -352,6 +351,13 @@ class ReaderScreen : Screen {
     ) {
         Box(modifier = modifier) {
             ColumnLayout(sm, modifier = Modifier.align(Alignment.Center))
+            if (sm.showWarning) Text(
+                "No pages found",
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.align(Alignment.Center)
+            )
             AnimatedVisibility(
                 visible = sm.showPageIndicator,
                 modifier = Modifier
@@ -456,12 +462,13 @@ class ReaderScreen : Screen {
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.align(Alignment.Center)
                 ) {
-                    CircularProgressIndicator(color = Color.White)
-                    Text(
-                        "loading page...",
-                        color = Color.White,
-                        fontWeight = FontWeight.Medium
-                    )
+                    LoadingIndicator {
+                        Text(
+                            "loading page...",
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
         }

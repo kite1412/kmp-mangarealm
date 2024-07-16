@@ -8,6 +8,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -35,8 +37,10 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
@@ -47,6 +51,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -56,8 +61,11 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -81,14 +89,17 @@ import assets.`Text-align-right`
 import assets.`Treasure-map`
 import cafe.adriel.voyager.navigator.Navigator
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import model.Manga
 import model.session.MangaSession
 import model.session.Session
 import model.session.SessionState
 import util.APP_BAR_HEIGHT
 import util.LATEST_UPDATE_SLIDE_TIME
+import util.Log
 import util.edgeToEdge
 import util.session_handler.MangaSessionHandler
+import util.swipeToPop
 import util.undoEdgeToEdge
 import view_model.main.MainViewModel
 import view_model.main.state.HomeState
@@ -127,15 +138,9 @@ fun Home(
         derivedStateOf { pagerState.settledPage }
     }
     if (vm.undoEdgeToEdge && settledPage == 0) undoEdgeToEdge()
-    LaunchedEffect(settledPage) {
-        if (settledPage == 0) {
-            vm.hideBottomBar = false
-            state.clearSession()
-        }
-    }
     HorizontalPager(
         state = pagerState,
-        userScrollEnabled = sessionState != SessionState.IDLE
+        userScrollEnabled = false
     ) {
         when(it) {
             0 -> LazyColumn(
@@ -193,11 +198,18 @@ fun Home(
                     Spacer(modifier = Modifier.height(bottomBarTotalHeight - 16.dp))
                 }
             }
-            else -> MangaPage(
-                session = state.session,
-                onSessionLoaded = state::onSessionLoaded,
-                onPainterLoaded = state::onPainterLoaded
-            )
+            else -> {
+                MangaPage(
+                    session = state.session,
+                    onSessionLoaded = state::onSessionLoaded,
+                    pop = {
+                        state.clearSession()
+                        vm.hideBottomBar = false
+                    },
+                    onChapterListClick = { m -> vm.navigateToDetailScreen(nav, m) },
+                    onPainterLoaded = state::onPainterLoaded
+                )
+            }
         }
     }
 }
@@ -881,6 +893,8 @@ fun PsyMysTag(
 fun MangaPage(
     session: MangaSession,
     onSessionLoaded: (Session<Manga, MangaAttributes>) -> Unit,
+    pop: () -> Unit,
+    onChapterListClick: (Manga) -> Unit,
     onPainterLoaded: (Int, Painter) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
@@ -894,30 +908,20 @@ fun MangaPage(
         modifier = modifier
             .fillMaxSize()
             .padding(bottom = navBarHeight)
+            .swipeToPop(action = pop)
     ) {
         when(session.state.value) {
             SessionState.FETCHING -> {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5f))
+                        .background(Color.Black.copy(alpha = 0.8f))
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color.Black.copy(alpha = 0.8f))
-                    ) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .padding(24.dp),
-                        )
-                    }
+                    LoadingIndicator(Modifier.align(Alignment.Center))
                 }
             }
             else -> {
+                val scope = rememberCoroutineScope()
                 SessionPagerVerticalPager(
                     session = session,
                     state = pagerState,
@@ -926,7 +930,23 @@ fun MangaPage(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     val manga = session.data[it]
-                    MangaPageDisplay(manga, onPainterLoaded = { p -> onPainterLoaded(it, p) })
+                    MangaPageDisplay(
+                        manga = manga,
+                        onChapterListClick = { onChapterListClick(manga) },
+                        onOverscrollDesc = { isBackward ->
+                            if (isBackward) {
+                                if (it > 0) scope.launch {
+                                    pagerState.animateScrollToPage(it - 1)
+                                }
+                            } else {
+                                val next = it + 1
+                                if ((session.data.size - 1) > next) scope.launch {
+                                    pagerState.animateScrollToPage(next)
+                                }
+                            }
+                        },
+                        onPainterLoaded = { p -> onPainterLoaded(it, p) }
+                    )
                 }
             }
         }
@@ -936,16 +956,20 @@ fun MangaPage(
 @Composable
 fun MangaPageDisplay(
     manga: Manga,
+    onChapterListClick: (Manga) -> Unit,
+    onOverscrollDesc: (up: Boolean) -> Unit,
     modifier: Modifier = Modifier,
     onPainterLoaded: (Painter) -> Unit
 ) {
     BoxWithConstraints(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
     ) {
         ImageLoader(
             url = getCoverUrl(manga.data),
             painter = manga.painter,
             contentScale = ContentScale.FillBounds,
+            loading = {},
             modifier = Modifier.fillMaxSize(),
             onPainterLoaded = onPainterLoaded
         )
@@ -961,10 +985,13 @@ fun MangaPageDisplay(
                 )
         ) {
             val coverWidth = this@BoxWithConstraints.maxWidth / 2.2f
-            Column(
+            var chapterListHeight by remember { mutableStateOf(0.dp) }
+            if (manga.painter != null) Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = chapterListHeight)
             ) {
                 BrowseImageNullable(
                     painter = manga.painter,
@@ -975,20 +1002,64 @@ fun MangaPageDisplay(
                         .height(coverWidth * (3f / 2f))
                         .clip(RoundedCornerShape(16.dp))
                 )
+                Title(
+                    manga = manga.data.attributes,
+                    textAlign = TextAlign.Center
+                )
                 Tags(
                     data = manga.data.attributes,
                     horizontalAlignment = Alignment.CenterHorizontally,
                     fontColor = Color.White,
-                    fontSize = 14.sp,
+                    fontSize = 12.sp,
                     horizontalPadding = 4.dp,
                     cornerRadius = 6.dp,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp)
                 )
-                Title(
-                    manga = manga.data.attributes,
-                    textAlign = TextAlign.Center
+                val descState = rememberScrollState()
+                val scope = rememberCoroutineScope()
+                // TODO fix scroll
+                Text(
+                    getDesc(manga.data.attributes.description),
+                    color = Color.White,
+                    modifier = Modifier
+                        .padding(24.dp)
+                        .verticalScroll(descState)
+                        .pointerInput(true) {
+                            detectVerticalDragGestures { _, dragAmount ->
+                                Log.w(dragAmount.toString())
+                                if (dragAmount < 0) {
+                                    if (dragAmount <= -30) onOverscrollDesc(false) else scope.launch {
+                                        descState.scrollBy(dragAmount)
+                                    }
+                                } else if (dragAmount >= 30) onOverscrollDesc(true) else scope.launch {
+                                    descState.scrollBy(-(dragAmount))
+                                }
+                            }
+                        }
+                )
+            } else LoadingIndicator(Modifier.align(Alignment.Center))
+            val density = LocalDensity.current
+            Action(
+                onClick =  { onChapterListClick(manga) },
+                verticalPadding = 16.dp,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .onGloballyPositioned {
+                        with(density) {
+                            chapterListHeight = (it.size.height.toDp() + 16.dp)
+                        }
+                    }
+            ) {
+                Text(
+                    "Chapter List",
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.align(Alignment.Center)
                 )
             }
         }
