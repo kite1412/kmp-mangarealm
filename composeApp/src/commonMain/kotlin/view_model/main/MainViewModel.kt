@@ -15,6 +15,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import io.github.irgaly.kottage.KottageStorage
 import model.Manga
 import model.MangaStatus
+import view_model.ChapterNavigator
 import view_model.DetailNavigator
 import view_model.main.state.DiscoveryState
 import view_model.main.state.HomeState
@@ -23,7 +24,7 @@ class MainViewModel(
     mangaDex: MangaDex = Libs.mangaDex,
     kottageStorage: KottageStorage = Libs.kottageStorage,
     private val cache: Cache = Libs.cache
-) : ViewModel(), DetailNavigator {
+) : ViewModel(), DetailNavigator, ChapterNavigator {
     val menuStack = mutableStateStackOf(Menu.HOME)
     val currentPage by derivedStateOf { menuStack.lastItemOrNull }
     var undoEdgeToEdge by mutableStateOf(false)

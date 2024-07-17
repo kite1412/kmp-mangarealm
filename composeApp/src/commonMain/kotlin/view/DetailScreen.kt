@@ -498,7 +498,7 @@ class DetailScreen : Screen {
         val nav = LocalNavigator.currentOrThrow
         Action(
             onClick = {
-                sm.navigateToChapterListScreen(nav)
+                sm.navigateToChapter(nav)
             },
             verticalPadding = 16.dp,
             modifier = modifier
