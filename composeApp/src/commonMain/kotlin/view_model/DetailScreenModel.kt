@@ -18,12 +18,11 @@ import model.Chapters
 import model.MangaStatus
 import util.ASCENDING
 import util.WARNING_TIME
-import view.ChapterScreen
 
 class DetailScreenModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val cache: Cache = Libs.cache
-) : ScreenModel, ReaderNavigator {
+) : ScreenModel, ReaderNavigator, ChapterNavigator {
     var titleTagsPadding by mutableStateOf(24)
     var isShowingDetail by mutableStateOf(false)
     var chapterListHeight by mutableStateOf(0)
@@ -41,10 +40,6 @@ class DetailScreenModel(
 
     fun detailVisibility() {
         isShowingDetail = !isShowingDetail
-    }
-
-    fun navigateToChapterListScreen(nav: Navigator) {
-        nav.push(ChapterScreen())
     }
 
     fun onRead(nav: Navigator) {
