@@ -118,17 +118,17 @@ private const val tagsColumnCount = 2
 @Composable
 fun Home(
     vm: MainViewModel,
-    state: HomeState,
     nav: Navigator,
     modifier: Modifier = Modifier
 ) {
     val screenSize = LocalScreenSize.current
     val latestBarHeight = (screenSize.height.value / 4.2).dp
     val pagerState = rememberPagerState { 2 }
-    val session = state.session
+    val session = vm.homeState.session
     val sessionState by remember {
         derivedStateOf { session.state.value }
     }
+    val state = vm.homeState
     LaunchedEffect(sessionState) {
         when(sessionState) {
             SessionState.IDLE -> {
@@ -180,7 +180,11 @@ fun Home(
                         }
                     }
                     item {
-                        ContinueReading(vm = vm, state = state, nav = nav, height = latestBarHeight)
+                        ContinueReading(
+                            state = state,
+                            nav = nav,
+                            height = latestBarHeight
+                        ) { m -> vm.navigateToDetailScreen(nav, m) }
                     }
                     item {
                         Column(
@@ -469,11 +473,11 @@ private fun LatestUpdateDisplay(
 
 @Composable
 private fun ContinueReading(
-    vm: MainViewModel,
     state: HomeState,
     nav: Navigator,
     height: Dp,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (Manga) -> Unit
 ) {
     val data = state.continueReading
     val screenSize = LocalScreenSize.current
@@ -518,7 +522,7 @@ private fun ContinueReading(
                         state.continueReading[it] = state.continueReading[it].copy(painter = p)
                     },
                     modifier = Modifier.width(screenSize.width / 2)
-                ) { vm.navigateToDetailScreen(nav, manga) }
+                ) { onClick(manga) }
             }
         }
     }

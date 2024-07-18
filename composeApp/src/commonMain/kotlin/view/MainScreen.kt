@@ -63,7 +63,8 @@ class MainScreen : Screen {
             ) {
                 when(vm.currentPage) {
                     Menu.DISCOVERY -> Discovery(vm)
-                    else -> Home(vm, vm.homeState, nav)
+                    Menu.USER_LIST -> UserList(vm)
+                    else -> Home(vm, nav)
                 }
                 if (!vm.hideBottomBar) BottomAppBar(
                     page = vm.currentPage!!,
