@@ -2,7 +2,6 @@ package view
 
 import Assets
 import LocalMainViewModel
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -63,15 +62,11 @@ class MainScreen : Screen {
                     Menu.DISCOVERY -> Discovery(vm)
                     else -> Home(vm, vm.homeState, nav)
                 }
-                AnimatedVisibility(
-                    visible = !vm.hideBottomBar,
+                if (!vm.hideBottomBar) BottomAppBar(
+                    page = vm.currentPage!!,
+                    onPageChange = vm::pushMenu,
                     modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
-                    BottomAppBar(
-                        page = vm.currentPage!!,
-                        onPageChange = vm::pushMenu,
-                    )
-                }
+                )
                 if (vm.discoveryState.showDeletionWarning) DeletionWarning(vm.discoveryState)
             }
         }

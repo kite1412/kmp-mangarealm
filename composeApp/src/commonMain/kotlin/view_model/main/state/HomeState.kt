@@ -66,7 +66,7 @@ class HomeState(
         this.tags = tags
         psyMysTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!) to listOf(tags[COMEDY_TAG]!!)
         romComTags = listOf(tags[ROMANCE_TAG]!!, tags[COMEDY_TAG]!!) to psyMysTags.first
-        advComTags = listOf(tags[ADVENTURE_TAG]!!, tags[COMEDY_TAG]!!) to psyMysTags.first + listOf(tags[ROMANCE_TAG]!! )
+        advComTags = listOf(tags[ADVENTURE_TAG]!!, tags[COMEDY_TAG]!!) to (psyMysTags.first + listOf(tags[ROMANCE_TAG]!!))
     }
 
     fun initLatestUpdatesData() {
@@ -131,8 +131,8 @@ class HomeState(
                 val fromCache = cache.latestMangaSearch[q]
                 session.clear()
                 vm.hideBottomBar = true
+                sessionQueries = q
                 if (fromCache == null) {
-                    sessionQueries = q
                     session.init(queries)
                     val res = mangaDex.getManga(q)
                     if (res != null) {

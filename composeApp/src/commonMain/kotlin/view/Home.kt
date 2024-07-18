@@ -137,6 +137,7 @@ fun Home(
         derivedStateOf { pagerState.settledPage }
     }
     if (vm.undoEdgeToEdge && settledPage == 0) undoEdgeToEdge()
+    val mangaPageState = rememberPagerState { session.data.size }
     HorizontalPager(
         state = pagerState,
         userScrollEnabled = false
@@ -198,6 +199,9 @@ fun Home(
                 }
             }
             else -> {
+                if (session.state.value == SessionState.ACTIVE) LaunchedEffect(true) {
+                    mangaPageState.scrollToPage(0)
+                }
                 MangaPage(
                     session = state.session,
                     onSessionLoaded = state::onSessionLoaded,
@@ -206,6 +210,7 @@ fun Home(
                         vm.hideBottomBar = false
                     },
                     onChapterListClick = { m -> vm.navigateToChapter(nav, m) },
+                    pagerState = mangaPageState,
                     onPainterLoaded = state::onPainterLoaded
                 )
             }
@@ -894,11 +899,11 @@ fun MangaPage(
     onSessionLoaded: (Session<Manga, MangaAttributes>) -> Unit,
     pop: () -> Unit,
     onChapterListClick: (Manga) -> Unit,
+    pagerState: PagerState = rememberPagerState { session.data.size },
     onPainterLoaded: (Int, Painter) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
     edgeToEdge()
-    val pagerState = rememberPagerState { session.data.size }
     val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     BoxWithConstraints(
         modifier = modifier
@@ -916,20 +921,18 @@ fun MangaPage(
                     LoadingIndicator(Modifier.align(Alignment.Center))
                 }
             }
-            else -> {
-                var manga by remember { mutableStateOf(session.data[0]) }
+            SessionState.ACTIVE -> {
                 var chapterListBotPadding by remember { mutableStateOf(0.dp) }
                 val scope = rememberCoroutineScope()
                 SessionPagerVerticalPager(
                     session = session,
                     state = pagerState,
                     handler = MangaSessionHandler(session),
-                    userScrollEnabled = false,
                     pageSize = PageSize.Fixed(maxHeight - (chapterListBotPadding / 2)),
                     onSessionLoaded = onSessionLoaded,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    manga = session.data[it]
+                    val manga = session.data[it]
                     MangaPageDisplay(
                         manga = manga,
                         onChapterListClick = { onChapterListClick(manga) },
@@ -946,6 +949,7 @@ fun MangaPage(
                     )
                 }
             }
+            else -> {}
         }
     }
 }
@@ -1028,10 +1032,10 @@ fun MangaPageDisplay(
                             detectVerticalDragGestures { _, dragAmount ->
                                 var forward = false
                                 val scrollText = if (dragAmount > 0.0f)
-                                                    if (dragAmount >= 50) false else true
-                                                        else if (dragAmount <= -60) false.also {
-                                                            forward = true
-                                                        } else true
+                                    if (dragAmount >= 40) false else true
+                                else if (dragAmount <= -40) false.also {
+                                    forward = true
+                                } else true
                                 scope.launch {
                                     if (scrollText) {
                                         descState.scrollBy(-(dragAmount))
