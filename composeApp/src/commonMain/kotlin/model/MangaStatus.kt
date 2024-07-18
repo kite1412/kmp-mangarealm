@@ -28,4 +28,15 @@ object MangaStatus {
         )
         return if (!includeAll) l else listOf(All) + l
     }
+
+    fun toStatus(raw: String): Status = when(raw) {
+        Reading.rawStatus -> Reading
+        OnHold.rawStatus -> OnHold
+        PlanToRead.rawStatus -> PlanToRead
+        Completed.rawStatus -> Completed
+        Dropped.rawStatus -> Dropped
+        ReReading.rawStatus -> ReReading
+        else -> throw IllegalArgumentException("Unknown status: $this")
+    }
+
 }

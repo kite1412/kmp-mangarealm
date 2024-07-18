@@ -10,7 +10,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.lifecycle.viewModelScope
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
-import api.mangadex.util.Status
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
 import io.github.irgaly.kottage.KottageStorage
@@ -100,12 +99,11 @@ class HomeState(
                 predicate = { continueReading.isEmpty() }
             ) {
                 // TODO change to all statuses
-                val res = mangaDex.getMangaByStatus(Status.READING)
+                val res = mangaDex.getMangaByStatus()
                 if (res?.statuses != null) {
                     if (res.statuses.isNotEmpty()) {
-                        val temp = mutableListOf<String>()
-                        res.statuses.forEach { manga ->
-                            temp.add(manga.key)
+                        val temp = res.statuses.map { manga ->
+                            manga.key
                         }
                         val mangaIds = generateArrayQueryParam(
                             name = "ids[]",
@@ -115,10 +113,12 @@ class HomeState(
                         val mangaList = mangaDex.getManga(queries)
                         mangaList?.let {
                             val data = it.toMangaList().map { m ->
-                                m.status = MangaStatus.Reading
+                                res.statuses[m.data.id]?.let { s ->
+                                    m.status = MangaStatus.toStatus(s)
+                                }
                                 m
                             }
-                            continueReading.addAll(data)
+                            continueReading.addAll(data.filter { m -> m.status  == MangaStatus.Reading })
                             cache.mangaStatus.putAll(data.associateBy { m -> m.data.id })
                         }
                     }
