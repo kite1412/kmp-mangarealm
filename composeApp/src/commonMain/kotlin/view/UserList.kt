@@ -9,13 +9,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.MaterialTheme
@@ -32,6 +35,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import api.mangadex.util.getCoverUrl
+import model.Manga
 import model.MangaStatus
 import model.Status
 import shared.adjustStatusBarColor
@@ -81,7 +86,8 @@ fun List(
     val rotate by transition.animateFloat { if (it) 0f else -10f }
     val clip by transition.animateDp { if (it) 0.dp else 24.dp }
     val offset by transition.animateDp { if (it) 0.dp else width / 2 }
-    val shadowBoxRange = 8.dp
+    val shadowBoxRangeHeight = 16.dp
+    val shadowBoxRangeWidth = 8.dp
     val shadowBoxCount = 2
     val shadowBoxColors = listOf(
         MaterialTheme.colors.background.copy(alpha = 0.7f),
@@ -90,9 +96,9 @@ fun List(
     for (i in shadowBoxCount downTo 1) {
         Box(
             modifier = modifier
-                .rotate(rotate)
-                .offset(x = offset - (shadowBoxRange * i), y = (shadowBoxRange * i))
-                .height(height)
+                .rotate(rotate - 2 * i)
+                .offset(x = offset - (shadowBoxRangeWidth * i))
+                .height(height - shadowBoxRangeHeight * i)
                 .width(width)
                 .clip(RoundedCornerShape(clip))
                 .background(shadowBoxColors[i - 1])
@@ -106,11 +112,41 @@ fun List(
             .width(width)
             .clip(RoundedCornerShape(clip))
             .background(MaterialTheme.colors.background)
+            .clickable(enabled = state.showOptions) { state.onOptionDismiss() }
     ) {
         TextButton(
             onClick = { state.showOptions = true }
         ) {
             Text("press")
+        }
+    }
+}
+
+@Composable
+private fun ListContent(
+    state: UserListState,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(modifier = modifier.fillMaxSize()) {
+
+    }
+}
+
+@Composable
+private fun MangaDisplay(
+    manga: Manga,
+    modifier: Modifier = Modifier
+) {
+    BoxWithConstraints(modifier = modifier) {
+        Row(modifier = modifier.fillMaxWidth()) {
+            ImageLoader(
+                url = getCoverUrl(manga.data),
+                modifier = Modifier
+                    .height(this@BoxWithConstraints.maxHeight / 4)
+                    .weight(0.3f)
+            ) {
+
+            }
         }
     }
 }
@@ -164,10 +200,10 @@ private fun StatusOption(
     val transition = updateTransition(selected)
     val background by transition.animateColor {
         if (it) MaterialTheme.colors.onBackground
-            else MaterialTheme.colors.background
+            else MaterialTheme.colors.background.copy(alpha = 0.7f)
     }
     val fontColor by transition.animateColor {
-        if (it) Color.White else Color.Black
+        if (it) Color.White else Color.Gray
     }
     Text(
         text = status.status,
