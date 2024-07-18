@@ -49,7 +49,6 @@ class MainScreen : Screen {
             vm.init()
         }
         if (vm.undoEdgeToEdge) undoEdgeToEdge()
-        vm.syncReadingStatus()
         val nav = LocalNavigator.currentOrThrow
         Scaffold(
             modifier = Modifier.fillMaxSize()

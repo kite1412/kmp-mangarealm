@@ -56,6 +56,7 @@ object Libs {
 
 object SharedObject {
     var detailManga: Manga = emptyManga()
+    var updatedManga: Manga = emptyManga()
     var chapterList: ChapterList = ChapterList()
     var popNotifierCount = 2
 }

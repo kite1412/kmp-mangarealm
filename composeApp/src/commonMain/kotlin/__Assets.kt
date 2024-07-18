@@ -12,10 +12,12 @@ import assets.Person
 import assets.Search
 import assets.Width
 import assets.`Arrow-left-solid`
+import assets.`Book-bookmark`
 import assets.`Book-close`
 import assets.`Book-open`
 import assets.`Bookmark-alt-fill`
 import assets.`Bookmark-alt`
+import assets.`Bxs-book-bookmark`
 import assets.`Chevron-right-bold`
 import assets.`Chevron-right`
 import assets.`Collapse-solid`
@@ -43,11 +45,11 @@ public val Assets.Assets: ____KtList<ImageVector>
     if (__Assets != null) {
       return __Assets!!
     }
-    __Assets= listOf(`Arrow-left-solid`, `Book-close`, `Book-open`, `Bookmark-alt-fill`,
-        `Bookmark-alt`, `Chevron-right-bold`, `Chevron-right`, Clipboard, `Collapse-solid`, Cross,
-        `Expand-solid`, Eye, Eyeshut, Flower, `Heart-outline`, Height, Home, Info, `List-add`,
-        `List-check`, Logo, `Magnifying-glass`, `Menu-outline`, `Other-1-solid`, Person, Search,
-        `Settings-adjust-solid`, `Shelf-outline`, `Shelf-solid`, `Text-align-right`, `Trash-solid`,
-        `Treasure-map`, Width)
+    __Assets= listOf(`Arrow-left-solid`, `Book-bookmark`, `Book-close`, `Book-open`,
+        `Bookmark-alt-fill`, `Bookmark-alt`, `Bxs-book-bookmark`, `Chevron-right-bold`,
+        `Chevron-right`, Clipboard, `Collapse-solid`, Cross, `Expand-solid`, Eye, Eyeshut, Flower,
+        `Heart-outline`, Height, Home, Info, `List-add`, `List-check`, Logo, `Magnifying-glass`,
+        `Menu-outline`, `Other-1-solid`, Person, Search, `Settings-adjust-solid`, `Shelf-outline`,
+        `Shelf-solid`, `Text-align-right`, `Trash-solid`, `Treasure-map`, Width)
     return __Assets!!
   }

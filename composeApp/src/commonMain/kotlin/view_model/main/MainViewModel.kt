@@ -2,7 +2,6 @@ package view_model.main
 
 import Cache
 import Libs
-import SharedObject
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,7 +13,6 @@ import cafe.adriel.voyager.core.stack.mutableStateStackOf
 import cafe.adriel.voyager.navigator.Navigator
 import io.github.irgaly.kottage.KottageStorage
 import model.Manga
-import model.MangaStatus
 import view_model.ChapterNavigator
 import view_model.DetailNavigator
 import view_model.main.state.DiscoveryState
@@ -53,14 +51,6 @@ class MainViewModel(
     fun init() {
         homeState.initLatestUpdatesData()
         homeState.initContinueReadingData()
-    }
-
-    fun syncReadingStatus() {
-        val reading = cache.mangaStatus.filter { it.value.status == MangaStatus.Reading }
-        if (reading.size != homeState.continueReading.size) {
-            if (homeState.continueReading.size < reading.size) homeState.continueReading.add(SharedObject.detailManga)
-            else homeState.continueReading.removeAll { SharedObject.detailManga.data.id == it.data.id }
-        }
     }
 
     fun navigateToDetailScreen(nav: Navigator, manga: Manga) {
