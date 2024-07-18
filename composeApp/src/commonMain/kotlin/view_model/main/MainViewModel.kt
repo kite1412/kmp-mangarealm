@@ -17,6 +17,7 @@ import view_model.ChapterNavigator
 import view_model.DetailNavigator
 import view_model.main.state.DiscoveryState
 import view_model.main.state.HomeState
+import view_model.main.state.UserListState
 
 class MainViewModel(
     mangaDex: MangaDex = Libs.mangaDex,
@@ -42,6 +43,8 @@ class MainViewModel(
         scope = viewModelScope,
         kottageStorage = kottageStorage
     )
+
+    val userListState = UserListState()
 
     fun popMenu() { menuStack.pop() }
 
