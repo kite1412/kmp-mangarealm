@@ -2,6 +2,7 @@ package view_model.main.state
 
 import Cache
 import Libs
+import SharedObject
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +21,7 @@ import model.Manga
 import model.MangaStatus
 import model.session.MangaSession
 import model.session.Session
+import model.session.SessionState
 import model.toMangaList
 import util.ADVENTURE_TAG
 import util.COMEDY_TAG
@@ -28,16 +30,17 @@ import util.KottageConst
 import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
+import util.StatusUpdater
 import util.retry
 import view_model.main.MainViewModel
 
 class HomeState(
     private val vm: MainViewModel,
     private val scope: CoroutineScope = vm.viewModelScope,
-    private val mangaDex: MangaDex = Libs.mangaDex,
+    override val mangaDex: MangaDex = Libs.mangaDex,
     private val kottageStorage: KottageStorage = Libs.kottageStorage,
-    private val cache: Cache = Libs.cache
-) {
+    override val cache: Cache = Libs.cache
+): StatusUpdater {
     val enableAutoSlide = derivedStateOf {
         latestUpdates.isNotEmpty() && latestUpdates[0].painter != null
     }
@@ -134,14 +137,30 @@ class HomeState(
                 sessionQueries = q
                 if (fromCache == null) {
                     session.init(queries)
-                    val res = mangaDex.getManga(q)
+                    val res = retry(
+                        count = 3,
+                        predicate = { it == null || it.errors != null }
+                    ) {
+                        mangaDex.getManga(q)
+                    }
                     if (res != null) {
-                        val data = res.toMangaList()
+                        val data = res.toMangaList().map {
+                            if (cache.mangaStatus.containsKey(it.data.id)) it.copy(
+                                status = MangaStatus.Reading
+                            ) else it
+                        }
                         session.setActive(res, data)
                         cache.latestMangaSearch[q] = MangaSession().apply { from(session) }
                     }
                 } else {
-                    session.from(fromCache)
+                    session.from(fromCache).also {
+                        it.data.forEachIndexed { i, m ->
+                            if (cache.mangaStatus[m.data.id]?.status == MangaStatus.Reading)
+                                it.data[i] = m.copy(status = MangaStatus.Reading)
+                            else if (m.status == MangaStatus.Reading && !cache.mangaStatus.containsKey(m.data.id))
+                                it.data[i] = m.copy(status = MangaStatus.None)
+                        }
+                    }
                 }
             }
         }
@@ -167,6 +186,28 @@ class HomeState(
         val new = session.data[i].copy(painter = p)
         session.data[i] = new
         cache.latestMangaSearch[sessionQueries]!!.data[i] = new
+    }
+
+    fun onStatusUpdate(reading: Boolean, index: Int) {
+        scope.launch {
+            val res = if (reading) updateStatus(session.data[index], MangaStatus.Reading)
+                else updateStatus(session.data[index], MangaStatus.None)
+            res.also {
+                if (session.state.value == SessionState.ACTIVE) session.data[index] = it
+                cache.latestMangaSearch[sessionQueries]!!.data[index] = it
+            }
+        }
+    }
+
+    fun syncReadingStatus() {
+        val reading = cache.mangaStatus.filter { it.value.status == MangaStatus.Reading }
+        if (reading.size != continueReading.size) {
+            if (continueReading.size < reading.size) continueReading.add(SharedObject.updatedManga)
+            else {
+                continueReading.removeAll { SharedObject.updatedManga.data.id == it.data.id }
+                cache.mangaStatus.remove(SharedObject.updatedManga.data.id)
+            }
+        }
     }
 }
 

@@ -17,12 +17,13 @@ import model.ChapterList
 import model.Chapters
 import model.MangaStatus
 import util.ASCENDING
+import util.StatusUpdater
 import util.WARNING_TIME
 
 class DetailScreenModel(
-    private val mangaDex: MangaDex = Libs.mangaDex,
-    private val cache: Cache = Libs.cache
-) : ScreenModel, ReaderNavigator, ChapterNavigator {
+    override val mangaDex: MangaDex = Libs.mangaDex,
+    override val cache: Cache = Libs.cache
+) : ScreenModel, ReaderNavigator, ChapterNavigator, StatusUpdater {
     var titleTagsPadding by mutableStateOf(24)
     var isShowingDetail by mutableStateOf(false)
     var chapterListHeight by mutableStateOf(0)
@@ -120,10 +121,7 @@ class DetailScreenModel(
     fun onUpdateStatus() {
         screenModelScope.launch {
             showUpdateStatus = false
-            val new = manga.copy(status = status)
-            cache.mangaStatus[manga.data.id] = new
-            manga = new
-            mangaDex.updateMangaStatus(manga.data.id, status.rawStatus)
+            manga = updateStatus(manga, status)
         }
     }
 }

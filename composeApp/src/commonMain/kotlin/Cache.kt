@@ -4,6 +4,7 @@ import model.Chapters
 import model.Manga
 import model.session.MangaSession
 
+// runtime cache
 class Cache {
     val chapters = mutableMapOf<String, Chapters?>()
 

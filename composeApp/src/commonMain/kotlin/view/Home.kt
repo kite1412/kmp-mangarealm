@@ -2,6 +2,7 @@ package view
 
 import Assets
 import LocalScreenSize
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -47,6 +48,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -81,6 +83,8 @@ import api.mangadex.util.getDesc
 import api.mangadex.util.getTags
 import api.mangadex.util.getTitle
 import api.mangadex.util.obstruct
+import assets.`Book-bookmark`
+import assets.`Bxs-book-bookmark`
 import assets.`Chevron-right`
 import assets.`Heart-outline`
 import assets.`Magnifying-glass`
@@ -91,6 +95,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.Manga
+import model.MangaStatus
 import model.session.MangaSession
 import model.session.Session
 import model.session.SessionState
@@ -137,79 +142,84 @@ fun Home(
         derivedStateOf { pagerState.settledPage }
     }
     if (vm.undoEdgeToEdge && settledPage == 0) undoEdgeToEdge()
+    SideEffect {
+        state.syncReadingStatus()
+    }
     val mangaPageState = rememberPagerState { session.data.size }
     HorizontalPager(
         state = pagerState,
         userScrollEnabled = false
     ) {
         when(it) {
-            0 -> LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = parentHorizontalPadding),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
-            ) {
-                item {
-                    Header(
-                        username = state.username.value,
-                        modifier = Modifier.padding(top = 24.dp)
-                    )
-                }
-                item {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 8.dp)
-                    ) {
-                        Text(
-                            "Latest Updates",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            modifier = Modifier.padding(start = 10.dp)
-                        )
-                        LatestUpdatesBar(
-                            vm = vm,
-                            state = state,
-                            height = latestBarHeight,
-                            nav = nav,
+            0 -> {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = parentHorizontalPadding),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    item {
+                        Header(
+                            username = state.username.value,
+                            modifier = Modifier.padding(top = 24.dp)
                         )
                     }
-                }
-                item {
-                    ContinueReading(vm = vm, state = state, nav = nav, height = latestBarHeight)
-                }
-                item {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Text(
-                            "Suggestions",
-                            fontSize = 24.sp,
-                            fontStyle = FontStyle.Italic,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Suggestions(
-                            state = state,
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                    item {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Text(
+                                "Latest Updates",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                modifier = Modifier.padding(start = 10.dp)
+                            )
+                            LatestUpdatesBar(
+                                vm = vm,
+                                state = state,
+                                height = latestBarHeight,
+                                nav = nav,
+                            )
+                        }
                     }
-                }
-                // to prevent contents being obstructed by bottom bar.
-                item {
-                    Spacer(modifier = Modifier.height(bottomBarTotalHeight - 16.dp))
+                    item {
+                        ContinueReading(vm = vm, state = state, nav = nav, height = latestBarHeight)
+                    }
+                    item {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Text(
+                                "Suggestions",
+                                fontSize = 24.sp,
+                                fontStyle = FontStyle.Italic,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Suggestions(
+                                state = state,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                    // to prevent contents being obstructed by bottom bar.
+                    item {
+                        Spacer(modifier = Modifier.height(bottomBarTotalHeight - 16.dp))
+                    }
                 }
             }
             else -> {
-                if (session.state.value == SessionState.ACTIVE) LaunchedEffect(true) {
-                    mangaPageState.scrollToPage(0)
-                }
+                val scope = rememberCoroutineScope()
                 MangaPage(
                     session = state.session,
                     onSessionLoaded = state::onSessionLoaded,
                     pop = {
+                        scope.launch { mangaPageState.scrollToPage(0) }
                         state.clearSession()
                         vm.hideBottomBar = false
                     },
                     onChapterListClick = { m -> vm.navigateToChapter(nav, m) },
+                    onStatusUpdate = state::onStatusUpdate,
                     pagerState = mangaPageState,
                     onPainterLoaded = state::onPainterLoaded
                 )
@@ -899,6 +909,7 @@ fun MangaPage(
     onSessionLoaded: (Session<Manga, MangaAttributes>) -> Unit,
     pop: () -> Unit,
     onChapterListClick: (Manga) -> Unit,
+    onStatusUpdate: (Boolean, Int) -> Unit,
     pagerState: PagerState = rememberPagerState { session.data.size },
     onPainterLoaded: (Int, Painter) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
@@ -936,6 +947,7 @@ fun MangaPage(
                     MangaPageDisplay(
                         manga = manga,
                         onChapterListClick = { onChapterListClick(manga) },
+                        onStatusUpdate = { r -> onStatusUpdate(r, it) },
                         onOverscrollDesc = { forward ->
                             scope.launch {
                                 if (forward) {
@@ -960,6 +972,7 @@ fun MangaPageDisplay(
     onChapterListClick: (Manga) -> Unit,
     chapterHeight: (Dp) -> Unit,
     onOverscrollDesc: (forward: Boolean) -> Unit,
+    onStatusUpdate: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     onPainterLoaded: (Painter) -> Unit
 ) {
@@ -997,15 +1010,51 @@ fun MangaPageDisplay(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxSize().padding(bottom = chapterListHeight)
             ) {
-                BrowseImageNullable(
-                    painter = manga.painter,
-                    contentScale = ContentScale.FillBounds,
-                    modifier = Modifier
-                        .align(Alignment.End)
-                        .width(coverWidth)
-                        .height(coverWidth * (3f / 2f))
-                        .clip(RoundedCornerShape(16.dp))
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    var read by remember { mutableStateOf(manga.status == MangaStatus.Reading) }
+                    val icon  = if (read) Assets.`Bxs-book-bookmark` else Assets.`Book-bookmark`
+                    AnimatedContent(
+                        targetState = read,
+                        modifier = Modifier.align(Alignment.Bottom)
+                    ) {
+                        Action(
+                            onClick = {
+                                read = !read
+                                onStatusUpdate(read)
+                            },
+                            fill = !read,
+                            verticalPadding = 16.dp,
+                            horizontalPadding = 16.dp
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                if (it) Text(
+                                    "Reading",
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colors.secondary,
+                                )
+                                Icon(
+                                    imageVector = icon,
+                                    contentDescription = if (it) "remove from reading list" else "add to reading list",
+                                    tint = if (it) MaterialTheme.colors.secondary else Color.White
+                                )
+                            }
+                        }
+                    }
+                    BrowseImageNullable(
+                        painter = manga.painter,
+                        contentScale = ContentScale.FillBounds,
+                        modifier = Modifier
+                            .width(coverWidth)
+                            .height(coverWidth * (3f / 2f))
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                }
                 Title(
                     manga = manga.data.attributes,
                     textAlign = TextAlign.Center
