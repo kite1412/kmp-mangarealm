@@ -196,6 +196,7 @@ class HomeState(
                 if (session.state.value == SessionState.ACTIVE) session.data[index] = it
                 cache.latestMangaSearch[sessionQueries]!!.data[index] = it
             }
+            syncReadingStatus()
         }
     }
 

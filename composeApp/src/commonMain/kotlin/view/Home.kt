@@ -48,7 +48,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -142,9 +141,6 @@ fun Home(
         derivedStateOf { pagerState.settledPage }
     }
     if (vm.undoEdgeToEdge && settledPage == 0) undoEdgeToEdge()
-    SideEffect {
-        state.syncReadingStatus()
-    }
     val mangaPageState = rememberPagerState { session.data.size }
     HorizontalPager(
         state = pagerState,
@@ -399,8 +395,8 @@ private fun IndicatorDots(
     selected: Int = 1,
     dotSize: Dp = 10.dp,
     spacing: Dp = 2.dp,
-    selectedColor: Color = Color.White,
-    unselectedColor: Color = Color.Gray,
+    selectedColor: Color = Color(255, 192, 0),
+    unselectedColor: Color = Color.White,
     modifier: Modifier = Modifier
 ) {
     Row(
