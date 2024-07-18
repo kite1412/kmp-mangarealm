@@ -44,7 +44,7 @@ class MainViewModel(
         kottageStorage = kottageStorage
     )
 
-    val userListState = UserListState()
+    val userListState = UserListState(this)
 
     fun popMenu() { menuStack.pop() }
 
