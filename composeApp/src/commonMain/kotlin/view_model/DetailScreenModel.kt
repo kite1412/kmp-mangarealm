@@ -21,6 +21,7 @@ import util.StatusUpdater
 import util.WARNING_TIME
 
 class DetailScreenModel(
+    override val sharedViewModel: SharedViewModel,
     override val mangaDex: MangaDex = Libs.mangaDex,
     override val cache: Cache = Libs.cache
 ) : ScreenModel, ReaderNavigator, ChapterNavigator, StatusUpdater {

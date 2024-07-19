@@ -18,7 +18,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,9 +47,6 @@ class MainScreen : Screen {
         val vm = LocalMainViewModel.current
         LifecycleEffectOnce {
             vm.init()
-        }
-        SideEffect {
-            vm.homeState.syncReadingStatus()
         }
         if (vm.undoEdgeToEdge) undoEdgeToEdge()
         val nav = LocalNavigator.currentOrThrow

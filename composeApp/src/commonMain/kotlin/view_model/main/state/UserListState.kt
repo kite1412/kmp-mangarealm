@@ -18,7 +18,7 @@ class UserListState(
     private val scope: CoroutineScope = vm.viewModelScope
 ) {
     var selectedStatus by mutableStateOf(MangaStatus.None)
-    var showOptions by mutableStateOf(false)
+    var showOptions by mutableStateOf(true)
     val manga = mutableStateListOf<Manga>()
 
     fun onStatusSelected(new: Status) {

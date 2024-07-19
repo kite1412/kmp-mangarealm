@@ -2,6 +2,7 @@ package view
 
 import Assets
 import LocalScreenSize
+import LocalSharedViewModel
 import SharedObject
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
@@ -89,7 +90,8 @@ class DetailScreen : Screen {
     @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        val sm = rememberScreenModel { DetailScreenModel() }
+        val sharedViewModel = LocalSharedViewModel.current
+        val sm = rememberScreenModel { DetailScreenModel(sharedViewModel) }
         val screenSize = LocalScreenSize.current
         val popAnimation by animateDpAsState(if (sm.showPopNotice) 0f.dp else -(screenSize.width.value / 2f).dp)
         LifecycleEffectOnce {
