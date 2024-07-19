@@ -1,0 +1,40 @@
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24px"
+    height="24px"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    role="img"
+    style="display:inline-block;vertical-align:middle"
+    version="1.1"
+    id="svg4">
+  <g
+      fill="currentColor"
+      id="g4">
+    <g
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-width="2"
+        id="g3">
+      <path
+          d="M3 5h4m14 0H11m-8 7h12m6 0h-2M3 19h2m16 0H9"
+          id="path1" />
+      <circle
+          cx="9"
+          cy="5"
+          r="2"
+          id="circle1" />
+      <circle
+          cx="17"
+          cy="12"
+          r="2"
+          id="circle2" />
+      <circle
+          cx="7"
+          cy="19"
+          r="2"
+          id="circle3" />
+    </g>
+  </g>
+</svg>
