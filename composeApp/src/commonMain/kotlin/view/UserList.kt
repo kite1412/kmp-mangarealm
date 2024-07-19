@@ -1,5 +1,6 @@
 package view
 
+import Assets
 import LocalScreenSize
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.animateDp
@@ -11,19 +12,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -33,14 +34,17 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import api.mangadex.util.getCoverUrl
-import model.Manga
+import assets.`Settings-horizontal`
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import model.MangaStatus
 import model.Status
 import shared.adjustStatusBarColor
 import theme.selectedButton
+import util.APP_BAR_HEIGHT
 import view_model.main.MainViewModel
 import view_model.main.state.UserListState
 
@@ -78,11 +82,9 @@ fun List(
     modifier: Modifier = Modifier
 ) {
     val screenSize = LocalScreenSize.current
-    val transition = updateTransition(
-        !state.showOptions
-    )
-    val height by transition.animateDp { if (it) screenSize.height else screenSize.height / 2f }
-    val width by transition.animateDp { if (it) screenSize.width else screenSize.width / 2f }
+    val transition = updateTransition(!state.showOptions)
+    val height by transition.animateDp { if (it) screenSize.height else screenSize.height * state.sizeRatio }
+    val width by transition.animateDp { if (it) screenSize.width else screenSize.width * state.sizeRatio }
     val rotate by transition.animateFloat { if (it) 0f else -10f }
     val clip by transition.animateDp { if (it) 0.dp else 24.dp }
     val offset by transition.animateDp { if (it) 0.dp else width / 2 }
@@ -104,7 +106,7 @@ fun List(
                 .background(shadowBoxColors[i - 1])
         )
     }
-    Box(
+    BoxWithConstraints(
         modifier = modifier
             .rotate(rotate)
             .offset(x = offset)
@@ -112,41 +114,82 @@ fun List(
             .width(width)
             .clip(RoundedCornerShape(clip))
             .background(MaterialTheme.colors.background)
-            .clickable(enabled = state.showOptions) { state.onOptionDismiss() }
     ) {
-        TextButton(
-            onClick = { state.showOptions = true }
-        ) {
-            Text("press")
+        Column {
+            TopBar(state)
+            ListContent(
+                state = state,
+                parentHeight = this@BoxWithConstraints.maxHeight,
+                modifier = Modifier.padding(8.dp)
+            )
         }
+        if (state.showOptions) Box(
+            Modifier
+                .fillMaxSize()
+                .clickable { state.onOptionDismiss() }
+        )
+    }
+}
+
+@Composable
+private fun TopBar(
+    state: UserListState,
+    modifier: Modifier = Modifier
+) {
+    val defaultHeight = APP_BAR_HEIGHT
+    val sizeRatio = state.sizeRatio
+    val transition = updateTransition(sizeRatio)
+    val height by transition.animateDp { defaultHeight * it }
+    val startPadding by transition.animateDp { 24.dp * sizeRatio }
+    val iconSize by transition.animateDp { 32.dp * sizeRatio }
+    val headerSize by transition.animateFloat { 24 * sizeRatio }
+    Box(
+        modifier = modifier.fillMaxWidth().height(height)
+    ) {
+        Icon(
+            imageVector = Assets.`Settings-horizontal`,
+            contentDescription = "show options",
+            tint = Color.Black,
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = startPadding)
+                .size(iconSize)
+                .clickable { state.showOptions() }
+        )
+        Text(
+            state.selectedStatus.status,
+            fontSize = headerSize.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.align(Alignment.Center)
+        )
     }
 }
 
 @Composable
 private fun ListContent(
     state: UserListState,
+    parentHeight: Dp,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-
-    }
-}
-
-@Composable
-private fun MangaDisplay(
-    manga: Manga,
-    modifier: Modifier = Modifier
-) {
-    BoxWithConstraints(modifier = modifier) {
-        Row(modifier = modifier.fillMaxWidth()) {
-            ImageLoader(
-                url = getCoverUrl(manga.data),
-                modifier = Modifier
-                    .height(this@BoxWithConstraints.maxHeight / 4)
-                    .weight(0.3f)
-            ) {
-
-            }
+    val manga = state.manga
+    val nav = LocalNavigator.currentOrThrow
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier.fillMaxSize()
+    ) {
+        items(manga.size) {
+            DynamicMangaDisplay(
+                manga = manga[it],
+                parentHeight = parentHeight,
+                ratio = state.sizeRatio,
+                onPainterLoaded = { p ->
+                    state.sharedViewModel.onMangaStatusPainterLoaded(
+                        status = state.selectedStatus,
+                        painter = p,
+                        index = it
+                    )
+                }
+            ) { state.vm.navigateToDetail(nav, manga[it]) }
         }
     }
 }

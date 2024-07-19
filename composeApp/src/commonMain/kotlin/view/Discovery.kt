@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,22 +44,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
-import api.mangadex.util.getCoverUrl
-import api.mangadex.util.getDesc
-import api.mangadex.util.getTitle
 import assets.`Arrow-left-solid`
 import assets.`Chevron-right-bold`
 import assets.Cross
@@ -75,10 +67,6 @@ import model.Manga
 import model.session.SessionState
 import model.session.isNotEmpty
 import util.APP_BAR_HEIGHT
-import util.publicationDemographic
-import util.publicationDemographicColor
-import util.publicationStatus
-import util.publicationStatusColor
 import util.session_handler.MangaSessionHandler
 import view_model.main.MainViewModel
 import view_model.main.state.DiscoveryState
@@ -259,7 +247,7 @@ private fun Content(
                 modifier = Modifier.fillMaxSize()
             ) {
                 val manga = state.session.data[it]
-                Display(
+                MangaDisplay(
                     manga = manga,
                     onPainterLoaded = { p ->
                         vm.discoveryState.updateMangaPainter(it, manga, p)
@@ -516,97 +504,3 @@ fun DeletionWarning(
     }
 }
 
-@Composable
-private fun Display(
-    manga: Manga,
-    parentHeight: Dp,
-    onPainterLoaded: (Painter) -> Unit,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    val height = parentHeight / 5f
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .clickable(onClick = onClick)
-    ) {
-        Box(
-            modifier = Modifier
-                .weight(0.3f)
-                .fillMaxSize()
-                .clip(RoundedCornerShape(8.dp))
-        ) {
-            ImageLoader(
-                url = getCoverUrl(manga.data),
-                painter = manga.painter,
-                contentScale = ContentScale.FillBounds,
-                onPainterLoaded = onPainterLoaded,
-                loading = {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color.LightGray.copy(alpha = 0.6f))
-                    ) {
-                        CircularProgressIndicator(Modifier.size(18.dp).align(Alignment.Center))
-                    }
-                }
-            )
-        }
-        Column(
-            horizontalAlignment = Alignment.Start,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = Modifier
-                .weight(0.7f)
-                .padding(top = 4.dp)
-        ) {
-            val attributes = manga.data.attributes
-            Text(
-                getTitle(attributes.title),
-                maxLines = 2,
-                fontSize = 16.sp,
-                overflow = TextOverflow.Ellipsis,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (attributes.status != null) Information(
-                    label = publicationStatus(attributes.status),
-                    background = publicationStatusColor(attributes.status)
-                )
-                if (attributes.publicationDemographic != null) Information(
-                    label = publicationDemographic(attributes.publicationDemographic),
-                    background = publicationDemographicColor(attributes.publicationDemographic)
-                )
-                if (attributes.year != null) Information(
-                    label = attributes.year.toString(),
-                    background = Color.Gray
-                )
-            }
-            Spacer(Modifier.height(0.dp))
-            Text(
-                getDesc(attributes.description),
-                overflow = TextOverflow.Ellipsis,
-                fontSize = 12.sp,
-            )
-        }
-    }
-}
-
-@Composable
-private fun Information(
-    label: String,
-    background: Color,
-    modifier: Modifier = Modifier
-) {
-    InformationBar(
-        label = label,
-        background = background,
-        fontSize = 10.sp,
-        clip = RoundedCornerShape(2.dp),
-        modifier = modifier
-    )
-}

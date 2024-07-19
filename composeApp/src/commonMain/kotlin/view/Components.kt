@@ -1,11 +1,15 @@
 package view
 
 import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
@@ -19,7 +23,11 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -61,6 +69,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.MangaAttributes
+import api.mangadex.util.getCoverUrl
+import api.mangadex.util.getDesc
 import api.mangadex.util.getTagList
 import api.mangadex.util.getTitle
 import com.seiko.imageloader.model.ImageAction
@@ -71,9 +81,14 @@ import com.seiko.imageloader.rememberImageSuccessPainter
 import com.seiko.imageloader.ui.AutoSizeBox
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.no_image
+import model.Manga
 import model.session.Session
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import util.publicationDemographic
+import util.publicationDemographicColor
+import util.publicationStatus
+import util.publicationStatusColor
 import util.session_handler.SessionHandler
 
 @Composable
@@ -503,4 +518,208 @@ fun LoadingIndicator(
             message?.invoke(this)
         }
     }
+}
+
+@Composable
+fun MangaDisplay(
+    manga: Manga,
+    parentHeight: Dp,
+    onPainterLoaded: (Painter) -> Unit,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val height = parentHeight / 5f
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+            .clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(0.3f)
+                .fillMaxSize()
+                .clip(RoundedCornerShape(8.dp))
+        ) {
+            ImageLoader(
+                url = getCoverUrl(manga.data),
+                painter = manga.painter,
+                contentScale = ContentScale.FillBounds,
+                onPainterLoaded = onPainterLoaded,
+                loading = {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color.LightGray.copy(alpha = 0.6f))
+                    ) {
+                        CircularProgressIndicator(Modifier.size(18.dp).align(Alignment.Center))
+                    }
+                }
+            )
+        }
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier
+                .weight(0.7f)
+                .padding(top = 4.dp)
+        ) {
+            val attributes = manga.data.attributes
+            Text(
+                getTitle(attributes.title),
+                maxLines = 2,
+                fontSize = 16.sp,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (attributes.status != null) Information(
+                    label = publicationStatus(attributes.status),
+                    background = publicationStatusColor(attributes.status)
+                )
+                if (attributes.publicationDemographic != null) Information(
+                    label = publicationDemographic(attributes.publicationDemographic),
+                    background = publicationDemographicColor(attributes.publicationDemographic)
+                )
+                if (attributes.year != null) Information(
+                    label = attributes.year.toString(),
+                    background = Color.Gray
+                )
+            }
+            Spacer(Modifier.height(0.dp))
+            Text(
+                getDesc(attributes.description),
+                overflow = TextOverflow.Ellipsis,
+                fontSize = 12.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun Information(
+    label: String,
+    background: Color,
+    modifier: Modifier = Modifier
+) {
+    InformationBar(
+        label = label,
+        background = background,
+        fontSize = 10.sp,
+        clip = RoundedCornerShape(2.dp),
+        modifier = modifier
+    )
+}
+
+@Composable
+fun DynamicMangaDisplay(
+    manga: Manga,
+    parentHeight: Dp,
+    ratio: Float,
+    onPainterLoaded: (Painter) -> Unit,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val transition = updateTransition(ratio)
+    val horizontalSpacing by transition.animateDp { 12.dp * ratio }
+    val loadingIndicatorSize by transition.animateDp { 18.dp * ratio }
+    val verticalSpacing by transition.animateDp { 4.dp * ratio }
+    val informationTopPadding by transition.animateDp { 4.dp * ratio }
+    val titleSize by transition.animateFloat { 16 * ratio }
+    val informationSpacing by transition.animateDp { 2.dp * ratio }
+    val descSize by transition.animateFloat { 12 * ratio }
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(horizontalSpacing),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(parentHeight / 5f)
+            .clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(0.3f)
+                .fillMaxSize()
+                .clip(RoundedCornerShape(8.dp))
+        ) {
+            ImageLoader(
+                url = getCoverUrl(manga.data),
+                painter = manga.painter,
+                contentScale = ContentScale.FillBounds,
+                onPainterLoaded = onPainterLoaded,
+                loading = {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color.LightGray.copy(alpha = 0.6f))
+                    ) {
+                        CircularProgressIndicator(Modifier.size(loadingIndicatorSize).align(Alignment.Center))
+                    }
+                }
+            )
+        }
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(verticalSpacing),
+            modifier = Modifier
+                .weight(0.7f)
+                .padding(top = informationTopPadding)
+        ) {
+            val attributes = manga.data.attributes
+            Text(
+                getTitle(attributes.title),
+                maxLines = 2,
+                fontSize = titleSize.sp,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(informationSpacing),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (attributes.status != null) DynamicInformation(
+                    label = publicationStatus(attributes.status),
+                    background = publicationStatusColor(attributes.status),
+                    ratio = ratio
+                )
+                if (attributes.publicationDemographic != null) DynamicInformation(
+                    label = publicationDemographic(attributes.publicationDemographic),
+                    background = publicationDemographicColor(attributes.publicationDemographic),
+                    ratio = ratio
+                )
+                if (attributes.year != null) DynamicInformation(
+                    label = attributes.year.toString(),
+                    background = Color.Gray,
+                    ratio = ratio
+                )
+            }
+            Spacer(Modifier.height(0.dp))
+            Text(
+                getDesc(attributes.description),
+                overflow = TextOverflow.Ellipsis,
+                fontSize = descSize.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DynamicInformation(
+    label: String,
+    background: Color,
+    ratio: Float,
+    modifier: Modifier = Modifier
+) {
+    val transition = updateTransition(ratio)
+    val size by transition.animateFloat { 10 * ratio }
+    InformationBar(
+        label = label,
+        background = background,
+        fontSize = size.sp,
+        clip = RoundedCornerShape(2.dp),
+        modifier = modifier
+    )
 }

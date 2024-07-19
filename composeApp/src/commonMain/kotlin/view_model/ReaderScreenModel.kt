@@ -49,6 +49,7 @@ class ReaderScreenModel(
 
     private fun getChapterImages() {
         screenModelScope.launch {
+            showWarning = false
             index = chapters[currentChapterIndex].id + imageQuality
             val images = cache.chapterImages[index]
             val res = mangaDex.getHomeUrl(chapters[currentChapterIndex].id)
