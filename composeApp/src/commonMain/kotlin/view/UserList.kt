@@ -5,6 +5,7 @@ import LocalScreenSize
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -146,7 +147,7 @@ private fun TopBar(
     Box(
         modifier = modifier.fillMaxWidth().height(height)
     ) {
-        Icon(
+        if (state.selectedStatus != MangaStatus.None) Icon(
             imageVector = Assets.`Settings-horizontal`,
             contentDescription = "show options",
             tint = Color.Black,
@@ -173,7 +174,7 @@ private fun ListContent(
 ) {
     val manga = state.manga
     val nav = LocalNavigator.currentOrThrow
-    LazyColumn(
+    if (manga.isNotEmpty()) LazyColumn(
         verticalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier.fillMaxSize()
     ) {
@@ -191,6 +192,13 @@ private fun ListContent(
                 }
             ) { state.vm.navigateToDetail(nav, manga[it]) }
         }
+    } else Box(modifier = Modifier.fillMaxSize()) {
+        Text(
+            "List is empty",
+            fontWeight = FontWeight.Medium,
+            fontSize = animateFloatAsState(18 * state.sizeRatio).value.sp,
+            modifier = Modifier.align(Alignment.Center)
+        )
     }
 }
 

@@ -26,7 +26,7 @@ class UserListState(
     fun onStatusSelected(new: Status) {
         scope.launch {
             selectedStatus = new
-            delay(300)
+            delay(250)
             showOptions = false
         }
     }

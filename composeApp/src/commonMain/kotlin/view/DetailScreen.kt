@@ -67,6 +67,7 @@ import assets.`Chevron-right`
 import assets.Cross
 import assets.`List-add`
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -74,6 +75,7 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.navigator.internal.BackHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.MangaStatus
@@ -87,7 +89,7 @@ import util.toMap
 import view_model.DetailScreenModel
 
 class DetailScreen : Screen {
-    @OptIn(ExperimentalVoyagerApi::class)
+    @OptIn(ExperimentalVoyagerApi::class, InternalVoyagerApi::class)
     @Composable
     override fun Content() {
         val sharedViewModel = LocalSharedViewModel.current
@@ -105,12 +107,13 @@ class DetailScreen : Screen {
         edgeToEdge()
         val nav = LocalNavigator.currentOrThrow
         Scaffold {
+            BackHandler(enabled = !sm.updating) { nav.pop() }
             val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(bottom = bottomPadding)
-                    .swipeToPop(nav)
+                    .swipeToPop(nav, enabled = !sm.updating)
             ) {
                 val aboveBottomBar = APP_BAR_HEIGHT + 16.dp
                 Background()
@@ -149,6 +152,11 @@ class DetailScreen : Screen {
                     show = sm.showWarning,
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
+                if (sm.updating) LoadingIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                ) {
+                    Text("Updating...", color = Color.White)
+                }
             }
         }
     }

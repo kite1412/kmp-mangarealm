@@ -3,6 +3,7 @@ package view_model.main.state
 import Cache
 import Libs
 import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.painter.Painter
@@ -50,6 +51,7 @@ class HomeState(
     var latestUpdatesBarPage = 0
 
     val latestUpdates = mutableStateListOf<Manga>()
+    val continueReading by derivedStateOf { sharedViewModel.mangaStatus[MangaStatus.Reading] ?: listOf() }
 
     private var _username = mutableStateOf("")
     val username = _username
