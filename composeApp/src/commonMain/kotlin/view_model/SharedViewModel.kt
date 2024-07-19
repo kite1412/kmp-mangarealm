@@ -25,4 +25,14 @@ class SharedViewModel : ViewModel() {
 
     fun findMangaStatus(manga: Manga): Manga? =
         mangaStatus[MangaStatus.All]!!.find { it.data.id == manga.data.id }
+
+    fun updateMangaAllStatus(manga: Manga) {
+        for ((i, m) in mangaStatus[MangaStatus.All]!!.withIndex()) {
+            if (m.data.id == manga.data.id) {
+                mangaStatus[MangaStatus.All]!![i] = manga
+                return
+            }
+        }
+        mangaStatus[MangaStatus.All]!!.add(manga)
+    }
 }
