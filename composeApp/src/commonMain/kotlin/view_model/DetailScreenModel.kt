@@ -115,8 +115,11 @@ class DetailScreenModel(
     }
 
     fun onDeleteStatus() {
-        status = MangaStatus.None
-        onUpdateStatus()
+        screenModelScope.launch {
+            showUpdateStatus = false
+            status = MangaStatus.None
+            manga = updateStatus(manga, MangaStatus.None)
+        }
     }
 
     fun onUpdateStatus() {

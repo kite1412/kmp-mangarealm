@@ -184,7 +184,7 @@ fun Home(
                             state = state,
                             nav = nav,
                             height = latestBarHeight
-                        ) { m -> vm.navigateToDetailScreen(nav, m) }
+                        ) { m -> vm.navigateToDetail(nav, m) }
                     }
                     item {
                         Column(
@@ -347,7 +347,7 @@ fun LatestUpdatesBar(
                     .padding(horizontal = 4.dp)
                     .clip(RoundedCornerShape(15.dp))
                     .clickable {
-                        vm.navigateToDetailScreen(nav, manga)
+                        vm.navigateToDetail(nav, manga)
                     }
             ) {
                 ImageLoader(
@@ -636,7 +636,7 @@ private fun MangaTags (
                         parentHeight = maxHeight,
                         isSelected = pagerState.currentPage == it,
                         onClick = { p ->
-                            vm.navigateToDetailScreen(nav, manga)
+                            vm.navigateToDetail(nav, manga)
                         },
                         onPainterLoaded = { p -> mangaList[it] = mangaList[it].copy(painter = p) },
                         modifier = Modifier.wrapContentHeight()

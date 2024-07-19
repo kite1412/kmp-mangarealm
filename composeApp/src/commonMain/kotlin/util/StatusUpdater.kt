@@ -1,6 +1,7 @@
 package util
 
 import Cache
+import SharedObject
 import androidx.lifecycle.viewModelScope
 import api.mangadex.service.MangaDex
 import kotlinx.coroutines.launch
@@ -19,10 +20,12 @@ interface StatusUpdater {
         status: Status,
     ): Manga {
         val new = manga.copy(status = status)
+        SharedObject.detailManga = new
         sharedViewModel.viewModelScope.launch {
             mangaDex.updateMangaStatus(manga.data.id, status.rawStatus).also {
-                sharedViewModel.mangaStatus[new.status]?.add(new)
+                sharedViewModel.mangaStatus[status]?.add(new)
                 if (status == MangaStatus.None) sharedViewModel.mangaStatus[manga.status]?.remove(manga)
+                if (manga.status != MangaStatus.None) sharedViewModel.mangaStatus[manga.status]!!.remove(manga)
             }
         }
         return new

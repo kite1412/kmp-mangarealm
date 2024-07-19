@@ -75,7 +75,6 @@ import model.Manga
 import model.session.SessionState
 import model.session.isNotEmpty
 import util.APP_BAR_HEIGHT
-import util.Log
 import util.publicationDemographic
 import util.publicationDemographicColor
 import util.publicationStatus
@@ -266,7 +265,7 @@ private fun Content(
                         vm.discoveryState.updateMangaPainter(it, manga, p)
                     },
                     parentHeight = maxHeight
-                ) { vm.navigateToDetailScreen(nav, manga) }
+                ) { vm.navigateToDetail(nav, manga) }
             } else Text(
                 "No results found",
                 fontSize = 20.sp,

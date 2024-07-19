@@ -13,10 +13,8 @@ import api.mangadex.service.MangaDex
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
 import cafe.adriel.voyager.core.stack.mutableStateStackOf
-import cafe.adriel.voyager.navigator.Navigator
 import io.github.irgaly.kottage.KottageStorage
 import kotlinx.coroutines.launch
-import model.Manga
 import model.MangaStatus
 import model.toMangaList
 import util.retry
@@ -28,10 +26,10 @@ import view_model.main.state.HomeState
 import view_model.main.state.UserListState
 
 class MainViewModel(
-    val sharedViewModel: SharedViewModel,
+    override val sharedViewModel: SharedViewModel,
     mangaDex: MangaDex = Libs.mangaDex,
     kottageStorage: KottageStorage = Libs.kottageStorage,
-    private val cache: Cache = Libs.cache
+    cache: Cache = Libs.cache
 ) : ViewModel(), DetailNavigator, ChapterNavigator {
     val menuStack = mutableStateStackOf(Menu.HOME)
     val currentPage by derivedStateOf { menuStack.lastItemOrNull }
@@ -39,6 +37,7 @@ class MainViewModel(
     var hideBottomBar by mutableStateOf(false)
 
     val discoveryState = DiscoveryState(
+        vm = this,
         mangaDex = mangaDex,
         cache = cache,
         scope = viewModelScope,
@@ -65,11 +64,6 @@ class MainViewModel(
         initMangaStatus()
     }
 
-    fun navigateToDetailScreen(nav: Navigator, manga: Manga) {
-        val m = sharedViewModel.mangaStatus[MangaStatus.All]!!.find { it.data.id == manga.data.id } ?: manga
-        navigateToDetail(nav, m)
-    }
-
     private fun initMangaStatus() {
         viewModelScope.launch {
             val res = retry(
@@ -88,7 +82,12 @@ class MainViewModel(
                         values = temp
                     )
                     val queries = generateQuery(mapOf(Pair("includes[]", "cover_art")), mangaIds)
-                    val mangaList = mangaDex.getManga(queries)
+                    val mangaList = retry(
+                        count = 3,
+                        predicate = { it == null || it.result == "error" }
+                    ) {
+                        mangaDex.getManga(queries)
+                    }
                     mangaList?.let {
                         it.toMangaList().map { m ->
                             res.statuses[m.data.id]?.let { s ->
