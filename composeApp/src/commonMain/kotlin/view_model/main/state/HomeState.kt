@@ -111,10 +111,7 @@ class HomeState(
                     }
                     if (res != null) {
                         val data = res.toMangaList().map {
-                            if (vm.sharedViewModel.mangaStatus[MangaStatus.Reading]!!.find { m ->
-                                    m.data.id == it.data.id
-                                } != null
-                            ) it.copy(
+                            if (sharedViewModel.findMangaStatus(it)?.status == MangaStatus.Reading) it.copy(
                                 status = MangaStatus.Reading
                             ) else it
                         }

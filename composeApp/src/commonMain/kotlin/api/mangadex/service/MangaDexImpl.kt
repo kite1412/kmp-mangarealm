@@ -211,7 +211,7 @@ class MangaDexImpl(
 
     override suspend fun updateMangaStatus(mangaId: String, status: String): UpdateStatusResponse? =
         updateMangaStatus(mangaId, status, true)?.also {
-            Log.d("POST (updateMangaStatus) success updating manga status")
+            Log.d("POST (updateMangaStatus) manga status updates: ${it.result}")
         }
 
 

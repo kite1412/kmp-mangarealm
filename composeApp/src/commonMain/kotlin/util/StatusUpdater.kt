@@ -3,6 +3,7 @@ package util
 import Cache
 import SharedObject
 import androidx.lifecycle.viewModelScope
+import api.mangadex.model.response.UpdateStatusResponse
 import api.mangadex.service.MangaDex
 import kotlinx.coroutines.launch
 import model.Manga
@@ -22,10 +23,20 @@ interface StatusUpdater {
         val new = manga.copy(status = status)
         SharedObject.detailManga = new
         sharedViewModel.viewModelScope.launch {
-            mangaDex.updateMangaStatus(manga.data.id, status.rawStatus).also {
-                sharedViewModel.mangaStatus[status]?.add(new)
-                if (status == MangaStatus.None) sharedViewModel.mangaStatus[manga.status]?.remove(manga)
-                if (manga.status != MangaStatus.None) sharedViewModel.mangaStatus[manga.status]!!.remove(manga)
+            retry<UpdateStatusResponse?>(
+                count = 3,
+                predicate = { it == null || it.errors != null }
+            ) {
+                mangaDex.updateMangaStatus(manga.data.id, status.rawStatus).also {
+                    if (status == MangaStatus.None) {
+                        sharedViewModel.mangaStatus[manga.status]?.remove(manga)
+                        sharedViewModel.mangaStatus[MangaStatus.All]!!.remove(manga)
+                    } else {
+                        sharedViewModel.mangaStatus[status]!!.add(new)
+                        sharedViewModel.mangaStatus[manga.status]?.remove(manga)
+                        sharedViewModel.updateMangaAllStatus(new)
+                    }
+                }
             }
         }
         return new

@@ -8,7 +8,7 @@ data class Status(
 )
 
 object MangaStatus {
-    val None = Status("", "Reading")
+    val None = Status("", "")
     val All = Status("", "All")
     val Reading = Status(s.READING, "Reading")
     val OnHold = Status(s.ON_HOLD, "On Hold")
