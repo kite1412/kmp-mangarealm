@@ -479,7 +479,7 @@ private fun ContinueReading(
     modifier: Modifier = Modifier,
     onClick: (Manga) -> Unit
 ) {
-    val data = state.continueReading
+    val data = state.sharedViewModel.mangaStatus[MangaStatus.Reading]!!
     val screenSize = LocalScreenSize.current
     val smallDisplayHeight = height / 2
     val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp
@@ -519,7 +519,11 @@ private fun ContinueReading(
                     imageWidth = smallDisplayWidth,
                     imageHeight = smallDisplayHeight,
                     onPainterLoaded = { p ->
-                        state.continueReading[it] = state.continueReading[it].copy(painter = p)
+                        state.sharedViewModel.onMangaStatusPainterLoaded(
+                            status = MangaStatus.Reading,
+                            painter = p,
+                            index = it
+                        )
                     },
                     modifier = Modifier.width(screenSize.width / 2)
                 ) { onClick(manga) }

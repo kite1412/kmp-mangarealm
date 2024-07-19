@@ -31,6 +31,7 @@ import theme.AppTheme
 import view.LoginScreen
 import view.MainScreen
 import view.SplashScreen
+import view_model.SharedViewModel
 import view_model.main.MainViewModel
 
 data class ScreenSize(
@@ -39,7 +40,8 @@ data class ScreenSize(
 )
 
 val LocalScreenSize = compositionLocalOf { ScreenSize(0.dp, 0.dp) }
-val LocalMainViewModel = compositionLocalOf { MainViewModel() }
+val LocalMainViewModel = compositionLocalOf { MainViewModel(SharedViewModel()) }
+val LocalSharedViewModel = compositionLocalOf { SharedViewModel() }
 
 object Libs {
     val kottageStorage = Kottage(
@@ -56,7 +58,6 @@ object Libs {
 
 object SharedObject {
     var detailManga: Manga = emptyManga()
-    var updatedManga: Manga = emptyManga()
     var chapterList: ChapterList = ChapterList()
     var popNotifierCount = 2
 }
@@ -77,7 +78,8 @@ fun App() {
     val isShowingSplash = remember {
         mutableStateOf(true)
     }
-    val mainViewModel = remember { MainViewModel() }
+    val sharedViewModel = remember { SharedViewModel() }
+    val mainViewModel = remember { MainViewModel(sharedViewModel) }
     // init for utilities that are not bound by whether is logged in or not
     LaunchedEffect(true) {
         Initializer()(postTagSetup = mainViewModel.homeState::setTags)
@@ -97,20 +99,22 @@ fun App() {
     }
     AppTheme {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            CompositionLocalProvider(LocalScreenSize provides ScreenSize(height = this.maxHeight, width = this.maxWidth)) {
-                if (!isLoggedIn.value) {
-                    LoginScreen(onSuccess = {
-                        isLoggedIn.value = true
-                    })
-                } else {
-                    CompositionLocalProvider(LocalMainViewModel provides mainViewModel) {
-                        Navigator(MainScreen())
+            CompositionLocalProvider(LocalSharedViewModel provides sharedViewModel) {
+                CompositionLocalProvider(LocalScreenSize provides ScreenSize(height = this.maxHeight, width = this.maxWidth)) {
+                    if (!isLoggedIn.value) {
+                        LoginScreen(onSuccess = {
+                            isLoggedIn.value = true
+                        })
+                    } else {
+                        CompositionLocalProvider(LocalMainViewModel provides mainViewModel) {
+                            Navigator(MainScreen())
+                        }
                     }
-                }
-                if (isShowingSplash.value) {
-                    SplashScreen()
-                } else {
-                    adjustStatusBarColor(MaterialTheme.colors.background)
+                    if (isShowingSplash.value) {
+                        SplashScreen()
+                    } else {
+                        adjustStatusBarColor(MaterialTheme.colors.background)
+                    }
                 }
             }
         }

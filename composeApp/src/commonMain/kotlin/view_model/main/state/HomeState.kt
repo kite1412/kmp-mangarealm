@@ -2,7 +2,6 @@ package view_model.main.state
 
 import Cache
 import Libs
-import SharedObject
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -31,11 +30,14 @@ import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
 import util.StatusUpdater
 import util.retry
+import view_model.SharedViewModel
 import view_model.main.MainViewModel
 
 class HomeState(
     private val vm: MainViewModel,
     private val scope: CoroutineScope = vm.viewModelScope,
+    override val sharedViewModel:
+    SharedViewModel = vm.sharedViewModel,
     override val mangaDex: MangaDex = Libs.mangaDex,
     private val kottageStorage: KottageStorage = Libs.kottageStorage,
     override val cache: Cache = Libs.cache
@@ -48,7 +50,7 @@ class HomeState(
     var latestUpdatesBarPage = 0
 
     val latestUpdates = mutableStateListOf<Manga>()
-    val continueReading = mutableStateListOf<Manga>()
+    val continueReading = derivedStateOf { vm.sharedViewModel.mangaStatus[MangaStatus.Reading]!! }
 
     private var _username = mutableStateOf("")
     val username = _username
@@ -92,41 +94,6 @@ class HomeState(
         }
     }
 
-    fun initContinueReadingData() {
-        scope.launch {
-            retry(
-                count = 3,
-                predicate = { continueReading.isEmpty() }
-            ) {
-                // TODO change to all statuses
-                val res = mangaDex.getMangaByStatus()
-                if (res?.statuses != null) {
-                    if (res.statuses.isNotEmpty()) {
-                        val temp = res.statuses.map { manga ->
-                            manga.key
-                        }
-                        val mangaIds = generateArrayQueryParam(
-                            name = "ids[]",
-                            values = temp
-                        )
-                        val queries = generateQuery(mapOf(Pair("includes[]", "cover_art")), mangaIds)
-                        val mangaList = mangaDex.getManga(queries)
-                        mangaList?.let {
-                            val data = it.toMangaList().map { m ->
-                                res.statuses[m.data.id]?.let { s ->
-                                    m.status = MangaStatus.toStatus(s)
-                                }
-                                m
-                            }
-                            continueReading.addAll(data.filter { m -> m.status  == MangaStatus.Reading })
-                            cache.mangaStatus.putAll(data.associateBy { m -> m.data.id })
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     fun beginSession(queries: Map<String, Any>) {
         scope.launch {
             if (tags.isNotEmpty()) {
@@ -145,7 +112,10 @@ class HomeState(
                     }
                     if (res != null) {
                         val data = res.toMangaList().map {
-                            if (cache.mangaStatus.containsKey(it.data.id)) it.copy(
+                            if (vm.sharedViewModel.mangaStatus[MangaStatus.Reading]!!.find { m ->
+                                    m.data.id == it.data.id
+                                } != null
+                            ) it.copy(
                                 status = MangaStatus.Reading
                             ) else it
                         }
@@ -155,9 +125,10 @@ class HomeState(
                 } else {
                     session.from(fromCache).also {
                         it.data.forEachIndexed { i, m ->
-                            if (cache.mangaStatus[m.data.id]?.status == MangaStatus.Reading)
+                            val isReading = vm.sharedViewModel.mangaStatus[MangaStatus.Reading]!!.find { m2 -> m2.data.id == m.data.id } != null
+                            if (isReading)
                                 it.data[i] = m.copy(status = MangaStatus.Reading)
-                            else if (m.status == MangaStatus.Reading && !cache.mangaStatus.containsKey(m.data.id))
+                            else if (m.status == MangaStatus.Reading && !isReading)
                                 it.data[i] = m.copy(status = MangaStatus.None)
                         }
                     }
@@ -195,18 +166,6 @@ class HomeState(
             res.also {
                 if (session.state.value == SessionState.ACTIVE) session.data[index] = it
                 cache.latestMangaSearch[sessionQueries]!!.data[index] = it
-            }
-            syncReadingStatus()
-        }
-    }
-
-    fun syncReadingStatus() {
-        val reading = cache.mangaStatus.filter { it.value.status == MangaStatus.Reading }
-        if (reading.size != continueReading.size) {
-            if (continueReading.size < reading.size) continueReading.add(SharedObject.updatedManga)
-            else {
-                continueReading.removeAll { SharedObject.updatedManga.data.id == it.data.id }
-                cache.mangaStatus.remove(SharedObject.updatedManga.data.id)
             }
         }
     }
