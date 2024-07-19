@@ -50,7 +50,6 @@ class HomeState(
     var latestUpdatesBarPage = 0
 
     val latestUpdates = mutableStateListOf<Manga>()
-    val continueReading = derivedStateOf { vm.sharedViewModel.mangaStatus[MangaStatus.Reading]!! }
 
     private var _username = mutableStateOf("")
     val username = _username

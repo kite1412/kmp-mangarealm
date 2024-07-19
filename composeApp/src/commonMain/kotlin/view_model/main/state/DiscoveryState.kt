@@ -1,6 +1,7 @@
 package view_model.main.state
 
 import Cache
+import Libs
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -9,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.SoftwareKeyboardController
+import androidx.lifecycle.viewModelScope
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
@@ -26,12 +28,17 @@ import model.session.Session
 import model.toMangaList
 import util.DEFAULT_COLLECTION_SIZE
 import util.KottageConst
+import util.retry
+import view_model.SharedViewModel
+import view_model.main.MainViewModel
 
 class DiscoveryState(
-    private val mangaDex: MangaDex,
-    private val cache: Cache,
-    private val scope: CoroutineScope,
-    private val kottageStorage: KottageStorage
+    private val vm: MainViewModel,
+    private val sharedViewModel: SharedViewModel = vm.sharedViewModel,
+    private val mangaDex: MangaDex = Libs.mangaDex,
+    private val cache: Cache = Libs.cache,
+    private val scope: CoroutineScope = vm.viewModelScope,
+    private val kottageStorage: KottageStorage = Libs.kottageStorage
 ) {
     private val maxHistory = 50
 
@@ -65,13 +72,24 @@ class DiscoveryState(
             val fromCache = cache.latestMangaSearch[q]
             if (fromCache == null) {
                 session.init(queries)
-                val res = mangaDex.getManga(q)
+                val res = retry(
+                    count = 3,
+                    predicate = { it == null || it.errors != null }
+                ) {
+                    mangaDex.getManga(q)
+                }
                 if (res != null) {
-                    val data = res.toMangaList()
+                    val data = res.toMangaList().map {
+                        sharedViewModel.findMangaStatus(it) ?: it
+                    }
                     session.setActive(res, data)
                     cache.latestMangaSearch[q] = MangaSession().apply { from(session) }
                 }
-            } else session.from(fromCache)
+            } else session.from(fromCache).apply {
+                data.mapIndexed { i, m ->
+                    data[i] = sharedViewModel.findMangaStatus(m) ?: m
+                }
+            }
             listState.scrollToItem(0)
             queries["title"]?.let {
                 saveHistory(it as String)

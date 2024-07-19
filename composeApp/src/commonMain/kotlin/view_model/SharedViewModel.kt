@@ -22,4 +22,7 @@ class SharedViewModel : ViewModel() {
             it.set(index, it[index].copy(painter = painter))
         }
     }
+
+    fun findMangaStatus(manga: Manga): Manga? =
+        mangaStatus[MangaStatus.All]!!.find { it.data.id == manga.data.id }
 }
