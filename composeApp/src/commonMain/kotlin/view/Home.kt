@@ -479,7 +479,7 @@ private fun ContinueReading(
     modifier: Modifier = Modifier,
     onClick: (Manga) -> Unit
 ) {
-    val data = state.sharedViewModel.mangaStatus[MangaStatus.Reading]!!
+    val data = state.continueReading
     val screenSize = LocalScreenSize.current
     val smallDisplayHeight = height / 2
     val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp

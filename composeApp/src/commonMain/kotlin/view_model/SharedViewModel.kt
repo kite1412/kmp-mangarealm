@@ -36,3 +36,12 @@ class SharedViewModel : ViewModel() {
         mangaStatus[MangaStatus.All]!!.add(manga)
     }
 }
+
+fun SnapshotStateList<Manga>.removeManga(manga: Manga) {
+    for ((i, m) in this.withIndex()) {
+        if (m.data.id == manga.data.id) {
+            this.removeAt(i)
+            return
+        }
+    }
+}

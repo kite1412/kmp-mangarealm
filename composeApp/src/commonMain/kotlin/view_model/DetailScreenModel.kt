@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import model.ChapterList
 import model.Chapters
 import model.MangaStatus
+import model.Status
 import util.ASCENDING
 import util.StatusUpdater
 import util.WARNING_TIME
@@ -32,6 +33,7 @@ class DetailScreenModel(
     var showUpdateStatus by mutableStateOf(false)
     var status by mutableStateOf(MangaStatus.None)
     var manga by mutableStateOf(SharedObject.detailManga)
+    var updating by mutableStateOf(false)
     var showWarning by mutableStateOf(false)
     var warning = ""
     var showPopNotice by mutableStateOf(false)
@@ -115,17 +117,19 @@ class DetailScreenModel(
     }
 
     fun onDeleteStatus() {
-        screenModelScope.launch {
-            showUpdateStatus = false
-            status = MangaStatus.None
-            manga = updateStatus(manga, MangaStatus.None)
-        }
+        status = MangaStatus.None
+        update(MangaStatus.None)
     }
 
-    fun onUpdateStatus() {
-        screenModelScope.launch {
-            showUpdateStatus = false
-            manga = updateStatus(manga, status)
+    fun onUpdateStatus() = update(status)
+
+    private fun update(status: Status) {
+        showUpdateStatus = false
+        manga = updateStatus(manga, status) { done, error ->
+            updating = !done
+            if (error) screenModelScope.launch {
+                showWarning("Failed to update status")
+            }
         }
     }
 }
