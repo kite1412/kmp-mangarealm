@@ -24,9 +24,19 @@ class CustomListScreenModel(
 ) : ScreenModel {
     var showPopNotice by mutableStateOf(false)
     var showWarning by mutableStateOf(false)
+    var showUpdateLoading by mutableStateOf(false)
+    var loadingMessage = ""
+    var warningMessage = ""
+    var deleteCount = 0
 
     init {
         beginSession()
+    }
+
+    override fun onDispose() {
+        sharedViewModel.viewModelScope.launch {
+            sharedViewModel.deleteDeletedCustomList()
+        }
     }
 
     private fun beginSession() {
@@ -54,13 +64,20 @@ class CustomListScreenModel(
     }
 
     private suspend fun showWarning(message: String) {
-            showWarning = true
-            delay(WARNING_TIME)
-            showWarning = false
+        warningMessage = message
+        showWarning = true
+        delay(WARNING_TIME)
+        showWarning = false
+    }
+
+    private fun showUpdateLoading(message: String) {
+        loadingMessage = message
+        showUpdateLoading = true
     }
 
     fun deleteCustomList(customList: CustomList, index: Int) {
         sharedViewModel.viewModelScope.launch {
+            showUpdateLoading("Deleting list...")
             val success = retry(
                 count = 3,
                 predicate = { false }
@@ -68,13 +85,16 @@ class CustomListScreenModel(
                 mangaDex.deleteCustomList(customList.data.id)
             }
             if (success) {
-                sharedViewModel.customListSession.data[index] = sharedViewModel.customListSession.data[index].copy(
-                    deleted = true
-                )
-                showWarning("List deleted")
+                sharedViewModel.customListSession.data[index] =
+                    sharedViewModel.customListSession.data[index].copy(deleted = true)
+                launch { showWarning("List deleted") }
+                deleteCount++
+                if (deleteCount == sharedViewModel.customListSession.data.size)
+                    sharedViewModel.deleteDeletedCustomList()
             } else {
-                showWarning("Failed to delete list")
+                launch { showWarning("Failed to delete list") }
             }
+            showUpdateLoading = false
         }
     }
 }

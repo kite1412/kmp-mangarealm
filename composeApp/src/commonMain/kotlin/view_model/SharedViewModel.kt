@@ -41,7 +41,7 @@ class SharedViewModel : ViewModel() {
     fun updateCustomListSession(new: CustomListSession): CustomListSession =
         customListSession.clearFrom(new) as CustomListSession
 
-    fun deleteCustomList(index: Int) = customListSession.data.removeAt(index)
+    fun deleteDeletedCustomList() = customListSession.data.removeAll { it.deleted }
 }
 
 fun SnapshotStateList<Manga>.removeManga(manga: Manga) {
