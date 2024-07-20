@@ -3,6 +3,7 @@ package view
 import Assets
 import LocalScreenSize
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,7 +33,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.pager.HorizontalPager
@@ -62,6 +63,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.SubcomposeLayout
@@ -86,8 +88,10 @@ import assets.`Book-bookmark`
 import assets.`Bxs-book-bookmark`
 import assets.`Chevron-right`
 import assets.`Heart-outline`
+import assets.List
 import assets.`Magnifying-glass`
 import assets.Person
+import assets.Settings
 import assets.`Text-align-right`
 import assets.`Treasure-map`
 import cafe.adriel.voyager.navigator.Navigator
@@ -148,19 +152,29 @@ fun Home(
     ) {
         when(it) {
             0 -> {
-                LazyColumn(
+                var headerHeight by remember { mutableStateOf(0.dp) }
+                val density = LocalDensity.current
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = parentHorizontalPadding),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = parentHorizontalPadding)
                 ) {
-                    item {
-                        Header(
-                            username = state.username.value,
-                            modifier = Modifier.padding(top = 24.dp)
-                        )
-                    }
-                    item {
+                    Header(
+                        username = state.username.value,
+                        state = state,
+                        modifier = Modifier
+                            .padding(top = 24.dp)
+                            .onGloballyPositioned { coordinates ->
+                                with(density) {
+                                    headerHeight = coordinates.size.height.toDp()
+                                }
+                            }
+                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.padding(top = headerHeight + 16.dp + 24.dp)
+                    ) {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.padding(top = 8.dp)
@@ -178,15 +192,11 @@ fun Home(
                                 nav = nav,
                             )
                         }
-                    }
-                    item {
                         ContinueReading(
                             state = state,
                             nav = nav,
                             height = latestBarHeight
                         ) { m -> vm.navigateToDetail(nav, m) }
-                    }
-                    item {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
@@ -201,11 +211,14 @@ fun Home(
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
-                    }
-                    // to prevent contents being obstructed by bottom bar.
-                    item {
                         Spacer(modifier = Modifier.height(bottomBarTotalHeight - 16.dp))
                     }
+                    AnimatedVisibility(
+                        visible = state.showOptions,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(top = headerHeight + 16.dp)
+                    ) { Options() }
                 }
             }
             else -> {
@@ -258,14 +271,14 @@ private fun autoSlideLatestUpdates(
 @Composable
 private fun Header(
     username: String,
+    state: HomeState,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Box {
+    Box(modifier = modifier.fillMaxWidth()) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Box(
                 modifier = Modifier
                     .size(52.dp)
@@ -281,22 +294,72 @@ private fun Header(
                         .align(Alignment.Center)
                 )
             }
+            Text(
+                username,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 16.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
-        Spacer(Modifier.width(8.dp))
-        Text(
-            username,
-            fontWeight = FontWeight.ExtraBold,
-            fontSize = 16.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-        Spacer(Modifier.weight(1f))
         Icon(
             imageVector = Assets.`Text-align-right`,
-            contentDescription = "custom list",
+            contentDescription = "options",
             tint = Color.Black,
             modifier = Modifier
+                .align(Alignment.CenterEnd)
                 .size(32.dp)
+                .clickable { state.onOptionsClick() }
+        )
+    }
+}
+
+@Composable
+private fun Options(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .width(IntrinsicSize.Max)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.White)
+            .clickable(enabled = false) {}
+    ) {
+        Option(
+            action = "My List",
+            icon = Assets.List,
+            modifier = Modifier.fillMaxWidth()
+        ) {  }
+        Option(
+            action = "Settings",
+            icon = Assets.Settings,
+            modifier = Modifier.fillMaxWidth()
+        ) {  }
+    }
+}
+
+@Composable
+private fun Option(
+    action: String,
+    icon: ImageVector,
+    color: Color = Color.Black,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(16.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = action,
+            tint = color,
+        )
+        Text(
+            action,
+            color = color,
+            fontSize = 16.sp,
         )
     }
 }

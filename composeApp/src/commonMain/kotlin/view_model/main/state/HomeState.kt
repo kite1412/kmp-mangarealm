@@ -6,6 +6,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.lifecycle.viewModelScope
 import api.mangadex.model.response.attribute.MangaAttributes
@@ -61,6 +62,7 @@ class HomeState(
     var psyMysTags = listOf<String>() to listOf<String>()
     val session = MangaSession()
     private var sessionQueries = ""
+    var showOptions by mutableStateOf(false)
 
     suspend fun updateUsername() {
         val username = kottageStorage.get<String>(KottageConst.USERNAME)
@@ -167,5 +169,7 @@ class HomeState(
             }
         }
     }
+
+    fun onOptionsClick() { showOptions = !showOptions  }
 }
 
