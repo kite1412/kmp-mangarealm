@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import model.ChapterImage
 import model.ChapterImages
 import util.ImageQuality
+import util.retry
 
 class ReaderScreenModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
@@ -52,7 +53,12 @@ class ReaderScreenModel(
             showWarning = false
             index = chapters[currentChapterIndex].id + imageQuality
             val images = cache.chapterImages[index]
-            val res = mangaDex.getHomeUrl(chapters[currentChapterIndex].id)
+            val res = retry(
+                count = 3,
+                predicate = { it == null || it.errors != null }
+            ) {
+                mangaDex.getHomeUrl(chapters[currentChapterIndex].id)
+            }
             if (images == null) {
                 if (res != null) {
                     if (res.chapter.data.isEmpty()) showWarning = true
@@ -146,6 +152,7 @@ class ReaderScreenModel(
         showChapterList = false
         currentChapterIndex = index
         currentPage = 1
+        pageNavigatorIndex = 0
         this.index = chapters[currentChapterIndex].id + imageQuality
         images.clear()
         getChapterImages()

@@ -422,7 +422,7 @@ class ReaderScreen : Screen {
             VerticalPager(
                 state = pagerState,
                 modifier = modifier,
-                beyondBoundsPageCount = 2
+                beyondBoundsPageCount = 1
             ) {
                 PageImageLoader(
                     sm = sm,
