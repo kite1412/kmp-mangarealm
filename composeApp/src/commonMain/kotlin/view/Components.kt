@@ -1,5 +1,7 @@
 package view
 
+import Assets
+import LocalScreenSize
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
@@ -42,6 +44,7 @@ import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -73,6 +76,7 @@ import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTagList
 import api.mangadex.util.getTitle
+import assets.`Chevron-right`
 import com.seiko.imageloader.model.ImageAction
 import com.seiko.imageloader.model.ImageRequest
 import com.seiko.imageloader.option.SizeResolver
@@ -722,4 +726,34 @@ private fun DynamicInformation(
         clip = RoundedCornerShape(2.dp),
         modifier = modifier
     )
+}
+
+@Composable
+fun PopNotice(
+    show: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val startPadding = 4.dp
+    val screenSize = LocalScreenSize.current
+    val popAnimation by animateDpAsState(if (show) 0f.dp else -(screenSize.width.value / 2f).dp)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .offset(x = popAnimation)
+            .padding(start = startPadding)
+            .clip(CircleShape)
+            .background(Color.Black.copy(alpha = 0.5f))
+            .padding(start = 8.dp, end = 4.dp, top = 2.dp, bottom = 2.dp)
+    ) {
+        Text(
+            "Swipe to pop",
+            color = Color.White
+        )
+        Icon(
+            imageVector = Assets.`Chevron-right`,
+            contentDescription = "back",
+            tint = Color.White,
+            modifier = Modifier.size(16.dp)
+        )
+    }
 }

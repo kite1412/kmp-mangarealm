@@ -28,9 +28,9 @@ interface Session<T, ATTR> {
         return this
     }
 
-    fun clearFrom(session: Session<T, ATTR>) {
+    fun clearFrom(session: Session<T, ATTR>): Session<T, ATTR> {
         clear()
-        from(session)
+        return from(session)
     }
 
     fun newResponse(res: ListResponse<ATTR>) { response = res }

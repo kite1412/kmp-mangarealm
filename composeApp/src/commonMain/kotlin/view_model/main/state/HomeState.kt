@@ -13,6 +13,7 @@ import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
+import cafe.adriel.voyager.navigator.Navigator
 import io.github.irgaly.kottage.KottageStorage
 import io.github.irgaly.kottage.get
 import kotlinx.coroutines.CoroutineScope
@@ -171,5 +172,10 @@ class HomeState(
     }
 
     fun onOptionsClick() { showOptions = !showOptions  }
+
+    fun navigateToCustomListScreen(nav: Navigator) {
+        vm.navigateToCustomList(nav)
+        showOptions = false
+    }
 }
 

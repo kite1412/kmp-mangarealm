@@ -7,9 +7,11 @@ import androidx.lifecycle.ViewModel
 import model.Manga
 import model.MangaStatus
 import model.Status
+import model.session.CustomListSession
 
 class SharedViewModel : ViewModel() {
     val mangaStatus = mutableMapOf<Status, SnapshotStateList<Manga>>()
+    val customListSession = CustomListSession()
 
     init {
         MangaStatus(true).forEach {
@@ -35,6 +37,9 @@ class SharedViewModel : ViewModel() {
         }
         mangaStatus[MangaStatus.All]!!.add(manga)
     }
+
+    fun updateCustomListSession(new: CustomListSession): CustomListSession =
+        customListSession.clearFrom(new) as CustomListSession
 }
 
 fun SnapshotStateList<Manga>.removeManga(manga: Manga) {
