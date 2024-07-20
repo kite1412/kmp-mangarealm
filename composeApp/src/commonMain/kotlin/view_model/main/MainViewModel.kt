@@ -7,6 +7,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import api.mangadex.service.MangaDex
@@ -17,6 +18,7 @@ import io.github.irgaly.kottage.KottageStorage
 import kotlinx.coroutines.launch
 import model.MangaStatus
 import model.toMangaList
+import util.APP_BAR_HEIGHT
 import util.retry
 import view_model.ChapterNavigator
 import view_model.CustomListNavigator
@@ -25,6 +27,8 @@ import view_model.SharedViewModel
 import view_model.main.state.DiscoveryState
 import view_model.main.state.HomeState
 import view_model.main.state.UserListState
+
+val bottomBarTotalHeight = APP_BAR_HEIGHT + 8.dp
 
 class MainViewModel(
     override val sharedViewModel: SharedViewModel,

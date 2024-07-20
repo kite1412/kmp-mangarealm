@@ -102,17 +102,16 @@ import model.MangaStatus
 import model.session.MangaSession
 import model.session.Session
 import model.session.SessionState
-import util.APP_BAR_HEIGHT
 import util.LATEST_UPDATE_SLIDE_TIME
 import util.edgeToEdge
 import util.session_handler.MangaSessionHandler
 import util.swipeToPop
 import util.undoEdgeToEdge
 import view_model.main.MainViewModel
+import view_model.main.bottomBarTotalHeight
 import view_model.main.state.HomeState
 
 private const val imageRatio = 2f / 3f
-private val bottomBarTotalHeight = APP_BAR_HEIGHT + 8.dp
 private val parentHorizontalPadding = 16.dp
 private val tagsHorizontalPadding = 8.dp
 private const val tagsRowCount = 2

@@ -4,6 +4,7 @@ import Libs
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewModelScope
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import cafe.adriel.voyager.core.model.ScreenModel
@@ -41,6 +42,17 @@ class CustomListScreenModel(
                     session.from(new)
                     sharedViewModel.updateCustomListSession(new)
                 }
+            }
+        }
+    }
+
+    private fun deleteCustomList(id: String) {
+        sharedViewModel.viewModelScope.launch {
+            retry(
+                count = 3,
+                predicate = { false }
+            ) {
+                mangaDex.deleteCustomList(id)
             }
         }
     }

@@ -8,6 +8,7 @@ import api.mangadex.model.response.EntityResponse
 import api.mangadex.model.response.HomeUrl
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.MangaStatus
+import api.mangadex.model.response.SimpleResponse
 import api.mangadex.model.response.Token
 import api.mangadex.model.response.UpdateStatusResponse
 import api.mangadex.model.response.attribute.ChapterAttributes
@@ -23,6 +24,7 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.delete
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -116,6 +118,22 @@ class MangaDexImpl(
             }
             null
         }
+    }
+
+    private suspend inline fun <reified R> delete(
+        url: String,
+        methodName: String,
+        auth: Boolean = true
+    ): R? = try {
+        client.delete {
+            url(url)
+            if (auth) authHeader()
+        }.body<R>()
+    } catch (e: Exception) {
+        e.message?.let {
+            Log.e("($methodName) $it")
+        }
+        null
     }
 
     override suspend fun login(request: TokenRequest): Token? {
@@ -237,6 +255,15 @@ class MangaDexImpl(
             methodName = "createCustomList"
         )
     }
+
+    override suspend fun deleteCustomList(customListId: String): Boolean =
+        delete<SimpleResponse>(
+            url = "${ApiConstant.USER_CUSTOM_LIST}/$customListId",
+            methodName = "deleteCustomList"
+        ).run {
+            this != null && errors == null
+        }
+
 
     private inner class Paging : MangaDex.Paging {
         private suspend fun <R> nextPage(

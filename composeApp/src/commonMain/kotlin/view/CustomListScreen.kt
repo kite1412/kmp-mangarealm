@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import api.mangadex.model.response.Data
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.CustomListAttributes
 import assets.`Box-open`
@@ -168,16 +169,17 @@ class CustomListScreen : Screen {
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = modifier.fillMaxSize()
         ) {
-            CustomList(
-                name = data[it].attributes.name,
-            )
+            CustomList(customList = data[it]) {
+
+            }
         }
     }
 
     @Composable
     private fun CustomList(
-        name: String,
-        modifier: Modifier = Modifier
+        customList: Data<CustomListAttributes>,
+        modifier: Modifier = Modifier,
+        onClick: (Data<CustomListAttributes>) -> Unit,
     ) {
         Box(
             modifier = modifier
@@ -203,13 +205,17 @@ class CustomListScreen : Screen {
                     icon = Icons.Rounded.Edit,
                     contentDescription = "edit list",
                     backgroundColor = leftmostColor,
-                    modifier = Modifier.weight(0.25f)
+                    modifier = Modifier
+                        .weight(0.25f)
+                        .clickable {  }
                 )
                 CustomListAction(
                     icon = Assets.`Trash-solid`,
                     contentDescription = "delete list",
                     backgroundColor = Color(220, 20, 60),
-                    modifier = Modifier.weight(0.25f)
+                    modifier = Modifier
+                        .weight(0.25f)
+                        .clickable {  }
                 )
             }
             var offset by remember { mutableStateOf(0.dp) }
@@ -224,6 +230,7 @@ class CustomListScreen : Screen {
                     .padding(horizontal = 8.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colors.onBackground)
+                    .clickable {  }
                     .pointerInput(true) {
                         detectHorizontalDragGestures(
                             onDragEnd = {
@@ -244,7 +251,7 @@ class CustomListScreen : Screen {
                     }
             ) {
                 Text(
-                    name,
+                    customList.attributes.name,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.White,
