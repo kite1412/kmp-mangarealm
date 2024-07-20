@@ -52,7 +52,7 @@ interface Session<T, ATTR> {
 }
 
 fun <T, ATTR> Session<T, ATTR>.isEmpty() =
-    response == ListResponse<ATTR>() && queries.isEmpty() && data.isEmpty()
+    response == ListResponse<ATTR>() && data.isEmpty()
 
 fun <T, ATTR> Session<T, ATTR>.isNotEmpty() = !isEmpty()
 

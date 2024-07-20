@@ -1,38 +1,54 @@
 package view
 
 import Assets
+import LocalScreenSize
 import LocalSharedViewModel
 import SharedObject
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.CustomListAttributes
-import assets.Books
 import assets.`Box-open`
-import assets.`Settings-vertical`
+import assets.`Trash-solid`
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.model.rememberScreenModel
@@ -145,11 +161,16 @@ class CustomListScreen : Screen {
         sm: CustomListScreenModel,
         modifier: Modifier = Modifier
     ) {
+        val data = sm.session.data
         SessionPagerColumn(
             session = sm.session,
-            handler = CustomListSessionHandler(sm.session)
+            handler = CustomListSessionHandler(sm.session),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = modifier.fillMaxSize()
         ) {
-
+            CustomList(
+                name = data[it].attributes.name,
+            )
         }
     }
 
@@ -158,35 +179,100 @@ class CustomListScreen : Screen {
         name: String,
         modifier: Modifier = Modifier
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+        Box(
             modifier = modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .height(IntrinsicSize.Max)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.weight(0.9f)
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .clip(RoundedCornerShape(8.dp))
             ) {
-                Icon(
-                    imageVector = Assets.Books,
-                    contentDescription = "books"
+                val leftmostColor = MaterialTheme.colors.secondary
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(0.5f)
+                        .background(leftmostColor)
                 )
-                Text(
-                    name,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
+                CustomListAction(
+                    icon = Icons.Rounded.Edit,
+                    contentDescription = "edit list",
+                    backgroundColor = leftmostColor,
+                    modifier = Modifier.weight(0.25f)
+                )
+                CustomListAction(
+                    icon = Assets.`Trash-solid`,
+                    contentDescription = "delete list",
+                    backgroundColor = Color(220, 20, 60),
+                    modifier = Modifier.weight(0.25f)
                 )
             }
-            Icon(
-                imageVector = Assets.`Settings-vertical`,
-                contentDescription = "settings",
-                tint = Color.Black,
+            var offset by remember { mutableStateOf(0.dp) }
+            val offsetAnimated by animateDpAsState(offset)
+            val density = LocalDensity.current
+            val screenSize = LocalScreenSize.current
+            var show by remember { mutableStateOf(false) }
+            Box(
                 modifier = Modifier
-                    .weight(0.1f)
-                    .clickable {  }
+                    .offset(x = offsetAnimated)
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colors.onBackground)
+                    .pointerInput(true) {
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                val maxOffset = -(screenSize.width / 2)
+                                offset = if (offset < 0.dp && (!show || offset < maxOffset)) {
+                                    show = true
+                                    maxOffset
+                                } else {
+                                    show = false
+                                    0.dp
+                                }
+                            }
+                        ) { _, dragAmount ->
+                            if (dragAmount < 0) with(density) {
+                                offset += dragAmount.toDp()
+                            } else if (offset < 0.dp) offset += dragAmount.toDp()
+                        }
+                    }
+            ) {
+                Text(
+                    name,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(32.dp)
+                )
+            }
+        }
+    }
+
+    @Composable
+    private fun CustomListAction(
+        icon: ImageVector,
+        contentDescription: String,
+        backgroundColor: Color,
+        modifier: Modifier = Modifier
+    ) {
+        Box(modifier = modifier.fillMaxHeight().background(backgroundColor)) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = Color.White,
+                modifier = Modifier
+                    .size(32.dp)
+                    .align(Alignment.Center)
             )
         }
     }
