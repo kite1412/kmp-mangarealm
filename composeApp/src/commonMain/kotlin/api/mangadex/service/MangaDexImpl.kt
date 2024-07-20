@@ -10,6 +10,7 @@ import api.mangadex.model.response.MangaStatus
 import api.mangadex.model.response.Token
 import api.mangadex.model.response.UpdateStatusResponse
 import api.mangadex.model.response.attribute.ChapterAttributes
+import api.mangadex.model.response.attribute.CustomListAttributes
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.model.response.attribute.TagAttributes
 import api.mangadex.model.response.attribute.UserAttributes
@@ -213,6 +214,14 @@ class MangaDexImpl(
         updateMangaStatus(mangaId, status, true)?.also {
             Log.d("POST (updateMangaStatus) manga status updates: ${it.result}")
         }
+
+    override suspend fun getUserCustomLists(): ListResponse<CustomListAttributes>? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun createCustomList(): EntityResponse<CustomListAttributes>? {
+        TODO("Not yet implemented")
+    }
 
 
     private inner class Paging : MangaDex.Paging {

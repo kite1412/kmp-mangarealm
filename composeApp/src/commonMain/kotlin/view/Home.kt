@@ -211,14 +211,18 @@ fun Home(
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
-                        Spacer(modifier = Modifier.height(bottomBarTotalHeight - 16.dp))
+                        Spacer(modifier = Modifier.height(bottomBarTotalHeight - 8.dp))
                     }
                     AnimatedVisibility(
                         visible = state.showOptions,
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(top = headerHeight + 16.dp)
-                    ) { Options() }
+                    ) {
+                        Options(
+                            onMyListClick = { vm.navigateToCustomList(nav) }
+                        )
+                    }
                 }
             }
             else -> {
@@ -315,7 +319,10 @@ private fun Header(
 }
 
 @Composable
-private fun Options(modifier: Modifier = Modifier) {
+private fun Options(
+    onMyListClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier
             .width(IntrinsicSize.Max)
@@ -326,8 +333,9 @@ private fun Options(modifier: Modifier = Modifier) {
         Option(
             action = "My List",
             icon = Assets.List,
-            modifier = Modifier.fillMaxWidth()
-        ) {  }
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onMyListClick
+        )
         Option(
             action = "Settings",
             icon = Assets.Settings,
