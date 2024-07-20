@@ -20,6 +20,10 @@ class CustomListScreenModel(
     var showPopNotice by mutableStateOf(false)
     val session = sharedViewModel.customListSession
 
+    init {
+        beginSession()
+    }
+
     private fun beginSession() {
         screenModelScope.launch {
             if (session.isEmpty()) {

@@ -220,7 +220,8 @@ class MangaDexImpl(
         getList(
             url = ApiConstant.USER_CUSTOM_LIST,
             methodName = "getUserCustomLists",
-            queries = queries
+            queries = queries,
+            auth = true
         )
 
     override suspend fun createCustomList(request: CreateCustomList): EntityResponse<CustomListAttributes>? {

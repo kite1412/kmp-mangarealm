@@ -15,12 +15,9 @@ class MangaSessionHandler(
     override val mangaDex: MangaDex = Libs.mangaDex
 ): SessionHandler<Manga, MangaAttributes> {
     override suspend fun updateSession(onFinish: (Boolean, Session<Manga, MangaAttributes>?) -> Unit) {
-        val offset = session.response.offset
-        val total = session.response.total
-        val limit = session.response.limit
-        if (offset < total && limit < total) {
-            session.queries["offset"] = offset + limit
-            session.queries["limit"] = limit
+        val needUpdate = needUpdate(session.response) { newOffset, prevResponse ->
+            session.queries["offset"] = newOffset
+            session.queries["limit"] = prevResponse.limit
             val res = retry<ListResponse<MangaAttributes>?>(
                 count = 3,
                 predicate = { it == null || it.errors != null}
@@ -29,10 +26,10 @@ class MangaSessionHandler(
                 session.addAll(res.toMangaList())
                 session.newResponse(res)
                 onFinish(res.data.isEmpty(), session)
-                return
+                return@needUpdate
             }
             onFinish(true, null)
         }
-        onFinish(true, null)
+        if (!needUpdate) onFinish(true, null)
     }
 }
