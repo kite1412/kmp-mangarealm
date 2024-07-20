@@ -1,27 +1,19 @@
 package view
 
 import Assets
-import LocalScreenSize
 import LocalSharedViewModel
 import SharedObject
-import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
@@ -30,22 +22,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import api.mangadex.model.response.Data
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.CustomListAttributes
 import assets.`Box-open`
@@ -59,6 +43,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import model.SwipeAction
 import model.session.SessionState
 import util.popNoticeDuration
 import util.session_handler.CustomListSessionHandler
@@ -72,7 +57,7 @@ class CustomListScreen : Screen {
         val sharedViewModel = LocalSharedViewModel.current
         val sm = rememberScreenModel { CustomListScreenModel(sharedViewModel) }
         val nav = LocalNavigator.currentOrThrow
-        val session = sm.session
+        val session = sm.sharedViewModel.customListSession
         LifecycleEffectOnce {
             val count = SharedObject.popNotifierCount--
             if (count > 0) sm.screenModelScope.launch {
@@ -91,7 +76,8 @@ class CustomListScreen : Screen {
                     SessionState.FETCHING -> LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
                         Text("Loading...", color = Color.White)
                     }
-                    SessionState.ACTIVE -> CustomLists(sm)
+                    SessionState.ACTIVE -> if (session.data.isNotEmpty()) CustomLists(sm)
+                        else EmptyList(modifier = Modifier.align(Alignment.Center))
                     else -> if (session.response != ListResponse<CustomListAttributes>() && session.data.isEmpty()) EmptyList(
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -162,125 +148,45 @@ class CustomListScreen : Screen {
         sm: CustomListScreenModel,
         modifier: Modifier = Modifier
     ) {
-        val data = sm.session.data
+        val customLists = sm.sharedViewModel.customListSession.data
         SessionPagerColumn(
-            session = sm.session,
-            handler = CustomListSessionHandler(sm.session),
+            session = sm.sharedViewModel.customListSession,
+            handler = CustomListSessionHandler(sm.sharedViewModel.customListSession),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = modifier.fillMaxSize()
         ) {
-            CustomList(customList = data[it]) {
-
+            val customList = customLists[it]
+            AnimatedVisibility(!customList.deleted) {
+                val actions = listOf(
+                    SwipeAction(
+                        actionName = "edit",
+                        icon = Icons.Rounded.Edit,
+                        backgroundColor = MaterialTheme.colors.secondary,
+                        action = {}
+                    ),
+                    SwipeAction(
+                        actionName = "delete",
+                        icon = Assets.`Trash-solid`,
+                        backgroundColor = Color(220, 20, 60),
+                        action = { sm.deleteCustomList(customList, it) }
+                    )
+                )
+                Swipeable(
+                    actions = actions
+                ) {
+                    Text(
+                        customList.data.attributes.name,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(32.dp)
+                    )
+                }
             }
-        }
-    }
-
-    @Composable
-    private fun CustomList(
-        customList: Data<CustomListAttributes>,
-        modifier: Modifier = Modifier,
-        onClick: (Data<CustomListAttributes>) -> Unit,
-    ) {
-        Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Max)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .clip(RoundedCornerShape(8.dp))
-            ) {
-                val leftmostColor = MaterialTheme.colors.secondary
-                Box(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .weight(0.5f)
-                        .background(leftmostColor)
-                )
-                CustomListAction(
-                    icon = Icons.Rounded.Edit,
-                    contentDescription = "edit list",
-                    backgroundColor = leftmostColor,
-                    modifier = Modifier
-                        .weight(0.25f)
-                        .clickable {  }
-                )
-                CustomListAction(
-                    icon = Assets.`Trash-solid`,
-                    contentDescription = "delete list",
-                    backgroundColor = Color(220, 20, 60),
-                    modifier = Modifier
-                        .weight(0.25f)
-                        .clickable {  }
-                )
-            }
-            var offset by remember { mutableStateOf(0.dp) }
-            val offsetAnimated by animateDpAsState(offset)
-            val density = LocalDensity.current
-            val screenSize = LocalScreenSize.current
-            var show by remember { mutableStateOf(false) }
-            Box(
-                modifier = Modifier
-                    .offset(x = offsetAnimated)
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(MaterialTheme.colors.onBackground)
-                    .clickable {  }
-                    .pointerInput(true) {
-                        detectHorizontalDragGestures(
-                            onDragEnd = {
-                                val maxOffset = -(screenSize.width / 2)
-                                offset = if (offset < 0.dp && (!show || offset < maxOffset)) {
-                                    show = true
-                                    maxOffset
-                                } else {
-                                    show = false
-                                    0.dp
-                                }
-                            }
-                        ) { _, dragAmount ->
-                            if (dragAmount < 0) with(density) {
-                                offset += dragAmount.toDp()
-                            } else if (offset < 0.dp) offset += dragAmount.toDp()
-                        }
-                    }
-            ) {
-                Text(
-                    customList.attributes.name,
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(32.dp)
-                )
-            }
-        }
-    }
-
-    @Composable
-    private fun CustomListAction(
-        icon: ImageVector,
-        contentDescription: String,
-        backgroundColor: Color,
-        modifier: Modifier = Modifier
-    ) {
-        Box(modifier = modifier.fillMaxHeight().background(backgroundColor)) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                tint = Color.White,
-                modifier = Modifier
-                    .size(32.dp)
-                    .align(Alignment.Center)
-            )
         }
     }
 }

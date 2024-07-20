@@ -16,6 +16,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.snapping.SnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,9 +25,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -62,7 +65,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -86,6 +91,7 @@ import com.seiko.imageloader.ui.AutoSizeBox
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.no_image
 import model.Manga
+import model.SwipeAction
 import model.session.Session
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
@@ -754,6 +760,99 @@ fun PopNotice(
             contentDescription = "back",
             tint = Color.White,
             modifier = Modifier.size(16.dp)
+        )
+    }
+}
+
+@Composable
+fun Swipeable(
+    actions: List<SwipeAction>,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Max)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .clip(RoundedCornerShape(8.dp))
+        ) {
+            val actionWeight = 0.25f
+            val fixed = actions.take(4)
+            if (fixed.isNotEmpty()) Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(1f - (actionWeight * fixed.size))
+                    .background(actions[0].backgroundColor)
+            )
+            for (action in fixed) {
+                SwipeableAction(
+                    data = action,
+                    modifier = Modifier.weight(actionWeight)
+                )
+            }
+        }
+        var offset by remember { mutableStateOf(0.dp) }
+        val offsetAnimated by animateDpAsState(offset)
+        val density = LocalDensity.current
+        val screenSize = LocalScreenSize.current
+        var show by remember { mutableStateOf(false) }
+        Box(
+            modifier = Modifier
+                .offset(x = offsetAnimated)
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colors.onBackground)
+                .clickable {  }
+                .pointerInput(true) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            val maxOffset = -(screenSize.width / 2)
+                            offset = if (offset < 0.dp && (!show || offset < maxOffset)) {
+                                show = true
+                                maxOffset
+                            } else {
+                                show = false
+                                0.dp
+                            }
+                        }
+                    ) { _, dragAmount ->
+                        if (dragAmount < 0) with(density) {
+                            offset += dragAmount.toDp()
+                        } else if (offset < 0.dp) offset += dragAmount.toDp()
+                    }
+                }
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun SwipeableAction(
+    data: SwipeAction,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .background(data.backgroundColor)
+            .clickable(onClick = data.action)
+    ) {
+        Icon(
+            imageVector = data.icon,
+            contentDescription = data.actionName,
+            tint = Color.White,
+            modifier = Modifier
+                .size(32.dp)
+                .align(Alignment.Center)
         )
     }
 }
