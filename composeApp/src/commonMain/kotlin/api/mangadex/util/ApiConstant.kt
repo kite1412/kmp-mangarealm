@@ -8,7 +8,9 @@ object ApiConstant {
     const val MANGA_ENDPOINT = "$BASE_URL/manga"
     const val MANGA_STATUS = "$MANGA_ENDPOINT/status"
     const val TAGS_ENDPOINT = "$MANGA_ENDPOINT/tag"
-    const val MANGADEX_HOME = "$BASE_URL/at-home/server"
+    private const val MANGADEX_HOME = "$BASE_URL/at-home/server"
+    const val USER_CUSTOM_LIST = "$BASE_URL/user/list"
+    const val CREATE_CUSTOM_LIST = "$BASE_URL/list"
 
     fun mangaChapters(mangaId: String): String = "$MANGA_ENDPOINT/$mangaId/feed"
 

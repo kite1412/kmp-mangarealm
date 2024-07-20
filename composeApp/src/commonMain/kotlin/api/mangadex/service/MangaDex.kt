@@ -10,6 +10,7 @@ import api.mangadex.model.response.MangaStatus
 import api.mangadex.model.response.Token
 import api.mangadex.model.response.UpdateStatusResponse
 import api.mangadex.model.response.attribute.ChapterAttributes
+import api.mangadex.model.response.attribute.CustomListAttributes
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.model.response.attribute.TagAttributes
 import api.mangadex.model.response.attribute.UserAttributes
@@ -33,6 +34,10 @@ interface MangaDex {
     suspend fun getHomeUrl(chapterId: String): HomeUrl?
 
     suspend fun updateMangaStatus(mangaId: String, status: String): UpdateStatusResponse?
+
+    suspend fun getUserCustomLists(): ListResponse<CustomListAttributes>?
+
+    suspend fun createCustomList(): EntityResponse<CustomListAttributes>?
 
     interface Paging {
         fun <R> nextPageExists(r: ListResponse<R>): Boolean =

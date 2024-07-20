@@ -19,6 +19,7 @@ import assets.`Book-close`
 import assets.`Book-open`
 import assets.`Bookmark-alt-fill`
 import assets.`Bookmark-alt`
+import assets.`Box-open`
 import assets.`Bxs-book-bookmark`
 import assets.`Chevron-right-bold`
 import assets.`Chevron-right`
@@ -49,7 +50,7 @@ public val Assets.Assets: ____KtList<ImageVector>
       return __Assets!!
     }
     __Assets= listOf(`Arrow-left-solid`, `Book-bookmark`, `Book-close`, `Book-open`,
-        `Bookmark-alt-fill`, `Bookmark-alt`, `Bxs-book-bookmark`, `Chevron-right-bold`,
+        `Bookmark-alt-fill`, `Bookmark-alt`, `Box-open`, `Bxs-book-bookmark`, `Chevron-right-bold`,
         `Chevron-right`, Clipboard, `Collapse-solid`, Cross, `Expand-solid`, Eye, Eyeshut, Flower,
         `Heart-outline`, Height, Home, Info, `List-add`, `List-check`, List, Logo,
         `Magnifying-glass`, `Menu-outline`, `Other-1-solid`, Person, Search,
