@@ -45,6 +45,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.SwipeAction
 import model.session.SessionState
+import util.APP_BAR_HEIGHT
 import util.popNoticeDuration
 import util.session_handler.CustomListSessionHandler
 import util.swipeToPop
@@ -91,6 +92,17 @@ class CustomListScreen : Screen {
                     show = sm.showPopNotice,
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
+                Warning(
+                    message = sm.warningMessage,
+                    height = APP_BAR_HEIGHT,
+                    show = sm.showWarning,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+                if (sm.showUpdateLoading) LoadingIndicator(
+                    modifier = Modifier.align(Alignment.Center)
+                ) {
+                    Text(sm.loadingMessage, color = Color.White)
+                }
             }
         }
     }
@@ -152,7 +164,6 @@ class CustomListScreen : Screen {
         SessionPagerColumn(
             session = sm.sharedViewModel.customListSession,
             handler = CustomListSessionHandler(sm.sharedViewModel.customListSession),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = modifier.fillMaxSize()
         ) {
             val customList = customLists[it]
@@ -172,7 +183,8 @@ class CustomListScreen : Screen {
                     )
                 )
                 Swipeable(
-                    actions = actions
+                    actions = actions,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 ) {
                     Text(
                         customList.data.attributes.name,
