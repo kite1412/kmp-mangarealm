@@ -250,7 +250,7 @@ class MangaDexImpl(
         if (request.manga.isNotEmpty()) body["manga"] = request.manga
         if (request.version != null) body["version"] = request.version
         return post(
-            url = ApiConstant.CREATE_CUSTOM_LIST,
+            url = ApiConstant.CUSTOM_LIST_ACTION,
             body = body,
             methodName = "createCustomList"
         )
@@ -258,7 +258,7 @@ class MangaDexImpl(
 
     override suspend fun deleteCustomList(customListId: String): Boolean =
         delete<SimpleResponse>(
-            url = "${ApiConstant.USER_CUSTOM_LIST}/$customListId",
+            url = "${ApiConstant.CUSTOM_LIST_ACTION}/$customListId",
             methodName = "deleteCustomList"
         ).run {
             this != null && errors == null
