@@ -1,5 +1,6 @@
 package api.mangadex.service
 
+import api.mangadex.model.request.CreateCustomList
 import api.mangadex.model.request.Queries
 import api.mangadex.model.request.Status
 import api.mangadex.model.request.TokenRequest
@@ -215,14 +216,26 @@ class MangaDexImpl(
             Log.d("POST (updateMangaStatus) manga status updates: ${it.result}")
         }
 
-    override suspend fun getUserCustomLists(): ListResponse<CustomListAttributes>? {
-        TODO("Not yet implemented")
-    }
+    override suspend fun getUserCustomLists(queries: Queries): ListResponse<CustomListAttributes>? =
+        getList(
+            url = ApiConstant.USER_CUSTOM_LIST,
+            methodName = "getUserCustomLists",
+            queries = queries
+        )
 
-    override suspend fun createCustomList(): EntityResponse<CustomListAttributes>? {
-        TODO("Not yet implemented")
+    override suspend fun createCustomList(request: CreateCustomList): EntityResponse<CustomListAttributes>? {
+        val body = mutableMapOf<String, Any>(
+            "name" to request.name,
+            "visibility" to request.visibility.toString()
+        )
+        if (request.manga.isNotEmpty()) body["manga"] = request.manga
+        if (request.version != null) body["version"] = request.version
+        return post(
+            url = ApiConstant.CREATE_CUSTOM_LIST,
+            body = body,
+            methodName = "createCustomList"
+        )
     }
-
 
     private inner class Paging : MangaDex.Paging {
         private suspend fun <R> nextPage(

@@ -31,6 +31,7 @@ const val MYSTERY_TAG = "Mystery"
 const val ASCENDING = "asc"
 const val DESCENDING = "desc"
 const val DEFAULT_COLLECTION_SIZE = 20
+const val popNoticeDuration = 2000L
 
 val BLUR_TINT = Color.LightGray.copy(alpha = 0.4f)
 

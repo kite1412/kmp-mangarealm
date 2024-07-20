@@ -5,7 +5,6 @@ import LocalScreenSize
 import LocalSharedViewModel
 import SharedObject
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,7 +30,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
@@ -40,7 +38,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,7 +49,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
@@ -82,6 +78,7 @@ import model.MangaStatus
 import model.Status
 import util.APP_BAR_HEIGHT
 import util.edgeToEdge
+import util.popNoticeDuration
 import util.publicationStatus
 import util.publicationStatusColor
 import util.swipeToPop
@@ -94,13 +91,11 @@ class DetailScreen : Screen {
     override fun Content() {
         val sharedViewModel = LocalSharedViewModel.current
         val sm = rememberScreenModel { DetailScreenModel(sharedViewModel) }
-        val screenSize = LocalScreenSize.current
-        val popAnimation by animateDpAsState(if (sm.showPopNotice) 0f.dp else -(screenSize.width.value / 2f).dp)
         LifecycleEffectOnce {
-            SharedObject.popNotifierCount--
-            sm.screenModelScope.launch {
+            val count = SharedObject.popNotifierCount--
+            if (count > 0) sm.screenModelScope.launch {
                 sm.showPopNotice = true
-                delay(2000)
+                delay(popNoticeDuration)
                 sm.showPopNotice = false
             }
         }
@@ -144,7 +139,10 @@ class DetailScreen : Screen {
                         .fillMaxWidth()
                         .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                 )
-                if (SharedObject.popNotifierCount >= 0) Pop(sm, popAnimation, modifier = Modifier.align(Alignment.CenterStart))
+                if (SharedObject.popNotifierCount >= 0) PopNotice(
+                    show = sm.showPopNotice,
+                    modifier = Modifier.align(Alignment.CenterStart)
+                )
                 if (sm.showUpdateStatus) UpdateStatus(sm)
                 Warning(
                     message = sm.warning,
@@ -158,35 +156,6 @@ class DetailScreen : Screen {
                     Text("Updating...", color = Color.White)
                 }
             }
-        }
-    }
-
-    @Composable
-    private fun Pop(
-        sm: DetailScreenModel,
-        offset: Dp,
-        modifier: Modifier = Modifier
-    ) {
-        val startPadding = 4.dp
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier
-                .offset(x = offset)
-                .padding(start = startPadding)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.5f))
-                .padding(start = 8.dp, end = 4.dp, top = 2.dp, bottom = 2.dp)
-        ) {
-            Text(
-                "Swipe to pop",
-                color = Color.White
-            )
-            Icon(
-                imageVector = Assets.`Chevron-right`,
-                contentDescription = "back",
-                tint = Color.White,
-                modifier = Modifier.size(16.dp)
-            )
         }
     }
 

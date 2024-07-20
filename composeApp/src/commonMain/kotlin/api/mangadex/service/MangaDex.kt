@@ -1,5 +1,6 @@
 package api.mangadex.service
 
+import api.mangadex.model.request.CreateCustomList
 import api.mangadex.model.request.Queries
 import api.mangadex.model.request.Status
 import api.mangadex.model.request.TokenRequest
@@ -35,9 +36,9 @@ interface MangaDex {
 
     suspend fun updateMangaStatus(mangaId: String, status: String): UpdateStatusResponse?
 
-    suspend fun getUserCustomLists(): ListResponse<CustomListAttributes>?
+    suspend fun getUserCustomLists(queries: Queries): ListResponse<CustomListAttributes>?
 
-    suspend fun createCustomList(): EntityResponse<CustomListAttributes>?
+    suspend fun createCustomList(request: CreateCustomList): EntityResponse<CustomListAttributes>?
 
     interface Paging {
         fun <R> nextPageExists(r: ListResponse<R>): Boolean =

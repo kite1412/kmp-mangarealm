@@ -220,7 +220,7 @@ fun Home(
                             .padding(top = headerHeight + 16.dp)
                     ) {
                         Options(
-                            onMyListClick = { vm.navigateToCustomList(nav) }
+                            onMyListClick = { state.navigateToCustomListScreen(nav) }
                         )
                     }
                 }

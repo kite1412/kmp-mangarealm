@@ -1,4 +1,5 @@
 import androidx.compose.ui.graphics.vector.ImageVector
+import assets.Books
 import assets.Clipboard
 import assets.Cross
 import assets.Eye
@@ -33,6 +34,7 @@ import assets.`Menu-outline`
 import assets.`Other-1-solid`
 import assets.`Settings-adjust-solid`
 import assets.`Settings-horizontal`
+import assets.`Settings-vertical`
 import assets.`Shelf-outline`
 import assets.`Shelf-solid`
 import assets.`Text-align-right`
@@ -50,11 +52,11 @@ public val Assets.Assets: ____KtList<ImageVector>
       return __Assets!!
     }
     __Assets= listOf(`Arrow-left-solid`, `Book-bookmark`, `Book-close`, `Book-open`,
-        `Bookmark-alt-fill`, `Bookmark-alt`, `Box-open`, `Bxs-book-bookmark`, `Chevron-right-bold`,
-        `Chevron-right`, Clipboard, `Collapse-solid`, Cross, `Expand-solid`, Eye, Eyeshut, Flower,
-        `Heart-outline`, Height, Home, Info, `List-add`, `List-check`, List, Logo,
-        `Magnifying-glass`, `Menu-outline`, `Other-1-solid`, Person, Search,
-        `Settings-adjust-solid`, `Settings-horizontal`, Settings, `Shelf-outline`, `Shelf-solid`,
-        `Text-align-right`, `Trash-solid`, `Treasure-map`, Width)
+        `Bookmark-alt-fill`, `Bookmark-alt`, Books, `Box-open`, `Bxs-book-bookmark`,
+        `Chevron-right-bold`, `Chevron-right`, Clipboard, `Collapse-solid`, Cross, `Expand-solid`,
+        Eye, Eyeshut, Flower, `Heart-outline`, Height, Home, Info, `List-add`, `List-check`, List,
+        Logo, `Magnifying-glass`, `Menu-outline`, `Other-1-solid`, Person, Search,
+        `Settings-adjust-solid`, `Settings-horizontal`, `Settings-vertical`, Settings,
+        `Shelf-outline`, `Shelf-solid`, `Text-align-right`, `Trash-solid`, `Treasure-map`, Width)
     return __Assets!!
   }
