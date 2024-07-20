@@ -7,9 +7,11 @@ import assets.Flower
 import assets.Height
 import assets.Home
 import assets.Info
+import assets.List
 import assets.Logo
 import assets.Person
 import assets.Search
+import assets.Settings
 import assets.Width
 import assets.`Arrow-left-solid`
 import assets.`Book-bookmark`
@@ -49,9 +51,9 @@ public val Assets.Assets: ____KtList<ImageVector>
     __Assets= listOf(`Arrow-left-solid`, `Book-bookmark`, `Book-close`, `Book-open`,
         `Bookmark-alt-fill`, `Bookmark-alt`, `Bxs-book-bookmark`, `Chevron-right-bold`,
         `Chevron-right`, Clipboard, `Collapse-solid`, Cross, `Expand-solid`, Eye, Eyeshut, Flower,
-        `Heart-outline`, Height, Home, Info, `List-add`, `List-check`, Logo, `Magnifying-glass`,
-        `Menu-outline`, `Other-1-solid`, Person, Search, `Settings-adjust-solid`,
-        `Settings-horizontal`, `Shelf-outline`, `Shelf-solid`, `Text-align-right`, `Trash-solid`,
-        `Treasure-map`, Width)
+        `Heart-outline`, Height, Home, Info, `List-add`, `List-check`, List, Logo,
+        `Magnifying-glass`, `Menu-outline`, `Other-1-solid`, Person, Search,
+        `Settings-adjust-solid`, `Settings-horizontal`, Settings, `Shelf-outline`, `Shelf-solid`,
+        `Text-align-right`, `Trash-solid`, `Treasure-map`, Width)
     return __Assets!!
   }
