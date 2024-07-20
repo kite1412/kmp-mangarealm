@@ -40,6 +40,8 @@ interface MangaDex {
 
     suspend fun createCustomList(request: CreateCustomList): EntityResponse<CustomListAttributes>?
 
+    suspend fun deleteCustomList(customListId: String): Boolean
+
     interface Paging {
         fun <R> nextPageExists(r: ListResponse<R>): Boolean =
             r.offset < r.total

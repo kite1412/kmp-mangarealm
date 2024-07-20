@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -47,6 +48,7 @@ import shared.adjustStatusBarColor
 import theme.selectedButton
 import util.APP_BAR_HEIGHT
 import view_model.main.MainViewModel
+import view_model.main.bottomBarTotalHeight
 import view_model.main.state.UserListState
 
 @Composable
@@ -176,6 +178,7 @@ private fun ListContent(
     val nav = LocalNavigator.currentOrThrow
     if (manga.isNotEmpty()) LazyColumn(
         verticalArrangement = Arrangement.spacedBy(4.dp),
+        contentPadding = PaddingValues(bottom = bottomBarTotalHeight),
         modifier = modifier.fillMaxSize()
     ) {
         items(manga.size) {
