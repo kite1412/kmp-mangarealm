@@ -4,19 +4,27 @@ import Assets
 import LocalSharedViewModel
 import SharedObject
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
@@ -30,6 +38,7 @@ import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,7 +71,9 @@ import util.APP_BAR_HEIGHT
 import util.popNoticeDuration
 import util.session_handler.CustomListSessionHandler
 import util.swipeToPop
+import util.undoEdgeToEdge
 import view_model.CustomListScreenModel
+import view_model.main.bottomBarTotalHeight
 
 class CustomListScreen : Screen {
     @OptIn(ExperimentalVoyagerApi::class)
@@ -80,28 +91,27 @@ class CustomListScreen : Screen {
                 sm.showPopNotice = false
             }
         }
+        undoEdgeToEdge()
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
                 .swipeToPop(nav)
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                when(session.state.value) {
-                    SessionState.FETCHING -> LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
-                        Text("Loading...", color = Color.White)
-                    }
-                    SessionState.ACTIVE -> if (session.data.isNotEmpty()) CustomLists(sm)
+                Box(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    when(session.state.value) {
+                        SessionState.FETCHING -> LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
+                            Text("Loading...", color = Color.White)
+                        }
+                        SessionState.ACTIVE -> if (session.data.isNotEmpty()) CustomLists(sm)
                         else EmptyList(modifier = Modifier.align(Alignment.Center))
-                    else -> if (session.response != ListResponse<CustomListAttributes>() && session.data.isEmpty()) EmptyList(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                        else -> if (session.response != ListResponse<CustomListAttributes>() && session.data.isEmpty()) EmptyList(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
                 }
-                AddCustomList(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 16.dp, bottom = 24.dp)
-                        .clickable { sm.showAddPrompt = true }
-                )
                 PopNotice(
                     show = sm.showPopNotice,
                     modifier = Modifier.align(Alignment.CenterStart)
@@ -126,6 +136,28 @@ class CustomListScreen : Screen {
                     Text(sm.loadingMessage, color = Color.White)
                 }
             }
+        }
+    }
+
+    @Composable
+    private fun TopBar(
+        title: String = "My List",
+        modifier: Modifier = Modifier
+    ) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(APP_BAR_HEIGHT)
+                .background(MaterialTheme.colors.background)
+        ) {
+            Text(
+                title,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Clip,
+                modifier = Modifier.align(Alignment.Center)
+            )
         }
     }
 
@@ -158,7 +190,10 @@ class CustomListScreen : Screen {
     }
 
     @Composable
-    private fun EmptyList(modifier: Modifier = Modifier) {
+    private fun EmptyList(
+        message: String = "Your list is empty",
+        modifier: Modifier = Modifier
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier
@@ -169,7 +204,7 @@ class CustomListScreen : Screen {
                 modifier = Modifier.size(100.dp)
             )
             Text(
-                "Your list is empty",
+                message,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 20.sp,
                 color = MaterialTheme.colors.onBackground
@@ -177,6 +212,7 @@ class CustomListScreen : Screen {
         }
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun CustomLists(
         sm: CustomListScreenModel,
@@ -184,71 +220,133 @@ class CustomListScreen : Screen {
     ) {
         val customLists = sm.sharedViewModel.customListSession.data
         val nav = LocalNavigator.currentOrThrow
-        SessionPagerColumn(
-            session = sm.sharedViewModel.customListSession,
-            handler = CustomListSessionHandler(sm.sharedViewModel.customListSession),
-            modifier = modifier.fillMaxSize()
+        val pagerState = rememberPagerState { 2 }
+        val scope = rememberCoroutineScope()
+        VerticalPager(
+            state = pagerState,
+            userScrollEnabled = false,
+            modifier = modifier
         ) {
-            val customList = customLists[it]
-            AnimatedVisibility(!customList.deleted) {
-                val actions = listOf(
-                    SwipeAction(
-                        actionName = "edit",
-                        icon = Icons.Rounded.Edit,
-                        backgroundColor = MaterialTheme.colors.secondary,
-                        action = {}
-                    ),
-                    SwipeAction(
-                        actionName = "delete",
-                        icon = Assets.`Trash-solid`,
-                        backgroundColor = Color(220, 20, 60),
-                        action = { sm.deleteCustomList(customList, it) }
-                    )
-                )
-                Swipeable(
-                    actions = actions,
-                    oppositeSwipe = { dragAmount ->
-                        if (dragAmount > 30) nav.pop()
-                    },
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.CenterStart)
-                            .padding(16.dp)
-                    ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
-                            modifier = Modifier.fillMaxHeight()
-                        ) {
-                            val visibility = customList.data.attributes.visibility
-                            Text(
-                                visibility.replaceFirstChar { c -> c.uppercaseChar() },
-                                fontWeight = FontWeight.Medium,
-                                color = if (visibility == "private") Color.Red
-                                    else Color.Green
+            when (it) {
+                0 -> Box {
+                    SessionPagerColumn(
+                        session = sm.sharedViewModel.customListSession,
+                        handler = CustomListSessionHandler(sm.sharedViewModel.customListSession),
+                        contentPadding = PaddingValues(top = APP_BAR_HEIGHT + 8.dp, bottom = bottomBarTotalHeight),
+                        modifier = Modifier.fillMaxSize()
+                    ) { index ->
+                        val customList = customLists[index]
+                        AnimatedVisibility(visible = !customList.deleted) {
+                            val actions = listOf(
+                                SwipeAction(
+                                    actionName = "edit",
+                                    icon = Icons.Rounded.Edit,
+                                    backgroundColor = MaterialTheme.colors.secondary,
+                                    action = {}
+                                ),
+                                SwipeAction(
+                                    actionName = "delete",
+                                    icon = Assets.`Trash-solid`,
+                                    backgroundColor = Color(220, 20, 60),
+                                    action = { sm.deleteCustomList(customList, index) }
+                                )
                             )
-                            Text(
-                                "Manga: ${customList.mangaIds.size}",
-                                fontWeight = FontWeight.Medium
-                            )
+                            Swipeable(
+                                actions = actions,
+                                oppositeSwipe = { dragAmount ->
+                                    if (dragAmount > 30) nav.pop()
+                                },
+                                pointerInput = {
+                                    scope.launch {
+                                        detectTapGestures {
+                                            sm.fetchManga(index)
+                                            launch { pagerState.animateScrollToPage(1) }
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .align(Alignment.CenterStart)
+                                        .padding(16.dp)
+                                ) {
+                                    Column(
+                                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+                                        modifier = Modifier.fillMaxHeight()
+                                    ) {
+                                        val visibility = customList.data.attributes.visibility
+                                        Text(
+                                            visibility.replaceFirstChar { c -> c.uppercaseChar() },
+                                            fontWeight = FontWeight.Medium,
+                                            color = if (visibility == "private") Color.Red
+                                            else Color.Green
+                                        )
+                                        Text(
+                                            "Manga: ${customList.mangaIds.size}",
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color.White
+                                        )
+                                    }
+                                    Text(
+                                        customList.data.attributes.name,
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color.White,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(16.dp)
+                                    )
+                                }
+                            }
                         }
-                        Text(
-                            customList.data.attributes.name,
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.White,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .padding(end = 16.dp, top = 16.dp, bottom = 16.dp)
-                        )
                     }
+                    TopBar()
+                    AddCustomList(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 16.dp, bottom = 24.dp)
+                            .clickable { sm.showAddPrompt = true }
+                    )
                 }
+                1 -> MangaList(sm)
             }
+        }
+    }
+
+    @Composable
+    private fun MangaList(
+        sm: CustomListScreenModel,
+        modifier: Modifier = Modifier
+    ) {
+        val index = sm.selectedCustomListIndex
+        val customList = sm.sharedViewModel.customListSession.data[index]
+        val nav = LocalNavigator.currentOrThrow
+        val data = sm.sharedViewModel.customListSession.data[index].manga
+        BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+            if (customList.mangaIds.isNotEmpty())
+                if (data.isNotEmpty()) LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    contentPadding = PaddingValues(top = APP_BAR_HEIGHT + 8.dp),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                ) {
+                    items(sm.sharedViewModel.customListSession.data[index].manga.size) {
+                        val manga = data[it]
+                        MangaDisplay(
+                            manga = manga,
+                            parentHeight = maxHeight,
+                            onPainterLoaded = { p -> sm.sharedViewModel.updateCustomListMangaPainter(sm.selectedCustomListIndex, it, p) }
+                        ) { sm.navigateToDetail(nav, manga) }
+                    }
+                } else LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
+                    Text("Loading list...", color = Color.White)
+                } else EmptyList(message = "No manga found", modifier = Modifier.align(Alignment.Center))
+            TopBar(customList.data.attributes.name)
         }
     }
 
@@ -280,9 +378,12 @@ class CustomListScreen : Screen {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(32.dp)
+                    .clip(RoundedCornerShape(
+                        bottomStart = 16.dp,
+                        bottomEnd = 16.dp,
+                    ))
                     .background(MaterialTheme.colors.background)
-                    .padding(16.dp)
+                    .padding(40.dp)
             ) {
                 Text(
                     "Add new list",
@@ -293,6 +394,7 @@ class CustomListScreen : Screen {
                     value = value,
                     onValueChange = onValueChange,
                     maxLines = 1,
+                    singleLine = true,
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester)

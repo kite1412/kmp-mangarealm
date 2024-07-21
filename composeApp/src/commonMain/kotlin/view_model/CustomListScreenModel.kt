@@ -10,19 +10,22 @@ import api.mangadex.model.request.Visibility
 import api.mangadex.model.response.EntityResponse
 import api.mangadex.model.response.attribute.CustomListAttributes
 import api.mangadex.service.MangaDex
+import api.mangadex.util.generateArrayQueryParam
+import api.mangadex.util.generateQuery
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.CustomList
 import model.toCustomList
+import model.toMangaList
 import util.WARNING_TIME
 import util.retry
 
 class CustomListScreenModel(
-    val sharedViewModel: SharedViewModel,
+    override val sharedViewModel: SharedViewModel,
     private val mangaDex: MangaDex = Libs.mangaDex
-) : ScreenModel {
+) : ScreenModel, DetailNavigator {
     var showPopNotice by mutableStateOf(false)
     var showWarning by mutableStateOf(false)
     var showUpdateLoading by mutableStateOf(false)
@@ -32,6 +35,7 @@ class CustomListScreenModel(
     var textFieldValue by mutableStateOf("")
     var visibility by mutableStateOf(Visibility.PRIVATE)
     var showAddPrompt by mutableStateOf(false)
+    var selectedCustomListIndex = 0
 
     init {
         sharedViewModel.beginSession()
@@ -57,6 +61,8 @@ class CustomListScreenModel(
 
     private fun dismissLoading(action: () -> Unit) {
         showUpdateLoading = false
+        textFieldValue = ""
+        visibility = Visibility.PRIVATE
         action()
     }
 
@@ -114,6 +120,27 @@ class CustomListScreenModel(
                 sharedViewModel.customListSession.data.add(res.data!!.toCustomList())
                 dismissAddPrompt("List added")
             } else dismissAddPrompt("Failed to add list")
+        }
+    }
+
+    fun fetchManga(index: Int) {
+        selectedCustomListIndex = index
+        screenModelScope.launch {
+            val customList = sharedViewModel.customListSession.data[index]
+            if (customList.mangaIds.size > 0 && customList.manga.isEmpty()) {
+                val res = retry(
+                    count = 3,
+                    predicate = { it == null || it.errors != null }
+                ) {
+                    val ids = generateArrayQueryParam("ids[]", customList.mangaIds)
+                    val includes = generateQuery(mapOf("includes[]" to "cover_art"), ids)
+                    mangaDex.getManga(includes)
+                }
+                if (res != null) {
+                    val data = res.toMangaList()
+                    sharedViewModel.updateCustomListManga(index, data)
+                }
+            }
         }
     }
 }
