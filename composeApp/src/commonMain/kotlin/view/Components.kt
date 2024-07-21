@@ -771,7 +771,7 @@ fun Swipeable(
     oppositeSwipe: ((Float) -> Unit)? = null,
     pointerInput: (suspend PointerInputScope.() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.(Modifier) -> Unit
 ) {
     Box(
         modifier = modifier
@@ -806,13 +806,10 @@ fun Swipeable(
         val density = LocalDensity.current
         val screenSize = LocalScreenSize.current
         var show by remember { mutableStateOf(false) }
-        Box(
-            modifier = Modifier
+        content(
+            Modifier
                 .offset(x = offsetAnimated)
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colors.onBackground)
                 .clickable {  }
                 .pointerInput(true) {
                     pointerInput?.invoke(this)
@@ -834,9 +831,7 @@ fun Swipeable(
                             else oppositeSwipe?.invoke(dragAmount)
                     }
                 }
-        ) {
-            content()
-        }
+        )
     }
 }
 

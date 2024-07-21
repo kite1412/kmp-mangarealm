@@ -60,10 +60,12 @@ import androidx.compose.ui.unit.sp
 import api.mangadex.model.request.Visibility
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.CustomListAttributes
+import assets.Books
 import assets.`Box-open`
 import assets.Cross
 import assets.`Trash-solid`
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
+import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -83,7 +85,7 @@ import view_model.CustomListScreenModel
 import view_model.main.bottomBarTotalHeight
 
 class CustomListScreen : Screen {
-    @OptIn(ExperimentalVoyagerApi::class)
+    @OptIn(ExperimentalVoyagerApi::class, InternalVoyagerApi::class)
     @Composable
     override fun Content() {
         val sharedViewModel = LocalSharedViewModel.current
@@ -274,41 +276,56 @@ class CustomListScreen : Screen {
                                     }
                                 },
                                 modifier = Modifier.padding(bottom = 8.dp)
-                            ) {
-                                Row(
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
+                            ) { m ->
+                                Box(
+                                    modifier = m
+                                        .padding(horizontal = 8.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colors.onBackground)
                                         .align(Alignment.CenterStart)
-                                        .padding(16.dp)
                                 ) {
-                                    Column(
-                                        verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
-                                        modifier = Modifier.fillMaxHeight()
+                                    Icon(
+                                        imageVector = Assets.Books,
+                                        contentDescription = "edit",
+                                        tint = Color(0xFFA49376),
+                                        modifier = Modifier
+                                            .align(Alignment.TopEnd)
+                                            .size(90.dp)
+                                    )
+                                    Row(
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
                                     ) {
-                                        val visibility = customList.data.attributes.visibility
+                                        Column(
+                                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+                                            modifier = Modifier.fillMaxHeight()
+                                        ) {
+                                            val visibility = customList.data.attributes.visibility
+                                            Text(
+                                                visibility.replaceFirstChar { c -> c.uppercaseChar() },
+                                                fontWeight = FontWeight.Medium,
+                                                color = if (visibility == "private") Color.Red
+                                                else Color.Green
+                                            )
+                                            Text(
+                                                "Manga: ${customList.mangaIds.size}",
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.White
+                                            )
+                                        }
                                         Text(
-                                            visibility.replaceFirstChar { c -> c.uppercaseChar() },
-                                            fontWeight = FontWeight.Medium,
-                                            color = if (visibility == "private") Color.Red
-                                            else Color.Green
-                                        )
-                                        Text(
-                                            "Manga: ${customList.mangaIds.size}",
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color.White
+                                            customList.data.attributes.name,
+                                            fontSize = 22.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.White,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.padding(16.dp)
                                         )
                                     }
-                                    Text(
-                                        customList.data.attributes.name,
-                                        fontSize = 22.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color.White,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier.padding(16.dp)
-                                    )
                                 }
                             }
                         }
