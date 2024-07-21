@@ -5,6 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
+import api.mangadex.model.request.CreateCustomList
+import api.mangadex.model.request.Visibility
+import api.mangadex.model.response.EntityResponse
+import api.mangadex.model.response.attribute.CustomListAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import cafe.adriel.voyager.core.model.ScreenModel
@@ -27,7 +31,10 @@ class CustomListScreenModel(
     var showUpdateLoading by mutableStateOf(false)
     var loadingMessage = ""
     var warningMessage = ""
-    var deleteCount = 0
+    private var deleteCount = 0
+    var textFieldValue by mutableStateOf("")
+    var visibility by mutableStateOf(Visibility.PRIVATE)
+    var showAddPrompt by mutableStateOf(false)
 
     init {
         beginSession()
@@ -75,6 +82,11 @@ class CustomListScreenModel(
         showUpdateLoading = true
     }
 
+    private fun dismissLoading(action: () -> Unit) {
+        showUpdateLoading = false
+        action()
+    }
+
     fun deleteCustomList(customList: CustomList, index: Int) {
         sharedViewModel.viewModelScope.launch {
             showUpdateLoading("Deleting list...")
@@ -89,12 +101,46 @@ class CustomListScreenModel(
                     sharedViewModel.customListSession.data[index].copy(deleted = true)
                 launch { showWarning("List deleted") }
                 deleteCount++
-                if (deleteCount == sharedViewModel.customListSession.data.size)
+                if (deleteCount == sharedViewModel.customListSession.data.size) {
+                    deleteCount = 0
                     sharedViewModel.deleteDeletedCustomList()
+                }
             } else {
                 launch { showWarning("Failed to delete list") }
             }
-            showUpdateLoading = false
+            dismissLoading {}
+        }
+    }
+
+    suspend fun dismissAddPrompt(message: String) {
+        dismissLoading {
+            showAddPrompt = false
+            textFieldValue = ""
+            visibility = Visibility.PRIVATE
+        }
+        showWarning(message)
+    }
+
+    fun onAdd() {
+        screenModelScope.launch {
+            showUpdateLoading("Adding list...")
+            val res = retry<EntityResponse<CustomListAttributes>?>(
+                count = 3,
+                predicate = { it == null || it.errors != null }
+            ) {
+                mangaDex.createCustomList(CreateCustomList(
+                    name = textFieldValue,
+                    visibility = visibility
+                ))
+            }
+            dismissLoading {
+                textFieldValue = ""
+                visibility = Visibility.PRIVATE
+            }
+            if (res != null) {
+                sharedViewModel.customListSession.data.add(res.data!!.toCustomList())
+                dismissAddPrompt("List added")
+            } else dismissAddPrompt("Failed to add list")
         }
     }
 }
