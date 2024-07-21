@@ -10,14 +10,11 @@ import api.mangadex.model.request.Visibility
 import api.mangadex.model.response.EntityResponse
 import api.mangadex.model.response.attribute.CustomListAttributes
 import api.mangadex.service.MangaDex
-import api.mangadex.util.generateQuery
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.CustomList
-import model.session.CustomListSession
-import model.session.isEmpty
 import model.toCustomList
 import util.WARNING_TIME
 import util.retry
@@ -37,36 +34,12 @@ class CustomListScreenModel(
     var showAddPrompt by mutableStateOf(false)
 
     init {
-        beginSession()
+        sharedViewModel.beginSession()
     }
 
     override fun onDispose() {
         sharedViewModel.viewModelScope.launch {
             sharedViewModel.deleteDeletedCustomList()
-        }
-    }
-
-    private fun beginSession() {
-        screenModelScope.launch {
-            val session = sharedViewModel.customListSession
-            if (session.isEmpty()) {
-                sharedViewModel.customListSession.init(session.queries)
-                val res = retry(
-                    count = 3,
-                    predicate = { it == null || it.errors != null }
-                ) {
-                    mangaDex.getUserCustomLists(generateQuery(session.queries))
-                }
-                if (res != null) {
-                    val new = CustomListSession().apply {
-                        setActive(
-                            response = res,
-                            data = res.data.map { it.toCustomList() }
-                        )
-                    }
-                    sharedViewModel.updateCustomListSession(new)
-                }
-            }
         }
     }
 
@@ -112,7 +85,7 @@ class CustomListScreenModel(
         }
     }
 
-    suspend fun dismissAddPrompt(message: String) {
+    private suspend fun dismissAddPrompt(message: String) {
         dismissLoading {
             showAddPrompt = false
             textFieldValue = ""

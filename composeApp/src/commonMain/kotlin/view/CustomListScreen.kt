@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -211,17 +212,41 @@ class CustomListScreen : Screen {
                     },
                     modifier = Modifier.padding(bottom = 8.dp)
                 ) {
-                    Text(
-                        customList.data.attributes.name,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(32.dp)
-                    )
+                            .fillMaxWidth()
+                            .align(Alignment.CenterStart)
+                            .padding(16.dp)
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+                            modifier = Modifier.fillMaxHeight()
+                        ) {
+                            val visibility = customList.data.attributes.visibility
+                            Text(
+                                visibility.replaceFirstChar { c -> c.uppercaseChar() },
+                                fontWeight = FontWeight.Medium,
+                                color = if (visibility == "private") Color.Red
+                                    else Color.Green
+                            )
+                            Text(
+                                "Manga: ${customList.mangaIds.size}",
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        Text(
+                            customList.data.attributes.name,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .padding(end = 16.dp, top = 16.dp, bottom = 16.dp)
+                        )
+                    }
                 }
             }
         }
