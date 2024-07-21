@@ -267,14 +267,6 @@ class CustomListScreen : Screen {
                                 oppositeSwipe = { dragAmount ->
                                     if (dragAmount > 30) nav.pop()
                                 },
-                                pointerInput = {
-                                    scope.launch {
-                                        detectTapGestures {
-                                            sm.fetchManga(index)
-                                            launch { pagerState.animateScrollToPage(1) }
-                                        }
-                                    }
-                                },
                                 modifier = Modifier.padding(bottom = 8.dp)
                             ) { m ->
                                 Box(
@@ -283,6 +275,12 @@ class CustomListScreen : Screen {
                                         .clip(RoundedCornerShape(8.dp))
                                         .background(MaterialTheme.colors.onBackground)
                                         .align(Alignment.CenterStart)
+                                        .clickable {
+                                            scope.launch {
+                                                sm.fetchManga(index)
+                                                pagerState.animateScrollToPage(1)
+                                            }
+                                        }
                                 ) {
                                     Icon(
                                         imageVector = Assets.Books,
@@ -353,7 +351,7 @@ class CustomListScreen : Screen {
         val index = sm.selectedCustomListIndex
         val customList = sm.sharedViewModel.customListSession.data[index]
         val nav = LocalNavigator.currentOrThrow
-        val data = sm.sharedViewModel.customListSession.data[index].manga
+        val data = customList.manga
         val scope = rememberCoroutineScope()
         BoxWithConstraints(
             modifier = modifier
@@ -368,7 +366,7 @@ class CustomListScreen : Screen {
                         .fillMaxSize()
                         .padding(8.dp)
                 ) {
-                    items(sm.sharedViewModel.customListSession.data[index].manga.size) {
+                    items(data.size) {
                         val manga = data[it]
                         MangaDisplay(
                             manga = manga,
