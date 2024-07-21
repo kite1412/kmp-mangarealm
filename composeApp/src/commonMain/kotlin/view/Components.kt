@@ -65,7 +65,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -769,7 +768,6 @@ fun PopNotice(
 fun Swipeable(
     actions: List<SwipeAction>,
     oppositeSwipe: ((Float) -> Unit)? = null,
-    pointerInput: (suspend PointerInputScope.() -> Unit)? = null,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.(Modifier) -> Unit
 ) {
@@ -812,7 +810,6 @@ fun Swipeable(
                 .fillMaxWidth()
                 .clickable {  }
                 .pointerInput(true) {
-                    pointerInput?.invoke(this)
                     detectHorizontalDragGestures(
                         onDragEnd = {
                             val maxOffset = -(screenSize.width / 2)

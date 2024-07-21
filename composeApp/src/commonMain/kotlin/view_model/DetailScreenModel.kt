@@ -37,6 +37,7 @@ class DetailScreenModel(
     var showWarning by mutableStateOf(false)
     var warning = ""
     var showPopNotice by mutableStateOf(false)
+    var showAddToList by mutableStateOf(false)
 
     init {
         status = manga.status
@@ -108,7 +109,7 @@ class DetailScreenModel(
     }
 
     fun onAddToList() {
-
+        showAddToList = true
     }
 
     fun onStatus() {

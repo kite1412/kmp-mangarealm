@@ -5,13 +5,17 @@ import LocalScreenSize
 import LocalSharedViewModel
 import SharedObject
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -38,6 +42,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +54,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
@@ -144,6 +151,7 @@ class DetailScreen : Screen {
                     modifier = Modifier.align(Alignment.CenterStart)
                 )
                 if (sm.showUpdateStatus) UpdateStatus(sm)
+                AddToList(sm)
                 Warning(
                     message = sm.warning,
                     height = aboveBottomBar,
@@ -281,7 +289,7 @@ class DetailScreen : Screen {
                     }
                 }
                 Action(
-                    onClick = {},
+                    onClick = { sm.onAddToList() },
                     fill = false,
                     verticalPadding = 2.dp,
                     modifier = Modifier
@@ -633,5 +641,53 @@ class DetailScreen : Screen {
                 .then(outer)
                 .padding(horizontal = 12.dp, vertical = 10.dp)
         )
+    }
+
+    @Composable
+    private fun AddToList(
+        sm: DetailScreenModel,
+        modifier: Modifier = Modifier
+    ) {
+        val screenSize = LocalScreenSize.current
+        val offset by animateDpAsState(
+            targetValue = if (sm.showAddToList) 0.dp else screenSize.height,
+            animationSpec = spring(stiffness = Spring.StiffnessHigh)
+        )
+        BoxWithConstraints(
+            modifier = modifier
+                .offset(y = offset)
+                .fillMaxSize()
+                .background(Color.Transparent)
+                .clickable { sm.showAddToList = false }
+        ) {
+            Box(
+                modifier = modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(maxHeight / 2)
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                    .background(MaterialTheme.colors.onBackground)
+                    .padding(16.dp)
+            ) {
+                Text(
+                    "Add to your list",
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 20.sp,
+                    maxLines = 1,
+                    textAlign = TextAlign.Center,
+                    overflow = TextOverflow.Clip,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .height(APP_BAR_HEIGHT)
+                        .fillMaxWidth()
+                )
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    modifier = Modifier.fillMaxSize()
+                ) {
+
+                }
+            }
+        }
     }
 }
