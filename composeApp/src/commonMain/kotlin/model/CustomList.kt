@@ -8,7 +8,7 @@ import api.mangadex.model.response.attribute.CustomListAttributes
 data class CustomList(
     val data: Data<CustomListAttributes>,
     val mangaIds: MutableList<String>,
-    val manga: SnapshotStateList<String>,
+    val manga: SnapshotStateList<Manga>,
     val deleted: Boolean
 )
 

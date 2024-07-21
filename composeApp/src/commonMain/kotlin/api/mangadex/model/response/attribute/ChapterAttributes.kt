@@ -1,6 +1,5 @@
 package api.mangadex.model.response.attribute
 
-import api.mangadex.model.response.Data
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -18,16 +17,3 @@ data class ChapterAttributes(
     val publishAt: String,
     val readableAt: String,
 )
-
-fun emptyChapterAttributes(): ChapterAttributes = ChapterAttributes(
-    pages = 0,
-    translatedLanguage = "",
-    uploader = "",
-    version = 0,
-    createdAt = "",
-    updatedAt = "",
-    publishAt = "",
-    readableAt =""
-)
-
-fun emptyChapter(): Data<ChapterAttributes> = Data(attributes = emptyChapterAttributes())

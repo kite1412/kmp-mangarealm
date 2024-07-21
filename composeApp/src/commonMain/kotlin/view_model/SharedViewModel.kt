@@ -80,6 +80,17 @@ class SharedViewModel(
         customListSession.clearFrom(new) as CustomListSession
 
     fun deleteDeletedCustomList() = customListSession.data.removeAll { it.deleted }
+
+    fun updateCustomListManga(index: Int, manga: List<Manga>) {
+        viewModelScope.launch {
+            customListSession.data[index].manga.addAll(manga)
+        }
+    }
+
+    fun updateCustomListMangaPainter(customListIndex: Int, mangaIndex: Int, painter: Painter) {
+        customListSession.data[customListIndex].manga[mangaIndex] =
+            customListSession.data[customListIndex].manga[mangaIndex].copy(painter = painter)
+    }
 }
 
 fun SnapshotStateList<Manga>.removeManga(manga: Manga) {
