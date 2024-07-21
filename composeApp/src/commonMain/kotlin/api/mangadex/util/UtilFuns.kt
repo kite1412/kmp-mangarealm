@@ -8,6 +8,7 @@ import api.mangadex.model.request.ImageQuality
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.HomeUrl
 import api.mangadex.model.response.attribute.MangaAttributes
+import util.Log
 
 fun generateArrayQueryParam(name: String, values: List<Any>): String {
     if (values.isNotEmpty()) {
@@ -77,6 +78,7 @@ fun getCoverUrl(manga: Data<MangaAttributes>): String {
             break
         }
     }
+    if (filename.isEmpty()) Log.w("filename not found for: ${manga.id}")
     return getCoverUrl(id, filename)
 }
 
