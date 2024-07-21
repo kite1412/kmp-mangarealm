@@ -767,6 +767,7 @@ fun PopNotice(
 @Composable
 fun Swipeable(
     actions: List<SwipeAction>,
+    oppositeSwipe: ((Float) -> Unit)? = null,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -775,6 +776,7 @@ fun Swipeable(
             .fillMaxWidth()
             .height(IntrinsicSize.Max)
     ) {
+        val fixed = actions.take(4)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -784,7 +786,6 @@ fun Swipeable(
                 .clip(RoundedCornerShape(8.dp))
         ) {
             val actionWeight = 0.25f
-            val fixed = actions.take(4)
             if (fixed.isNotEmpty()) Box(
                 modifier = Modifier
                     .fillMaxHeight()
@@ -827,6 +828,7 @@ fun Swipeable(
                         if (dragAmount < 0) with(density) {
                             offset += dragAmount.toDp()
                         } else if (offset < 0.dp) offset += dragAmount.toDp()
+                            else oppositeSwipe?.invoke(dragAmount)
                     }
                 }
         ) {
