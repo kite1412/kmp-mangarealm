@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,11 +22,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.RadioButton
@@ -48,6 +53,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,6 +61,7 @@ import api.mangadex.model.request.Visibility
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.CustomListAttributes
 import assets.`Box-open`
+import assets.Cross
 import assets.`Trash-solid`
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
@@ -93,9 +100,7 @@ class CustomListScreen : Screen {
         }
         undoEdgeToEdge()
         Scaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .swipeToPop(nav)
+            modifier = Modifier.fillMaxSize()
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Box(
@@ -142,7 +147,8 @@ class CustomListScreen : Screen {
     @Composable
     private fun TopBar(
         title: String = "My List",
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        action: @Composable BoxScope.() -> Unit = {}
     ) {
         Box(
             modifier = modifier
@@ -158,6 +164,7 @@ class CustomListScreen : Screen {
                 overflow = TextOverflow.Clip,
                 modifier = Modifier.align(Alignment.Center)
             )
+            action()
         }
     }
 
@@ -233,7 +240,9 @@ class CustomListScreen : Screen {
                         session = sm.sharedViewModel.customListSession,
                         handler = CustomListSessionHandler(sm.sharedViewModel.customListSession),
                         contentPadding = PaddingValues(top = APP_BAR_HEIGHT + 8.dp, bottom = bottomBarTotalHeight),
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .swipeToPop(nav)
                     ) { index ->
                         val customList = customLists[index]
                         AnimatedVisibility(visible = !customList.deleted) {
@@ -312,21 +321,28 @@ class CustomListScreen : Screen {
                             .clickable { sm.showAddPrompt = true }
                     )
                 }
-                1 -> MangaList(sm)
+                1 -> MangaList(sm, pagerState)
             }
         }
     }
 
+    @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun MangaList(
         sm: CustomListScreenModel,
+        pagerState: PagerState,
         modifier: Modifier = Modifier
     ) {
         val index = sm.selectedCustomListIndex
         val customList = sm.sharedViewModel.customListSession.data[index]
         val nav = LocalNavigator.currentOrThrow
         val data = sm.sharedViewModel.customListSession.data[index].manga
-        BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val scope = rememberCoroutineScope()
+        BoxWithConstraints(
+            modifier = modifier
+                .fillMaxSize()
+                .swipeToPop { scope.launch { pagerState.animateScrollToPage(0) } }
+        ) {
             if (customList.mangaIds.isNotEmpty())
                 if (data.isNotEmpty()) LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -346,7 +362,23 @@ class CustomListScreen : Screen {
                 } else LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
                     Text("Loading list...", color = Color.White)
                 } else EmptyList(message = "No manga found", modifier = Modifier.align(Alignment.Center))
-            TopBar(customList.data.attributes.name)
+            TopBar(customList.data.attributes.name) {
+                IconButton(
+                    onClick = {
+                        scope.launch { pagerState.animateScrollToPage(0) }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .padding(start = 12.dp)
+                ) {
+                    Icon(
+                        imageVector = Assets.Cross,
+                        contentDescription = "back",
+                        tint = Color.Black,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+            }
         }
     }
 
@@ -362,6 +394,11 @@ class CustomListScreen : Screen {
     ) {
         val keyboardController = LocalSoftwareKeyboardController.current
         val focusRequester = remember { FocusRequester() }
+        val onAddWrapper = {
+            focusRequester.freeFocus()
+            keyboardController?.hide()
+            onAdd()
+        }
         SideEffect {
             focusRequester.requestFocus()
             keyboardController?.show()
@@ -395,6 +432,10 @@ class CustomListScreen : Screen {
                     onValueChange = onValueChange,
                     maxLines = 1,
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(
+                        onSend = { if (value.isNotEmpty()) onAddWrapper() }
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester)
@@ -417,11 +458,7 @@ class CustomListScreen : Screen {
                         action = "Add",
                         color = MaterialTheme.colors.secondary,
                         enabled = value.isNotEmpty(),
-                        onClick = {
-                            focusRequester.freeFocus()
-                            keyboardController?.hide()
-                            onAdd()
-                        }
+                        onClick = onAddWrapper
                     )
                 }
             }
