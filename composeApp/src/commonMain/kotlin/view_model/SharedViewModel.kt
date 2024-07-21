@@ -1,15 +1,26 @@
 package view_model
 
+import Libs
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import api.mangadex.service.MangaDex
+import api.mangadex.util.generateQuery
+import kotlinx.coroutines.launch
 import model.Manga
 import model.MangaStatus
 import model.Status
+import model.getMangaIds
 import model.session.CustomListSession
+import model.session.isEmpty
+import model.toCustomList
+import util.retry
 
-class SharedViewModel : ViewModel() {
+class SharedViewModel(
+    private val mangaDex: MangaDex = Libs.mangaDex,
+) : ViewModel() {
     val mangaStatus = mutableMapOf<Status, SnapshotStateList<Manga>>()
     val customListSession = CustomListSession()
 
@@ -38,7 +49,34 @@ class SharedViewModel : ViewModel() {
         mangaStatus[MangaStatus.All]!!.add(manga)
     }
 
-    fun updateCustomListSession(new: CustomListSession): CustomListSession =
+    fun beginSession() {
+        viewModelScope.launch {
+            if (customListSession.isEmpty()) {
+                customListSession.init(customListSession.queries)
+                val res = retry(
+                    count = 3,
+                    predicate = { it == null || it.errors != null }
+                ) {
+                    mangaDex.getUserCustomLists(generateQuery(customListSession.queries))
+                }
+                if (res != null) {
+                    val new = CustomListSession().apply {
+                        setActive(
+                            response = res,
+                            data = res.data.map { it.toCustomList() }
+                                .map {
+                                    it.mangaIds.addAll(it.data.getMangaIds())
+                                    it
+                                }
+                        )
+                    }
+                    updateCustomListSession(new)
+                }
+            }
+        }
+    }
+
+    private fun updateCustomListSession(new: CustomListSession): CustomListSession =
         customListSession.clearFrom(new) as CustomListSession
 
     fun deleteDeletedCustomList() = customListSession.data.removeAll { it.deleted }
