@@ -22,7 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.Chapters
 import util.ASCENDING
-import util.Log
+import util.retry
 
 class ChapterScreenModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
@@ -95,7 +95,6 @@ class ChapterScreenModel(
     private fun initLanguages() {
         manga.data.attributes.availableTranslatedLanguages.forEach {
             if (it != null) availableLanguages.add(it)
-            Log.w(it.toString())
         }
         setLanguageOrder(availableLanguages)
     }
@@ -105,10 +104,15 @@ class ChapterScreenModel(
         if (loadedChapters == null) {
             showLoading = true
             screenModelScope.launch {
-                mangaDex.getMangaChapters(
-                    mangaId = mangaId,
-                    queries = queries(language, order)
-                )?.let { response ->
+                retry(
+                    count = 3,
+                    predicate = { it == null || it.errors != null }
+                ){
+                    mangaDex.getMangaChapters(
+                        mangaId = mangaId,
+                        queries = queries(language, order)
+                    )
+                }?.let { response ->
                     chapters.addAll(response.data)
                     cache.chapters[mangaId] = Chapters(
                         language = language,
@@ -144,7 +148,12 @@ class ChapterScreenModel(
         if (loadedChapters().size < nextSize) {
             showLoading = true
             screenModelScope.launch {
-                mangaDex.paging.chapters(loadedChapters.response, queries(language, order))?.let {
+                retry(
+                    count = 3,
+                    predicate = { it == null || it.errors != null }
+                ) {
+                    mangaDex.paging.chapters(loadedChapters.response, queries(language, order))
+                }?.let{
                     val chapters = it.data
                     cache.chapters[mangaId]!!.response = it
                     cache.chapters[mangaId]!!().addAll(chapters)
