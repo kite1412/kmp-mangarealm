@@ -38,7 +38,7 @@ class CustomListScreenModel(
     var selectedCustomListIndex = 0
 
     init {
-        sharedViewModel.beginSession()
+        sharedViewModel.beginCustomListSession()
     }
 
     override fun onDispose() {

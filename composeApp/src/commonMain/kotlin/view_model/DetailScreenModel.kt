@@ -4,6 +4,7 @@ import Cache
 import Libs
 import SharedObject
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import api.mangadex.service.MangaDex
@@ -15,8 +16,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.ChapterList
 import model.Chapters
+import model.CustomList
 import model.MangaStatus
 import model.Status
+import model.session.isEmpty
 import util.ASCENDING
 import util.StatusUpdater
 import util.WARNING_TIME
@@ -38,6 +41,7 @@ class DetailScreenModel(
     var warning = ""
     var showPopNotice by mutableStateOf(false)
     var showAddToList by mutableStateOf(false)
+    val checkedCustomList = mutableStateListOf<CustomList>()
 
     init {
         status = manga.status
@@ -110,6 +114,7 @@ class DetailScreenModel(
 
     fun onAddToList() {
         showAddToList = true
+        if (sharedViewModel.customListSession.isEmpty()) sharedViewModel.beginCustomListSession()
     }
 
     fun onStatus() {
@@ -132,5 +137,9 @@ class DetailScreenModel(
                 showWarning("Failed to update status")
             }
         }
+    }
+
+    fun onCustomListClick(customList: CustomList) {
+
     }
 }

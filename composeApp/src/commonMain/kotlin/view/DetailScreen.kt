@@ -15,7 +15,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -34,7 +33,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.Checkbox
+import androidx.compose.material.CheckboxDefaults
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -43,6 +45,9 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,7 +59,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -81,8 +85,10 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.internal.BackHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import model.CustomList
 import model.MangaStatus
 import model.Status
+import model.session.SessionState
 import util.APP_BAR_HEIGHT
 import util.edgeToEdge
 import util.popNoticeDuration
@@ -653,41 +659,103 @@ class DetailScreen : Screen {
             targetValue = if (sm.showAddToList) 0.dp else screenSize.height,
             animationSpec = spring(stiffness = Spring.StiffnessHigh)
         )
-        BoxWithConstraints(
+        val customListSession = sm.sharedViewModel.customListSession
+        Column(
             modifier = modifier
                 .offset(y = offset)
                 .fillMaxSize()
                 .background(Color.Transparent)
-                .clickable { sm.showAddToList = false }
         ) {
             Box(
-                modifier = modifier
-                    .align(Alignment.BottomCenter)
+                modifier = Modifier
                     .fillMaxWidth()
-                    .height(maxHeight / 2)
+                    .weight(0.5f)
+                    .background(Color.Transparent)
+                    .clickable { sm.showAddToList = false }
+            )
+            Box(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .weight(0.5f)
                     .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                     .background(MaterialTheme.colors.onBackground)
                     .padding(16.dp)
             ) {
+                var titleHeight by remember { mutableStateOf(0.dp) }
+                val density = LocalDensity.current
                 Text(
                     "Add to your list",
                     fontWeight = FontWeight.Medium,
                     fontSize = 20.sp,
                     maxLines = 1,
-                    textAlign = TextAlign.Center,
                     overflow = TextOverflow.Clip,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .height(APP_BAR_HEIGHT)
-                        .fillMaxWidth()
+                    onTextLayout = {
+                        with(density) { titleHeight = it.size.height.toDp() }
+                    },
+                    modifier = Modifier.align(Alignment.TopCenter)
                 )
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(2.dp),
-                    modifier = Modifier.fillMaxSize()
-                ) {
-
+                Icon(
+                    imageVector = Assets.Cross,
+                    contentDescription = "cancel",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .clickable { sm.showAddToList = false }
+                )
+                when(customListSession.state.value) {
+                    SessionState.FETCHING -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                    SessionState.ACTIVE -> if (customListSession.data.isNotEmpty()) LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = titleHeight + 16.dp)
+                    ) {
+                        items(customListSession.data) { customList ->
+                            CustomList(
+                                customList = customList,
+                                selected = customList.manga.find { it.data.id == sm.manga.data.id } != null,
+                                onCheckedChange = sm::onCustomListClick
+                            )
+                        }
+                    } else EmptyList("You have no list")
+                    else -> {}
                 }
             }
+        }
+    }
+
+    @Composable
+    private fun CustomList(
+        customList: CustomList,
+        selected: Boolean,
+        modifier: Modifier = Modifier,
+        onCheckedChange: (CustomList) -> Unit
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .background(MaterialTheme.colors.background)
+                .clickable { onCheckedChange(customList) }
+                .padding(8.dp)
+        ) {
+            Text(
+                customList.data.attributes.name,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp,
+                modifier = Modifier.weight(0.9f)
+            )
+            Checkbox(
+                checked = selected,
+                onCheckedChange = { onCheckedChange(customList) },
+                colors = CheckboxDefaults.colors(
+                    uncheckedColor = MaterialTheme.colors.onBackground.copy(alpha = 0.6f)
+                ),
+                modifier = Modifier.weight(0.1f)
+            )
         }
     }
 }

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
@@ -54,6 +55,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,7 +63,6 @@ import api.mangadex.model.request.Visibility
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.CustomListAttributes
 import assets.Books
-import assets.`Box-open`
 import assets.Cross
 import assets.`Trash-solid`
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
@@ -90,7 +91,6 @@ class CustomListScreen : Screen {
     override fun Content() {
         val sharedViewModel = LocalSharedViewModel.current
         val sm = rememberScreenModel { CustomListScreenModel(sharedViewModel) }
-        val nav = LocalNavigator.currentOrThrow
         val session = sm.sharedViewModel.customListSession
         LifecycleEffectOnce {
             val count = SharedObject.popNotifierCount--
@@ -152,7 +152,7 @@ class CustomListScreen : Screen {
         modifier: Modifier = Modifier,
         action: @Composable BoxScope.() -> Unit = {}
     ) {
-        Box(
+        BoxWithConstraints(
             modifier = modifier
                 .fillMaxWidth()
                 .height(APP_BAR_HEIGHT)
@@ -163,8 +163,11 @@ class CustomListScreen : Screen {
                 fontSize = 24.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
+                textAlign = TextAlign.Center,
                 overflow = TextOverflow.Clip,
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .width(maxWidth / 1.5f)
             )
             action()
         }
@@ -195,29 +198,6 @@ class CustomListScreen : Screen {
                     modifier = Modifier.size(32.dp)
                 )
             }
-        }
-    }
-
-    @Composable
-    private fun EmptyList(
-        message: String = "Your list is empty",
-        modifier: Modifier = Modifier
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = modifier
-        ) {
-            Icon(
-                imageVector = Assets.`Box-open`,
-                contentDescription = "Empty list",
-                modifier = Modifier.size(100.dp)
-            )
-            Text(
-                message,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 20.sp,
-                color = MaterialTheme.colors.onBackground
-            )
         }
     }
 
