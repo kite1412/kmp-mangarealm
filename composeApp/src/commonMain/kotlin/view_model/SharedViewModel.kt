@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import kotlinx.coroutines.launch
+import model.CustomList
 import model.Manga
 import model.MangaStatus
 import model.Status
@@ -91,6 +92,34 @@ class SharedViewModel(
         customListSession.data[customListIndex].manga[mangaIndex] =
             customListSession.data[customListIndex].manga[mangaIndex].copy(painter = painter)
     }
+
+    fun addCustomListManga(customList: CustomList, manga: Manga) {
+        viewModelScope.launch {
+            customList.manga.add(manga)
+            customList.mangaIds.add(manga.data.id)
+            retry(
+                count = 3,
+                predicate = { false }
+            ) {
+                mangaDex.addMangaToCustomList(manga.data.id, customList.data.id)
+            }.also {
+                if (!it) customList.manga.removeManga(manga)
+            }
+        }
+    }
+
+    fun removeCustomListManga(customList: CustomList, manga: Manga) {
+        viewModelScope.launch {
+            customList.manga.removeManga(manga)
+            customList.mangaIds.removeAll { it == manga.data.id }
+            retry(
+                count = 3,
+                predicate = { false }
+            ) {
+                mangaDex.removeMangaFromCustomList(manga.data.id, customList.data.id)
+            }.also { if (!it) customList.manga.add(manga) }
+        }
+    }
 }
 
 fun SnapshotStateList<Manga>.removeManga(manga: Manga) {
@@ -101,3 +130,5 @@ fun SnapshotStateList<Manga>.removeManga(manga: Manga) {
         }
     }
 }
+
+fun SnapshotStateList<Manga>.containsManga(manga: Manga): Boolean = any { it.data.id == manga.data.id }

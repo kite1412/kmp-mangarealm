@@ -96,8 +96,8 @@ class MangaDexImpl(
 
     private suspend inline fun <reified R> post(
         url: String,
-        body: Any,
         methodName: String,
+        body: Any? = null,
         auth: Boolean = true,
         headers: Map<String, String> = mapOf()
     ): R? {
@@ -110,7 +110,7 @@ class MangaDexImpl(
                         append(it.key, it.value)
                     }
                 }
-                setBody(body)
+                if (body != null) setBody(body)
             }.body<R>()
         } catch (e: Exception) {
             e.message?.let {
@@ -260,6 +260,22 @@ class MangaDexImpl(
         delete<SimpleResponse>(
             url = "${ApiConstant.CUSTOM_LIST_ACTION}/$customListId",
             methodName = "deleteCustomList"
+        ).run {
+            this != null && errors == null
+        }
+
+    override suspend fun addMangaToCustomList(mangaId: String, customListId: String): Boolean =
+        post<SimpleResponse?>(
+            url = ApiConstant.mangaToCustomList(mangaId, customListId),
+            methodName = "addMangaToCustomList"
+        ).run {
+            this != null && errors == null
+        }
+
+    override suspend fun removeMangaFromCustomList(mangaId: String, customListId: String): Boolean =
+        delete<SimpleResponse?>(
+            url = ApiConstant.mangaToCustomList(mangaId, customListId),
+            methodName = "removeMangaFromCustomList"
         ).run {
             this != null && errors == null
         }

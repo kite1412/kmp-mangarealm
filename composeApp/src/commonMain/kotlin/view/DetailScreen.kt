@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
@@ -671,7 +670,7 @@ class DetailScreen : Screen {
                     .fillMaxWidth()
                     .weight(0.5f)
                     .background(Color.Transparent)
-                    .clickable { sm.showAddToList = false }
+                    .clickable { sm.onAddToListDismiss() }
             )
             Box(
                 modifier = modifier
@@ -700,7 +699,7 @@ class DetailScreen : Screen {
                     tint = Color.Red,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .clickable { sm.showAddToList = false }
+                        .clickable { sm.onAddToListDismiss() }
                 )
                 when(customListSession.state.value) {
                     SessionState.FETCHING -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
@@ -710,10 +709,11 @@ class DetailScreen : Screen {
                             .fillMaxSize()
                             .padding(top = titleHeight + 16.dp)
                     ) {
-                        items(customListSession.data) { customList ->
+                        items(customListSession.data.size) {
+                            val customList = customListSession.data[it]
                             CustomList(
                                 customList = customList,
-                                selected = customList.manga.find { it.data.id == sm.manga.data.id } != null,
+                                selected = customList.mangaIds.contains(sm.manga.data.id),
                                 onCheckedChange = sm::onCustomListClick
                             )
                         }
@@ -736,8 +736,8 @@ class DetailScreen : Screen {
             modifier = modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colors.background)
                 .clickable { onCheckedChange(customList) }
+                .background(MaterialTheme.colors.background)
                 .padding(8.dp)
         ) {
             Text(

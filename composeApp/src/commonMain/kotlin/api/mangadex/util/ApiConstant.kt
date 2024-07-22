@@ -17,4 +17,7 @@ object ApiConstant {
     fun chapterImagesUrl(chapterId: String): String = "$MANGADEX_HOME/$chapterId"
 
     fun updateMangaStatus(mangaId: String): String = "$MANGA_ENDPOINT/$mangaId/status"
+
+    fun mangaToCustomList(mangaId: String, customListId: String): String =
+        "$MANGA_ENDPOINT/$mangaId/list/$customListId"
 }

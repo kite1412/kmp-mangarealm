@@ -42,6 +42,10 @@ interface MangaDex {
 
     suspend fun deleteCustomList(customListId: String): Boolean
 
+    suspend fun addMangaToCustomList(mangaId: String, customListId: String): Boolean
+
+    suspend fun removeMangaFromCustomList(mangaId: String, customListId: String): Boolean
+
     interface Paging {
         fun <R> nextPageExists(r: ListResponse<R>): Boolean =
             r.offset < r.total
