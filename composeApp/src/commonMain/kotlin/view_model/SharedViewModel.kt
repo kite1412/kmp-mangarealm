@@ -49,7 +49,7 @@ class SharedViewModel(
         mangaStatus[MangaStatus.All]!!.add(manga)
     }
 
-    fun beginSession() {
+    fun beginCustomListSession() {
         viewModelScope.launch {
             if (customListSession.isEmpty()) {
                 customListSession.init(customListSession.queries)

@@ -81,6 +81,7 @@ import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
 import api.mangadex.util.getTagList
 import api.mangadex.util.getTitle
+import assets.`Box-open`
 import assets.`Chevron-right`
 import com.seiko.imageloader.model.ImageAction
 import com.seiko.imageloader.model.ImageRequest
@@ -850,6 +851,29 @@ private fun SwipeableAction(
             modifier = Modifier
                 .size(32.dp)
                 .align(Alignment.Center)
+        )
+    }
+}
+
+@Composable
+fun EmptyList(
+    message: String = "Your list is empty",
+    modifier: Modifier = Modifier
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+    ) {
+        Icon(
+            imageVector = Assets.`Box-open`,
+            contentDescription = "Empty list",
+            modifier = Modifier.size(100.dp)
+        )
+        Text(
+            message,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 20.sp,
+            color = MaterialTheme.colors.onBackground
         )
     }
 }
