@@ -50,6 +50,8 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -875,5 +877,33 @@ fun EmptyList(
             fontSize = 20.sp,
             color = MaterialTheme.colors.onBackground
         )
+    }
+}
+
+@Composable
+fun AddCustomList(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colors.secondary)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Text(
+                "Add new list",
+                color = Color.White,
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp
+            )
+            Icon(
+                imageVector = Icons.Rounded.Add,
+                contentDescription = "add new list",
+                tint = Color.White,
+                modifier = Modifier.size(32.dp)
+            )
+        }
     }
 }

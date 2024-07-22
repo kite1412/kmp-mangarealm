@@ -138,7 +138,7 @@ class CustomListScreenModel(
                 }
                 if (res != null) {
                     val data = res.toMangaList()
-                    sharedViewModel.updateCustomListManga(index, data)
+                    sharedViewModel.updateCustomListManga(customList, data)
                 }
             }
         }
