@@ -26,7 +26,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -39,7 +38,6 @@ import androidx.compose.material.RadioButtonDefaults
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -112,8 +110,7 @@ class CustomListScreen : Screen {
                         SessionState.FETCHING -> LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
                             Text("Loading...", color = Color.White)
                         }
-                        SessionState.ACTIVE -> if (session.data.isNotEmpty()) CustomLists(sm)
-                        else EmptyList(modifier = Modifier.align(Alignment.Center))
+                        SessionState.ACTIVE -> CustomLists(sm)
                         else -> if (session.response != ListResponse<CustomListAttributes>() && session.data.isEmpty()) EmptyList(
                             modifier = Modifier.align(Alignment.Center)
                         )
@@ -173,34 +170,6 @@ class CustomListScreen : Screen {
         }
     }
 
-    @Composable
-    private fun AddCustomList(modifier: Modifier = Modifier) {
-        Box(
-            modifier = modifier
-                .clip(CircleShape)
-                .background(MaterialTheme.colors.secondary)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                Text(
-                    "Add new list",
-                    color = Color.White,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 16.sp
-                )
-                Icon(
-                    imageVector = Icons.Rounded.Add,
-                    contentDescription = "add new list",
-                    tint = Color.White,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-        }
-    }
-
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun CustomLists(
@@ -217,14 +186,13 @@ class CustomListScreen : Screen {
             modifier = modifier
         ) {
             when (it) {
-                0 -> Box {
-                    SessionPagerColumn(
+                0 -> Box(modifier = Modifier.fillMaxSize().swipeToPop(nav)) {
+                    if (sm.sharedViewModel.customListSession.data.isNotEmpty()) SessionPagerColumn(
                         session = sm.sharedViewModel.customListSession,
                         handler = CustomListSessionHandler(sm.sharedViewModel.customListSession),
                         contentPadding = PaddingValues(top = APP_BAR_HEIGHT + 8.dp, bottom = bottomBarTotalHeight),
                         modifier = Modifier
                             .fillMaxSize()
-                            .swipeToPop(nav)
                     ) { index ->
                         val customList = customLists[index]
                         AnimatedVisibility(visible = !customList.deleted) {
@@ -307,7 +275,7 @@ class CustomListScreen : Screen {
                                 }
                             }
                         }
-                    }
+                    } else EmptyList(modifier = Modifier.align(Alignment.Center))
                     TopBar()
                     AddCustomList(
                         modifier = Modifier
@@ -351,7 +319,7 @@ class CustomListScreen : Screen {
                         MangaDisplay(
                             manga = manga,
                             parentHeight = maxHeight,
-                            onPainterLoaded = { p -> sm.sharedViewModel.updateCustomListMangaPainter(sm.selectedCustomListIndex, it, p) }
+                            onPainterLoaded = { p -> sm.sharedViewModel.updateCustomListMangaPainter(customList, it, p) }
                         ) { sm.navigateToDetail(nav, manga) }
                     }
                 } else LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {

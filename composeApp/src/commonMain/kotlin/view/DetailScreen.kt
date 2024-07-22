@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
@@ -669,9 +670,34 @@ class DetailScreen : Screen {
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.5f)
-                    .background(Color.Transparent)
                     .clickable { sm.onAddToListDismiss() }
-            )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 8.dp, bottom = 8.dp)
+                        .clip(CircleShape)
+                        .background(Color(11, 218, 81))
+                        .clickable {  }
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Assets.Cross,
+                        contentDescription = "create new list",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(13.dp)
+                            .rotate(45f)
+                    )
+                    Text(
+                        "New list",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
+            }
             Box(
                 modifier = modifier
                     .fillMaxWidth()
