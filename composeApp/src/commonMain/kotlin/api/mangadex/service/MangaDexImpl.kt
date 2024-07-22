@@ -282,10 +282,10 @@ class MangaDexImpl(
 
 
     private inner class Paging : MangaDex.Paging {
-        private suspend fun <R> nextPage(
+        private inline fun <R> nextPage(
             prevResponse: ListResponse<R>,
-            get: suspend (offset: Int) -> ListResponse<R>?
-        ): ListResponse<R>? = if (nextPageExists(prevResponse)) null else
+            get: (offset: Int) -> ListResponse<R>?
+        ): ListResponse<R>? = if (!nextPageExists(prevResponse)) null else
             get(prevResponse.offset + prevResponse.limit)
 
         private fun getMangaId(r: ListResponse<ChapterAttributes>): String? = run {
