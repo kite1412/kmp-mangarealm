@@ -7,13 +7,13 @@ import api.mangadex.model.response.attribute.CustomListAttributes
 
 data class CustomList(
     val data: Data<CustomListAttributes>,
-    val mangaIds: MutableList<String>,
+    val mangaIds: SnapshotStateList<String>,
     val manga: SnapshotStateList<Manga>,
     val deleted: Boolean
 )
 
 fun Data<CustomListAttributes>.toCustomList(): CustomList
-    = CustomList(this, mutableListOf(), mutableStateListOf(), false)
+    = CustomList(this, mutableStateListOf(), mutableStateListOf(), false)
 
 fun Data<CustomListAttributes>.getMangaIds(): List<String> =
     relationships.filter { it.type == "manga" }

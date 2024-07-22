@@ -4,7 +4,6 @@ import Cache
 import Libs
 import SharedObject
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import api.mangadex.service.MangaDex
@@ -41,7 +40,6 @@ class DetailScreenModel(
     var warning = ""
     var showPopNotice by mutableStateOf(false)
     var showAddToList by mutableStateOf(false)
-    val checkedCustomList = mutableStateListOf<CustomList>()
 
     init {
         status = manga.status
@@ -139,7 +137,12 @@ class DetailScreenModel(
         }
     }
 
-    fun onCustomListClick(customList: CustomList) {
+    fun onAddToListDismiss() {
+        showAddToList = false
+    }
 
+    fun onCustomListClick(customList: CustomList) {
+        if (customList.mangaIds.contains(manga.data.id)) sharedViewModel.removeCustomListManga(customList, manga)
+            else sharedViewModel.addCustomListManga(customList, manga)
     }
 }
