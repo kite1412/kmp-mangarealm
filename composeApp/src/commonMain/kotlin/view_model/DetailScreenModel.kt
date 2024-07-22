@@ -6,6 +6,10 @@ import SharedObject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import api.mangadex.model.request.CreateCustomList
+import api.mangadex.model.request.Visibility
+import api.mangadex.model.response.EntityResponse
+import api.mangadex.model.response.attribute.CustomListAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import cafe.adriel.voyager.core.model.ScreenModel
@@ -19,9 +23,11 @@ import model.CustomList
 import model.MangaStatus
 import model.Status
 import model.session.isEmpty
+import model.toCustomList
 import util.ASCENDING
 import util.StatusUpdater
 import util.WARNING_TIME
+import util.retry
 
 class DetailScreenModel(
     override val sharedViewModel: SharedViewModel,
@@ -40,6 +46,9 @@ class DetailScreenModel(
     var warning = ""
     var showPopNotice by mutableStateOf(false)
     var showAddToList by mutableStateOf(false)
+    var showAddListPrompt by mutableStateOf(false)
+    var textFieldValue by mutableStateOf("")
+    var visibility by mutableStateOf(Visibility.PRIVATE)
 
     init {
         status = manga.status
@@ -144,5 +153,31 @@ class DetailScreenModel(
     fun onCustomListClick(customList: CustomList) {
         if (customList.mangaIds.contains(manga.data.id)) sharedViewModel.removeCustomListManga(customList, manga)
             else sharedViewModel.addCustomListManga(customList, manga)
+    }
+
+    fun onAddNewList() {
+        screenModelScope.launch {
+            showAddListPrompt = false
+            retry<EntityResponse<CustomListAttributes>?>(
+                count = 3,
+                predicate = { it == null || it.errors != null }
+            ) {
+                mangaDex.createCustomList(
+                    CreateCustomList(
+                        name = textFieldValue,
+                        visibility = visibility
+                    )
+                )
+            }?.let {
+                sharedViewModel.customListSession.data.add(it.data!!.toCustomList())
+                showWarning("List created")
+            }
+        }
+    }
+
+    fun onAddListPromptDismiss() {
+        showAddListPrompt = false
+        textFieldValue = ""
+        visibility = Visibility.PRIVATE
     }
 }

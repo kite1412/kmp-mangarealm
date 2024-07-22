@@ -7,7 +7,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -26,33 +25,25 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.RadioButton
 import androidx.compose.material.RadioButtonDefaults
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -289,6 +280,34 @@ class CustomListScreen : Screen {
         }
     }
 
+    @Composable
+    private fun AddCustomList(modifier: Modifier = Modifier) {
+        Box(
+            modifier = modifier
+                .clip(CircleShape)
+                .background(MaterialTheme.colors.secondary)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    "Add new list",
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp
+                )
+                Icon(
+                    imageVector = Icons.Rounded.Add,
+                    contentDescription = "add new list",
+                    tint = Color.White,
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
+    }
+
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun MangaList(
@@ -307,7 +326,7 @@ class CustomListScreen : Screen {
                 .swipeToPop { scope.launch { pagerState.animateScrollToPage(0) } }
         ) {
             if (customList.mangaIds.isNotEmpty())
-                if (data.isNotEmpty()) LazyColumn(
+                if (data.isNotEmpty() && customList.mangaIds.size == data.size) LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     contentPadding = PaddingValues(top = APP_BAR_HEIGHT + 8.dp),
                     modifier = Modifier
@@ -342,163 +361,6 @@ class CustomListScreen : Screen {
                     )
                 }
             }
-        }
-    }
-
-    @Composable
-    private fun AddCustomListPrompt(
-        value: String,
-        visibility: Visibility,
-        onValueChange: (String) -> Unit,
-        onVisibilityChange: (Visibility) -> Unit,
-        onAdd: () -> Unit,
-        onDismiss: () -> Unit,
-        modifier: Modifier = Modifier
-    ) {
-        val keyboardController = LocalSoftwareKeyboardController.current
-        val focusRequester = remember { FocusRequester() }
-        val onAddWrapper = {
-            focusRequester.freeFocus()
-            keyboardController?.hide()
-            onAdd()
-        }
-        SideEffect {
-            focusRequester.requestFocus()
-            keyboardController?.show()
-        }
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .pointerInput(true) {
-                    detectTapGestures { onDismiss() }
-                }
-        ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(
-                        bottomStart = 16.dp,
-                        bottomEnd = 16.dp,
-                    ))
-                    .background(MaterialTheme.colors.background)
-                    .padding(40.dp)
-            ) {
-                Text(
-                    "Add new list",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 20.sp
-                )
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = onValueChange,
-                    maxLines = 1,
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(
-                        onSend = { if (value.isNotEmpty()) onAddWrapper() }
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                )
-                VisibilityOptions(
-                    visibility = visibility,
-                    onClick = onVisibilityChange,
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    AddCustomListAction(
-                        action = "Cancel",
-                        color = Color(170, 0, 0),
-                        enabled = true,
-                        onClick = onDismiss
-                    )
-                    AddCustomListAction(
-                        action = "Add",
-                        color = MaterialTheme.colors.secondary,
-                        enabled = value.isNotEmpty(),
-                        onClick = onAddWrapper
-                    )
-                }
-            }
-        }
-    }
-
-    @Composable
-    private fun VisibilityOptions(
-        visibility: Visibility,
-        onClick: (Visibility) -> Unit,
-        modifier: Modifier = Modifier
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier.fillMaxWidth()
-        ) {
-            VisibilityOption(
-                visibility = Visibility.PRIVATE,
-                selected = { visibility == it },
-                onClick = { onClick(it) }
-            )
-            VisibilityOption(
-                visibility = Visibility.PUBLIC,
-                selected = { visibility == it },
-                onClick = { onClick(it) }
-            )
-        }
-    }
-
-    @Composable
-    private fun VisibilityOption(
-        visibility: Visibility,
-        selected: (Visibility) -> Boolean,
-        modifier: Modifier = Modifier,
-        onClick: (Visibility) -> Unit
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = modifier
-        ) {
-            RadioButton(
-                selected = selected(visibility),
-                onClick = { onClick(visibility) },
-                colors = RadioButtonDefaults.colors(
-                    unselectedColor = MaterialTheme.colors.onBackground.copy(alpha = 0.8f)
-                )
-            )
-            Text(
-                visibility.toString().replaceFirstChar { it.uppercaseChar() },
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp
-            )
-        }
-    }
-
-    @Composable
-    private fun AddCustomListAction(
-        action: String,
-        color: Color,
-        enabled: Boolean,
-        modifier: Modifier = Modifier,
-        onClick: () -> Unit
-    ) {
-        Action(
-            onClick = onClick,
-            color = color,
-            enabled = enabled,
-            modifier = modifier
-        ) {
-            Text(
-                action,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
         }
     }
 }

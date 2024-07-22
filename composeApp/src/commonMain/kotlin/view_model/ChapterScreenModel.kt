@@ -135,19 +135,19 @@ class ChapterScreenModel(
     }
 
     fun nextPage() {
-        ableToNavigate = false
         screenModelScope.launch {
+            ableToNavigate = false
+            val currentPage = currentPage
+            this@ChapterScreenModel.currentPage++
             chapterListState.scrollToItem(0)
-        }
-        val loadedChapters = cache.chapters[mangaId]!!
-        val limit = loadedChapters.response.limit
-        val total = loadedChapters.response.total
-        val nextPage = currentPage + 1
-        var nextSize = limit * nextPage
-        if (nextSize > total) nextSize = total
-        if (loadedChapters().size < nextSize) {
-            showLoading = true
-            screenModelScope.launch {
+            val loadedChapters = cache.chapters[mangaId]!!
+            val limit = loadedChapters.response.limit
+            val total = loadedChapters.response.total
+            val nextPage = currentPage + 1
+            var nextSize = limit * nextPage
+            if (nextSize > total) nextSize = total
+            if (loadedChapters().size < nextSize) {
+                showLoading = true
                 retry(
                     count = 3,
                     predicate = { it == null || it.errors != null }
@@ -161,24 +161,22 @@ class ChapterScreenModel(
                         clear()
                         addAll(chapters)
                     }
-                    currentPage++
                     ableToNavigate = true
                     showLoading = false
                 }
+            } else {
+                val startIndex = currentPage * limit
+                var endIndex = startIndex + limit - 1
+                if (endIndex > total) endIndex = total - 1
+                this@ChapterScreenModel.chapters.run {
+                    clear()
+                    addAll(loadedChapters.data.subList(startIndex, endIndex))
+                }
+                cache.chapters[mangaId]!!.response = cache.chapters[mangaId]!!.response.copy(
+                    offset = limit * currentPage
+                )
+                ableToNavigate = true
             }
-        } else {
-            val startIndex = currentPage * limit
-            var endIndex = startIndex + limit - 1
-            if (endIndex > total) endIndex = total - 1
-            this@ChapterScreenModel.chapters.run {
-                clear()
-                addAll(loadedChapters.data.subList(startIndex, endIndex))
-            }
-            cache.chapters[mangaId]!!.response = cache.chapters[mangaId]!!.response.copy(
-                offset = limit * currentPage
-            )
-            currentPage++
-            ableToNavigate = true
         }
     }
 
