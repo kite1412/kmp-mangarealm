@@ -127,7 +127,8 @@ class CustomListScreenModel(
         selectedCustomListIndex = index
         screenModelScope.launch {
             val customList = sharedViewModel.customListSession.data[index]
-            if (customList.mangaIds.size > 0 && customList.manga.isEmpty()) {
+            if (customList.mangaIds.size > 0 &&
+                (customList.manga.isEmpty() || customList.manga.size != customList.mangaIds.size)) {
                 val res = retry(
                     count = 3,
                     predicate = { it == null || it.errors != null }

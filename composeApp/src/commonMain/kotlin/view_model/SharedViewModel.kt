@@ -83,6 +83,7 @@ class SharedViewModel(
     fun deleteDeletedCustomList() = customListSession.data.removeAll { it.deleted }
 
     fun updateCustomListManga(customList: CustomList, manga: List<Manga>) = viewModelScope.launch {
+        customList.manga.clear()
         customList.manga.addAll(manga)
     }
 

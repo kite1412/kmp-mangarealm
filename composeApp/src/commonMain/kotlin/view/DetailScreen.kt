@@ -169,6 +169,14 @@ class DetailScreen : Screen {
                 ) {
                     Text("Updating...", color = Color.White)
                 }
+                if (sm.showAddListPrompt) AddCustomListPrompt(
+                    value = sm.textFieldValue,
+                    visibility = sm.visibility,
+                    onValueChange = { sm.textFieldValue = it },
+                    onVisibilityChange = { sm.visibility = it },
+                    onAdd = sm::onAddNewList,
+                    onDismiss = sm::onAddListPromptDismiss
+                )
             }
         }
     }
@@ -680,7 +688,7 @@ class DetailScreen : Screen {
                         .padding(end = 8.dp, bottom = 8.dp)
                         .clip(CircleShape)
                         .background(Color(11, 218, 81))
-                        .clickable {  }
+                        .clickable { sm.showAddListPrompt = true }
                         .padding(16.dp)
                 ) {
                     Icon(
