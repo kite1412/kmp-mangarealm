@@ -32,6 +32,7 @@ class SharedViewModel(
     val mangaStatus = mutableMapOf<Status, SnapshotStateList<Manga>>()
     val customListSession = CustomListSession()
     val chapterSessions = mutableStateMapOf<ChapterKey, ChapterSession>()
+    var currentChapterSessionKey = ChapterKey()
 
     init {
         MangaStatus(true).forEach {
@@ -164,10 +165,10 @@ class SharedViewModel(
     ) {
         viewModelScope.launch {
             val q = generateQuery(queries)
-            val chapterKey = ChapterKey(manga.data.id, q)
-            if (chapterSessions[chapterKey] == null) {
-                chapterSessions[chapterKey] = ChapterSession(manga.data.id)
-                val s = chapterSessions[chapterKey]!!
+            currentChapterSessionKey = ChapterKey(manga.data.id, q)
+            if (chapterSessions[currentChapterSessionKey] == null) {
+                chapterSessions[currentChapterSessionKey] = ChapterSession(manga.data.id)
+                val s = chapterSessions[currentChapterSessionKey]!!
                 s.init(queries)
                 retry<ListResponse<ChapterAttributes>?>(
                     count = 3,

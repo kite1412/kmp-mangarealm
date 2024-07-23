@@ -20,6 +20,7 @@ import util.ImageQuality
 import util.retry
 
 class ReaderScreenModel(
+    private val sharedViewModel: SharedViewModel,
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val cache: Cache = Libs.cache
 ) : ScreenModel {
@@ -51,7 +52,8 @@ class ReaderScreenModel(
     private fun getChapterImages() {
         screenModelScope.launch {
             showWarning = false
-            index = chapters[currentChapterIndex]().id + imageQuality
+            val chapterId = chapters[currentChapterIndex]().id
+            index = chapterId + imageQuality
             val images = cache.chapterImages[index]
             val res = retry(
                 count = 3,
@@ -78,6 +80,20 @@ class ReaderScreenModel(
                     )
                     cache.chapterImages[index] = chapterImages
                     this@ReaderScreenModel.images.addAll(chapterImages())
+                    launch {
+                        retry(
+                            count = 3,
+                            predicate = { false }
+                        ) {
+                            mangaDex.updateMangaReadMarkers(
+                                mangaId = SharedObject.detailManga.data.id,
+                                readIds = listOf(chapterId)
+                            )
+                        }.also {
+                            if (it) sharedViewModel.chapterSessions[sharedViewModel.currentChapterSessionKey]!!
+                                .data[currentChapterIndex].isRead.value = true
+                        }
+                    }
                 }
             } else {
                 if (res != null) {

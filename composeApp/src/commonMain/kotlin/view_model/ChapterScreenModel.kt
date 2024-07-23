@@ -11,7 +11,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.attribute.ChapterAttributes
-import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -22,7 +21,6 @@ import util.ASCENDING
 
 class ChapterScreenModel(
     private val sharedViewModel: SharedViewModel,
-    private val mangaDex: MangaDex = Libs.mangaDex,
     private val cache: Cache = Libs.cache,
 ) : ScreenModel, ReaderNavigator {
     val chapters = mutableStateListOf<Data<ChapterAttributes>>()
