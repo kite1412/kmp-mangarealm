@@ -8,6 +8,7 @@ import api.mangadex.model.response.EntityResponse
 import api.mangadex.model.response.HomeUrl
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.MangaStatus
+import api.mangadex.model.response.SimpleResponse
 import api.mangadex.model.response.Token
 import api.mangadex.model.response.UpdateStatusResponse
 import api.mangadex.model.response.attribute.ChapterAttributes
@@ -45,6 +46,10 @@ interface MangaDex {
     suspend fun addMangaToCustomList(mangaId: String, customListId: String): Boolean
 
     suspend fun removeMangaFromCustomList(mangaId: String, customListId: String): Boolean
+
+    suspend fun getMangaReadMarkers(mangaId: String): SimpleResponse<List<String>>?
+
+    suspend fun updateMangaReadMarkers(mangaId: String, readIds: List<String>, unreadIds: List<String> = listOf()): Boolean
 
     interface Paging {
         fun <R> nextPageExists(r: ListResponse<R>): Boolean =

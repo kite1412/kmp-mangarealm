@@ -20,4 +20,6 @@ object ApiConstant {
 
     fun mangaToCustomList(mangaId: String, customListId: String): String =
         "$MANGA_ENDPOINT/$mangaId/list/$customListId"
+
+    fun mangaReadMarkers(mangaId: String): String = "$MANGA_ENDPOINT/$mangaId/read"
 }
