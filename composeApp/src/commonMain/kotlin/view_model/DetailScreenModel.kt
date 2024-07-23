@@ -17,12 +17,14 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.navigator.Navigator
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import model.ChapterKey
 import model.ChapterList
 import model.Chapters
 import model.CustomList
 import model.MangaStatus
 import model.Status
 import model.session.isEmpty
+import model.toChapters
 import model.toCustomList
 import util.ASCENDING
 import util.StatusUpdater
@@ -61,26 +63,31 @@ class DetailScreenModel(
     fun onRead(nav: Navigator) {
         readClicked = true
         screenModelScope.launch {
-            val chapters = cache.chapters[manga.data.id]
-            if (chapters == null) {
-                val availableLanguages = manga.data.attributes
-                    .availableTranslatedLanguages
-                val languages = availableLanguages.filterNotNull().filter {
-                        it == "en" || it == "id"
-                    }
-                var l = ""
-                if (languages.isNotEmpty()) {
-                    for (lang in languages) {
-                        if (lang == "en") {
-                            l = lang
-                            break
-                        }
+            val availableLanguages = manga.data.attributes
+                .availableTranslatedLanguages
+            val languages = availableLanguages.filterNotNull().filter {
+                it == "en" || it == "id"
+            }
+            var l = ""
+            if (languages.isNotEmpty()) {
+                for (lang in languages) {
+                    if (lang == "en") {
                         l = lang
+                        break
                     }
-                } else {
-                    l =  if (availableLanguages.isNotEmpty()) manga.data.attributes
-                        .availableTranslatedLanguages[0]!! else return@launch showWarning("No chapters found")
+                    l = lang
                 }
+            } else {
+                l =  if (availableLanguages.isNotEmpty()) manga.data.attributes
+                    .availableTranslatedLanguages[0]!! else return@launch showWarning("No chapters found")
+            }
+            val chapterSession = sharedViewModel.chapterSessions[
+                ChapterKey(
+                    mangaId = manga.data.id,
+                    queries = generateQuery(sharedViewModel.chapterDefaultQueries(l, ASCENDING))
+                )
+            ]
+            if (chapterSession == null) {
                 val lang = generateQuery(mapOf("translatedLanguage[]" to l))
                 val res = mangaDex.getMangaChapters(
                     mangaId = manga.data.id,
@@ -91,7 +98,7 @@ class DetailScreenModel(
                 )
                 if (res != null) {
                     if (res.errors != null) return@launch showWarning()
-                    val chapterList = ChapterList(chapters = res.data)
+                    val chapterList = ChapterList(chapters = res.toChapters())
                     cache.chapters[manga.data.id] = Chapters(
                         language = l,
                         order = ASCENDING,
@@ -105,7 +112,7 @@ class DetailScreenModel(
                 } else return@launch showWarning()
             } else navigateToReader(
                 nav = nav,
-                chapterList = ChapterList(chapters = chapters())
+                chapterList = ChapterList(chapters = chapterSession.data)
             )
             readClicked = false
         }

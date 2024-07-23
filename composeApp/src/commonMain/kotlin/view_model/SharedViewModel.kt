@@ -21,7 +21,7 @@ import model.getMangaIds
 import model.session.ChapterSession
 import model.session.CustomListSession
 import model.session.isEmpty
-import model.toChapter
+import model.toChapters
 import model.toCustomList
 import util.retry
 
@@ -127,10 +127,18 @@ class SharedViewModel(
         }
     }
 
+    fun chapterDefaultQueries(language: String, order: String): Map<String, Any> =
+        mapOf(
+            "translatedLanguage[]" to language,
+            "order[chapter]" to order,
+            "limit" to 100,
+            "offset" to 0
+        )
+
     fun beginChapterSession(manga: Manga, queries: Map<String, Any>) {
         viewModelScope.launch {
             val q = generateQuery(queries)
-            val chapterKey = ChapterKey(manga, q)
+            val chapterKey = ChapterKey(manga.data.id, q)
             if (chapterSessions[chapterKey] == null) {
                 chapterSessions[chapterKey] = ChapterSession(manga.data.id)
                 val s = chapterSessions[chapterKey]!!
@@ -141,7 +149,7 @@ class SharedViewModel(
                 ) {
                     mangaDex.getMangaChapters(manga.data.id, q)
                 }?.let {
-                    s.setActive(it, it.toChapter())
+                    s.setActive(it, it.toChapters())
                 }
             }
         }

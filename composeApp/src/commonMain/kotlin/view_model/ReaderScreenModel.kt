@@ -51,13 +51,13 @@ class ReaderScreenModel(
     private fun getChapterImages() {
         screenModelScope.launch {
             showWarning = false
-            index = chapters[currentChapterIndex].id + imageQuality
+            index = chapters[currentChapterIndex]().id + imageQuality
             val images = cache.chapterImages[index]
             val res = retry(
                 count = 3,
                 predicate = { it == null || it.errors != null }
             ) {
-                mangaDex.getHomeUrl(chapters[currentChapterIndex].id)
+                mangaDex.getHomeUrl(chapters[currentChapterIndex]().id)
             }
             if (images == null) {
                 if (res != null) {
@@ -153,7 +153,7 @@ class ReaderScreenModel(
         currentChapterIndex = index
         currentPage = 1
         pageNavigatorIndex = 0
-        this.index = chapters[currentChapterIndex].id + imageQuality
+        this.index = chapters[currentChapterIndex]().id + imageQuality
         images.clear()
         getChapterImages()
     }

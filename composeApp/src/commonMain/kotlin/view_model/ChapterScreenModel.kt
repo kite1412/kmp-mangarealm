@@ -44,7 +44,12 @@ class ChapterScreenModel(
     private var order by mutableStateOf(ASCENDING)
     private val manga = SharedObject.detailManga
     val chapterSession = derivedStateOf {
-        sharedViewModel.chapterSessions[ChapterKey(manga, generateQuery(queries(language, order)))]
+        sharedViewModel.chapterSessions[
+            ChapterKey(
+                mangaId = manga.data.id,
+                queries = generateQuery(sharedViewModel.chapterDefaultQueries(language, order))
+            )
+        ]
     }
     private val mangaId = manga.data.id
     val chapterListState = LazyListState()
@@ -83,14 +88,6 @@ class ChapterScreenModel(
             languageSetting = it
         }
     }
-
-    private fun queries(language: String, order: String): Map<String, Any> =
-        mapOf(
-            "translatedLanguage[]" to language,
-            "order[chapter]" to order,
-            "limit" to 100,
-            "offset" to 0
-        )
 
     private fun initLanguages() {
         manga.data.attributes.availableTranslatedLanguages.forEach {
@@ -135,7 +132,7 @@ class ChapterScreenModel(
 //    }
 
     private fun fetchChapters() {
-        val queriesMap = queries(language, order)
+        val queriesMap = sharedViewModel.chapterDefaultQueries(language, order)
         sharedViewModel.beginChapterSession(manga, queriesMap)
     }
 
@@ -157,7 +154,10 @@ class ChapterScreenModel(
                     count = 3,
                     predicate = { it == null || it.errors != null }
                 ) {
-                    mangaDex.paging.chapters(loadedChapters.response, generateQuery(queries(language, order)))
+                    mangaDex.paging.chapters(
+                        prevResponse = loadedChapters.response,
+                        queries = generateQuery(sharedViewModel.chapterDefaultQueries(language, order))
+                    )
                 }?.let{
                     val chapters = it.data
                     cache.chapters[mangaId]!!.response = it
