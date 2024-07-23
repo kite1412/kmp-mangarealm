@@ -2,6 +2,7 @@ package view
 
 import Assets
 import LocalScreenSize
+import LocalSharedViewModel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -92,7 +93,8 @@ class ReaderScreen : Screen {
     override fun Content() {
         adjustStatusBar()
         val nav = LocalNavigator.currentOrThrow
-        val sm = rememberScreenModel { ReaderScreenModel() }
+        val sharedViewModel = LocalSharedViewModel.current
+        val sm = rememberScreenModel { ReaderScreenModel(sharedViewModel) }
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
