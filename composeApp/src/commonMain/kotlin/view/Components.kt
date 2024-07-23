@@ -312,7 +312,9 @@ fun <T, ATTR> SessionPagerColumn(
             key = { it }
         ) { content(it) }
         if (!finished) item {
-            CircularProgressIndicator(modifier = Modifier.padding(top = 16.dp))
+            CircularProgressIndicator(
+                modifier = Modifier.padding(top = 16.dp)
+            )
         }
     }
 }

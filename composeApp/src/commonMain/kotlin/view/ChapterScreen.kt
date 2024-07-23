@@ -172,7 +172,8 @@ class ChapterScreen : Screen {
                             top = APP_BAR_HEIGHT + 4.dp,
                             bottom = APP_BAR_HEIGHT + 24.dp
                         ),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         val chapter = session!!.data[it]
                         ChapterBar(chapter()) { _ ->
