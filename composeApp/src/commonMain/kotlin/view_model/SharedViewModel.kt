@@ -2,20 +2,26 @@ package view_model
 
 import Libs
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import api.mangadex.model.response.ListResponse
+import api.mangadex.model.response.attribute.ChapterAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import kotlinx.coroutines.launch
+import model.ChapterKey
 import model.CustomList
 import model.Manga
 import model.MangaStatus
 import model.Status
 import model.getMangaIds
+import model.session.ChapterSession
 import model.session.CustomListSession
 import model.session.isEmpty
+import model.toChapter
 import model.toCustomList
 import util.retry
 
@@ -24,6 +30,7 @@ class SharedViewModel(
 ) : ViewModel() {
     val mangaStatus = mutableMapOf<Status, SnapshotStateList<Manga>>()
     val customListSession = CustomListSession()
+    val chapterSessions = mutableStateMapOf<ChapterKey, ChapterSession>()
 
     init {
         MangaStatus(true).forEach {
@@ -117,6 +124,26 @@ class SharedViewModel(
             ) {
                 mangaDex.removeMangaFromCustomList(manga.data.id, customList.data.id)
             }.also { if (!it) customList.manga.add(manga) }
+        }
+    }
+
+    fun beginChapterSession(manga: Manga, queries: Map<String, Any>) {
+        viewModelScope.launch {
+            val q = generateQuery(queries)
+            val chapterKey = ChapterKey(manga, q)
+            if (chapterSessions[chapterKey] == null) {
+                chapterSessions[chapterKey] = ChapterSession(manga.data.id)
+                val s = chapterSessions[chapterKey]!!
+                s.init(queries)
+                retry<ListResponse<ChapterAttributes>?>(
+                    count = 3,
+                    predicate = { it == null || it.errors != null }
+                ) {
+                    mangaDex.getMangaChapters(manga.data.id, q)
+                }?.let {
+                    s.setActive(it, it.toChapter())
+                }
+            }
         }
     }
 }

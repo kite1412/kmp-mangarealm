@@ -2,6 +2,7 @@ package view
 
 import Assets
 import LocalScreenSize
+import LocalSharedViewModel
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.FlowRowScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -37,6 +39,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,6 +63,7 @@ import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.white_textured_concrete
+import model.session.SessionState
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 import util.APP_BAR_HEIGHT
@@ -67,6 +71,7 @@ import util.ASCENDING
 import util.DESCENDING
 import util.edgeToEdge
 import util.mapLanguage
+import util.session_handler.ChapterSessionHandler
 import util.swipeToPop
 import view_model.ChapterScreenModel
 
@@ -74,7 +79,8 @@ class ChapterScreen : Screen {
     @Composable
     override fun Content() {
         edgeToEdge()
-        val sm = rememberScreenModel { ChapterScreenModel() }
+        val sharedViewModel = LocalSharedViewModel.current
+        val sm = rememberScreenModel { ChapterScreenModel(sharedViewModel) }
         val nav = LocalNavigator.currentOrThrow
         val navBarsHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -88,7 +94,6 @@ class ChapterScreen : Screen {
         ) {
             Box {
                 ChapterList(
-                    nav = nav,
                     sm = sm,
                     modifier = Modifier
                         .padding(start = 8.dp, end = 8.dp, top = statusBarsHeight)
@@ -117,14 +122,14 @@ class ChapterScreen : Screen {
     ) {
         if (sm.chapters.isNotEmpty() && !sm.showLoading) LazyColumn(
             state = state,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
             modifier = modifier.fillMaxSize()
         ) {
             item {
                 Spacer(Modifier.height(APP_BAR_HEIGHT))
             }
             items(sm.chapters.size) {
-                ChapterBar(sm.chapters[it], modifier = Modifier.padding(horizontal = 8.dp)) { _ ->
+                ChapterBar(sm.chapters[it]) { _ ->
                     sm.navigateToReader(nav, model.ChapterList(it, sm.chapters))
                 }
             }
@@ -147,6 +152,36 @@ class ChapterScreen : Screen {
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
             )
+        }
+    }
+
+    @Composable
+    private fun ChapterList(
+        sm: ChapterScreenModel,
+        modifier: Modifier = Modifier
+    ) {
+        val session by sm.chapterSession
+        val nav = LocalNavigator.currentOrThrow
+        Box(modifier = modifier.fillMaxSize()) {
+            if (session == null) LoadingIndicator(Modifier.align(Alignment.Center)) {
+                Text("Loading chapters...", color = Color.White)
+            } else {
+                when(session!!.state.value) {
+                    SessionState.IDLE, SessionState.FETCHING -> LoadingIndicator(Modifier.align(Alignment.Center)) {
+                        Text("Loading chapters...", color = Color.White)
+                    }
+                    SessionState.ACTIVE -> SessionPagerColumn(
+                        session = session!!,
+                        handler = ChapterSessionHandler(session!!),
+                        contentPadding = PaddingValues(vertical = APP_BAR_HEIGHT + 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        val chapter = session!!.data[it]
+                        ChapterBar(chapter()) {
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -440,9 +475,9 @@ class ChapterScreen : Screen {
         onClick: (Data<ChapterAttributes>) -> Unit
     ) {
         Card(
-            backgroundColor = MaterialTheme.colors.background,
+            backgroundColor = Color(0xFFA39C8E),
             elevation = 6.dp,
-            shape = RoundedCornerShape(12.dp),
+            shape = RoundedCornerShape(4.dp),
             modifier = modifier.fillMaxWidth(),
             onClick = { onClick(chapter) }
         ) {
@@ -472,7 +507,7 @@ class ChapterScreen : Screen {
                         .fillMaxWidth()
                         .padding(end = 16.dp, top = 4.dp)
                         .height(1.dp)
-                        .background(MaterialTheme.colors.onBackground)
+                        .background(MaterialTheme.colors.primary)
                 )
             }
         }
