@@ -8,7 +8,7 @@ import api.mangadex.model.response.attribute.ChapterAttributes
 
 data class Chapter(
     val data: Data<ChapterAttributes>,
-    val isRead: MutableState<Boolean> = mutableStateOf(false)
+    var isRead: MutableState<Boolean> = mutableStateOf(false)
 ) {
     operator fun invoke(): Data<ChapterAttributes> = data
 }

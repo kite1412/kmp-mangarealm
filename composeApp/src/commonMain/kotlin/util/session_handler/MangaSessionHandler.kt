@@ -23,8 +23,7 @@ class MangaSessionHandler(
                 predicate = { it == null || it.errors != null}
             ) { mangaDex.getManga(generateQuery(session.queries)) }
             if (res != null) {
-                session.addAll(res.toMangaList())
-                session.newResponse(res)
+                session.new(res, res.toMangaList())
                 onFinish(res.data.isEmpty(), session)
                 return@needUpdate
             }

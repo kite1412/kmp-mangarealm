@@ -887,7 +887,8 @@ fun EmptyList(
             message,
             fontWeight = FontWeight.SemiBold,
             fontSize = 20.sp,
-            color = MaterialTheme.colors.onBackground
+            color = MaterialTheme.colors.onBackground,
+            textAlign = TextAlign.Center
         )
     }
 }

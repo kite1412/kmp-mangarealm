@@ -41,7 +41,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
@@ -49,9 +48,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import api.mangadex.model.response.Data
-import api.mangadex.model.response.attribute.ChapterAttributes
-import assets.`Chevron-right`
 import assets.Cross
 import assets.`Settings-adjust-solid`
 import cafe.adriel.voyager.core.model.rememberScreenModel
@@ -60,6 +56,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.white_textured_concrete
+import model.Chapter
 import model.session.SessionState
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
@@ -97,58 +94,21 @@ class ChapterScreen : Screen {
                         .align(Alignment.Center)
                 )
                 TopBar(appBarHeight)
-                ChapterSettings(
+                if (!sm.showWarning) ChapterSettings(
                     sm = sm,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(end = 8.dp, bottom = 16.dp)
                 )
+                Warning(
+                    message = "Loading read markers...",
+                    height = APP_BAR_HEIGHT / 2,
+                    show = sm.fetchingChaptersReadMarker,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
             }
         }
     }
-
-//    // TODO use session
-//    @Composable
-//    private fun ChapterList(
-//        nav: Navigator,
-//        sm: ChapterScreenModel,
-//        state: LazyListState = sm.chapterListState,
-//        modifier: Modifier = Modifier
-//    ) {
-//        if (sm.chapters.isNotEmpty() && !sm.showLoading) LazyColumn(
-//            state = state,
-//            verticalArrangement = Arrangement.spacedBy(2.dp),
-//            modifier = modifier.fillMaxSize()
-//        ) {
-//            item {
-//                Spacer(Modifier.height(APP_BAR_HEIGHT))
-//            }
-//            items(sm.chapters.size) {
-//                ChapterBar(sm.chapters[it]) { _ ->
-//                    sm.navigateToReader(nav, model.ChapterList(it, sm.chapters))
-//                }
-//            }
-//            item {
-//                Spacer(Modifier.height(APP_BAR_HEIGHT))
-//            }
-//        } else Column(
-//            horizontalAlignment = Alignment.CenterHorizontally,
-//            verticalArrangement = Arrangement.Center,
-//            modifier = modifier.fillMaxSize()
-//        ) {
-//            if (!sm.showWarning) Column(
-//                horizontalAlignment = Alignment.CenterHorizontally
-//            ) {
-//                CircularProgressIndicator()
-//                Spacer(Modifier.height(8.dp))
-//                Text("loading chapters...")
-//            } else Text(
-//                "No chapters found",
-//                fontSize = 18.sp,
-//                fontWeight = FontWeight.Medium,
-//            )
-//        }
-//    }
 
     @Composable
     private fun ChapterList(
@@ -158,16 +118,20 @@ class ChapterScreen : Screen {
         val session by sm.chapterSession
         val nav = LocalNavigator.currentOrThrow
         Box(modifier = modifier.fillMaxSize()) {
-            if (session == null) LoadingIndicator(Modifier.align(Alignment.Center)) {
+            if (session == null) if (!sm.showWarning) LoadingIndicator(Modifier.align(Alignment.Center)) {
                 Text("Loading chapters...", color = Color.White)
-            } else {
+            } else EmptyList(
+                message = "No available chapters for this manga",
+                modifier = Modifier.align(Alignment.Center)
+            ) else {
                 when(session!!.state.value) {
                     SessionState.IDLE, SessionState.FETCHING -> LoadingIndicator(Modifier.align(Alignment.Center)) {
                         Text("Loading chapters...", color = Color.White)
                     }
-                    SessionState.ACTIVE -> SessionPagerColumn(
+                    SessionState.ACTIVE -> if (session!!.data.isNotEmpty()) SessionPagerColumn(
                         session = session!!,
                         handler = ChapterSessionHandler(session!!),
+                        state = sm.chapterListState,
                         contentPadding = PaddingValues(
                             top = APP_BAR_HEIGHT + 4.dp,
                             bottom = APP_BAR_HEIGHT + 24.dp
@@ -176,10 +140,10 @@ class ChapterScreen : Screen {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         val chapter = session!!.data[it]
-                        ChapterBar(chapter()) { _ ->
+                        ChapterBar(chapter) { _ ->
                             sm.navigateToReader(nav, model.ChapterList(it, session!!.data))
                         }
-                    }
+                    } else EmptyList("No chapters found", Modifier.align(Alignment.Center))
                 }
             }
         }
@@ -211,63 +175,6 @@ class ChapterScreen : Screen {
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 8.dp)
             )
-        }
-    }
-
-    @OptIn(ExperimentalResourceApi::class)
-    @Composable
-    private fun BottomBar(
-        sm: ChapterScreenModel,
-        modifier: Modifier = Modifier
-    ) {
-        Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(APP_BAR_HEIGHT)
-                // makes the obstructed chapter bars not clickable
-                .clickable(enabled = false) {}
-        ) {
-            Image(
-                painter = painterResource(Res.drawable.white_textured_concrete),
-                contentDescription = null,
-                contentScale = ContentScale.FillWidth,
-                alpha = 0.8f,
-            )
-           Box(
-               modifier = Modifier
-                   .fillMaxSize()
-                   .padding(horizontal = 16.dp)
-           ) {
-               Text(
-                   "${sm.currentPage}/${sm.totalPages}",
-                   fontSize = 18.sp,
-                   fontWeight = FontWeight.Medium,
-                   modifier = Modifier.align(Alignment.Center)
-               )
-               if (sm.currentPage < sm.totalPages) IconButton(
-                   onClick = { sm.nextPage() },
-                   enabled = sm.ableToNavigate,
-                   modifier = Modifier.align(Alignment.CenterEnd)
-               ) {
-                   Icon(
-                       imageVector = Assets.`Chevron-right`,
-                       contentDescription = "next page",
-                       tint = Color.Black
-                   )
-               }
-               if (sm.currentPage > 1) IconButton(
-                   onClick = { sm.prevPage() },
-                   enabled = sm.ableToNavigate,
-                   modifier = Modifier.align(Alignment.CenterStart),
-               ) {
-                   Icon(
-                       imageVector = Assets.`Chevron-right`,
-                       contentDescription = "next page",
-                       tint = Color.Black,
-                       modifier = Modifier.rotate(180f)
-                   )
-               }
-           }
         }
     }
 
@@ -476,32 +383,33 @@ class ChapterScreen : Screen {
     @OptIn(ExperimentalMaterialApi::class)
     @Composable
     private fun ChapterBar(
-        chapter: Data<ChapterAttributes>,
+        chapter: Chapter,
         modifier: Modifier = Modifier,
-        onClick: (Data<ChapterAttributes>) -> Unit
+        onClick: (Chapter) -> Unit
     ) {
         Card(
-            backgroundColor = Color(0xFFA39C8E),
+            backgroundColor = if (chapter.isRead.value) Color(0xFFA39C8E) else MaterialTheme.colors.background ,
             elevation = 6.dp,
             shape = RoundedCornerShape(4.dp),
             modifier = modifier.fillMaxWidth(),
             onClick = { onClick(chapter) }
         ) {
+            val c = chapter()
             Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)) {
                 Row {
                     Text(
-                        "Chapter ${chapter.attributes.chapter ?: ""}",
+                        "Chapter ${c.attributes.chapter ?: ""}",
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colors.primary
                     )
-                    if (!chapter.attributes.title.isNullOrEmpty()) Row {
+                    if (!c.attributes.title.isNullOrEmpty()) Row {
                         Text(
                             ": ",
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colors.primary
                         )
                         Text(
-                            "${chapter.attributes.title}",
+                            "${c.attributes.title}",
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colors.primary
                         )

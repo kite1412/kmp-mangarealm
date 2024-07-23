@@ -12,6 +12,7 @@ import api.mangadex.model.response.attribute.ChapterAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import kotlinx.coroutines.launch
+import model.Chapter
 import model.ChapterKey
 import model.CustomList
 import model.Manga
@@ -135,7 +136,32 @@ class SharedViewModel(
             "offset" to 0
         )
 
-    fun beginChapterSession(manga: Manga, queries: Map<String, Any>) {
+    private fun updateChapterReadMarker(
+        mangaId: String,
+        chapters: List<Chapter>,
+        state: (Boolean) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            retry(
+                count = 3,
+                predicate = { r -> r == null || r.errors != null }
+            ) {
+                state(false)
+                mangaDex.getMangaReadMarkers(mangaId)
+            }?.let { r ->
+                if (r.data!!.isNotEmpty()) chapters.forEach {
+                    if (it.data.id in r.data) it.isRead.value = true
+                }
+            }
+            state(true)
+        }
+    }
+
+    fun beginChapterSession(
+        manga: Manga,
+        queries: Map<String, Any>,
+        readMarkerFetchState: (Boolean) -> Unit = {}
+    ) {
         viewModelScope.launch {
             val q = generateQuery(queries)
             val chapterKey = ChapterKey(manga.data.id, q)
@@ -150,6 +176,7 @@ class SharedViewModel(
                     mangaDex.getMangaChapters(manga.data.id, q)
                 }?.let {
                     s.setActive(it, it.toChapters())
+                    updateChapterReadMarker(manga.data.id, s.data, readMarkerFetchState)
                 }
             }
         }
