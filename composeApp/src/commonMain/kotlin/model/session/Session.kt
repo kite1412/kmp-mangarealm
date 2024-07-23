@@ -44,6 +44,11 @@ interface Session<T, ATTR> {
         putAllQueries(queries)
     }
 
+    fun new(newResponse: ListResponse<ATTR>, data: List<T>) {
+        newResponse(newResponse)
+        addAll(data)
+    }
+
     fun setActive(response: ListResponse<ATTR>, data: List<T>) {
         newResponse(response)
         addAll(data)

@@ -21,38 +21,40 @@ import kotlin.time.Duration.Companion.days
 class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
     private val storage = Libs.kottageStorage
 
+    private suspend fun refresh(request: RefreshTokenRequest, useReserved: Boolean = false): Token? = retry<Token?>(
+        count = 3,
+        predicate = { it == null || it.error != null }
+    ) {
+        try {
+            client.submitForm(
+                url = ApiConstant.AUTH_ENDPOINT,
+                formParameters = parameters {
+                    append("grant_type", request.grantType)
+                    append("refresh_token",
+                        if (useReserved) request.reserveRefreshToken else request.refreshToken)
+                    append("client_id", request.clientId)
+                    append("client_secret", request.clientSecret)
+                }
+            ).body<Token>()
+        } catch (e: Exception) {
+            e.message?.let {
+                Log.e("(refresh) $it")
+            }
+            null
+        }
+    }
+
     private suspend fun refreshToken(request: RefreshTokenRequest): Token? {
         return try {
             var useReserve = false
-            var res = retry<Token>(
-                count = 3,
-                predicate = { it.error != null }
-            ) {
-                client.submitForm(
-                    url = ApiConstant.AUTH_ENDPOINT,
-                    formParameters = parameters {
-                        append("grant_type", request.grantType)
-                        append("refresh_token", request.refreshToken)
-                        append("client_id", request.clientId)
-                        append("client_secret", request.clientSecret)
-                    }
-                ).body<Token>()
-            }
+            var res = refresh(request)
             // TODO handle if reserved refresh token also not works, typically prompting user to re-login
-            if (res.error != null) {
-                Log.w("(refreshToken) ${res.error}")
+            if (res == null ||res.error != null) {
+                Log.w("(refreshToken) ${res?.error}")
                 useReserve = true
-                res = client.submitForm(
-                    url = ApiConstant.AUTH_ENDPOINT,
-                    formParameters = parameters {
-                        append("grant_type", request.grantType)
-                        append("refresh_token", request.reserveRefreshToken)
-                        append("client_id", request.clientId)
-                        append("client_secret", request.clientSecret)
-                    }
-                ).body<Token>()
+                res = refresh(request, true)
             }
-            if (res.error != null) throw UnableRefreshTokenException()
+            if (res == null || res.error != null) throw UnableRefreshTokenException()
             res.also {
                 saveTokenToLocal(it, request.refreshToken)
                 Log.d("(refreshToken) success refreshing token")

@@ -24,8 +24,7 @@ class ChapterSessionHandler(
             ) {
                 mangaDex.paging.chapters(prevResponse, generateQuery(session.queries))
             }?.let {
-                session.addAll(it.toChapters())
-                session.newResponse(it)
+                session.new(it, it.toChapters())
                 onFinish(it.data.isEmpty(), session)
                 return@needUpdate
             }
