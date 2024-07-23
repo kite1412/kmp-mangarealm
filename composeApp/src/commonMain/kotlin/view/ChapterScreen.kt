@@ -27,11 +27,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
-import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
@@ -59,7 +57,6 @@ import assets.`Settings-adjust-solid`
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.white_textured_concrete
@@ -92,7 +89,7 @@ class ChapterScreen : Screen {
                 .padding(bottom = navBarsHeight)
                 .swipeToPop(nav)
         ) {
-            Box {
+            Box(modifier = Modifier.fillMaxSize()) {
                 ChapterList(
                     sm = sm,
                     modifier = Modifier
@@ -100,60 +97,58 @@ class ChapterScreen : Screen {
                         .align(Alignment.Center)
                 )
                 TopBar(appBarHeight)
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
-                    ChapterSettings(sm, modifier = Modifier.padding(end = 8.dp))
-                    BottomBar(sm)
-                }
+                ChapterSettings(
+                    sm = sm,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 8.dp, bottom = 16.dp)
+                )
             }
         }
     }
 
-    // TODO use session
-    @Composable
-    private fun ChapterList(
-        nav: Navigator,
-        sm: ChapterScreenModel,
-        state: LazyListState = sm.chapterListState,
-        modifier: Modifier = Modifier
-    ) {
-        if (sm.chapters.isNotEmpty() && !sm.showLoading) LazyColumn(
-            state = state,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
-            modifier = modifier.fillMaxSize()
-        ) {
-            item {
-                Spacer(Modifier.height(APP_BAR_HEIGHT))
-            }
-            items(sm.chapters.size) {
-                ChapterBar(sm.chapters[it]) { _ ->
-                    sm.navigateToReader(nav, model.ChapterList(it, sm.chapters))
-                }
-            }
-            item {
-                Spacer(Modifier.height(APP_BAR_HEIGHT))
-            }
-        } else Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = modifier.fillMaxSize()
-        ) {
-            if (!sm.showWarning) Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CircularProgressIndicator()
-                Spacer(Modifier.height(8.dp))
-                Text("loading chapters...")
-            } else Text(
-                "No chapters found",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-            )
-        }
-    }
+//    // TODO use session
+//    @Composable
+//    private fun ChapterList(
+//        nav: Navigator,
+//        sm: ChapterScreenModel,
+//        state: LazyListState = sm.chapterListState,
+//        modifier: Modifier = Modifier
+//    ) {
+//        if (sm.chapters.isNotEmpty() && !sm.showLoading) LazyColumn(
+//            state = state,
+//            verticalArrangement = Arrangement.spacedBy(2.dp),
+//            modifier = modifier.fillMaxSize()
+//        ) {
+//            item {
+//                Spacer(Modifier.height(APP_BAR_HEIGHT))
+//            }
+//            items(sm.chapters.size) {
+//                ChapterBar(sm.chapters[it]) { _ ->
+//                    sm.navigateToReader(nav, model.ChapterList(it, sm.chapters))
+//                }
+//            }
+//            item {
+//                Spacer(Modifier.height(APP_BAR_HEIGHT))
+//            }
+//        } else Column(
+//            horizontalAlignment = Alignment.CenterHorizontally,
+//            verticalArrangement = Arrangement.Center,
+//            modifier = modifier.fillMaxSize()
+//        ) {
+//            if (!sm.showWarning) Column(
+//                horizontalAlignment = Alignment.CenterHorizontally
+//            ) {
+//                CircularProgressIndicator()
+//                Spacer(Modifier.height(8.dp))
+//                Text("loading chapters...")
+//            } else Text(
+//                "No chapters found",
+//                fontSize = 18.sp,
+//                fontWeight = FontWeight.Medium,
+//            )
+//        }
+//    }
 
     @Composable
     private fun ChapterList(
@@ -173,11 +168,15 @@ class ChapterScreen : Screen {
                     SessionState.ACTIVE -> SessionPagerColumn(
                         session = session!!,
                         handler = ChapterSessionHandler(session!!),
-                        contentPadding = PaddingValues(vertical = APP_BAR_HEIGHT + 4.dp),
+                        contentPadding = PaddingValues(
+                            top = APP_BAR_HEIGHT + 4.dp,
+                            bottom = APP_BAR_HEIGHT + 24.dp
+                        ),
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         val chapter = session!!.data[it]
-                        ChapterBar(chapter()) {
+                        ChapterBar(chapter()) { _ ->
+                            sm.navigateToReader(nav, model.ChapterList(it, session!!.data))
                         }
                     }
                 }
@@ -279,9 +278,12 @@ class ChapterScreen : Screen {
     ) {
         val screenSize = LocalScreenSize.current
         val settingHeight = screenSize.height / 2
-        AnimatedVisibility(sm.showSettings) {
+        AnimatedVisibility(
+            visible = sm.showSettings,
+            modifier = modifier
+        ) {
             Box(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .height(settingHeight)
                     .padding(start = 8.dp)
@@ -343,10 +345,13 @@ class ChapterScreen : Screen {
                 }
             }
         }
-        AnimatedVisibility(!sm.showSettings) {
+        AnimatedVisibility(
+            visible = !sm.showSettings,
+            modifier = modifier
+        ) {
             Box(
-                modifier = modifier
-                    .size(56.dp)
+                modifier = Modifier
+                    .size(APP_BAR_HEIGHT)
                     .clip(CircleShape)
                     .clickable(onClick = sm::onSettingClick)
             ) {

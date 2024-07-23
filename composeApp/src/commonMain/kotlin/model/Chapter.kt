@@ -13,5 +13,5 @@ data class Chapter(
     operator fun invoke(): Data<ChapterAttributes> = data
 }
 
-fun ListResponse<ChapterAttributes>.toChapter(): List<Chapter> =
+fun ListResponse<ChapterAttributes>.toChapters(): List<Chapter> =
     data.map { Chapter(it) }
