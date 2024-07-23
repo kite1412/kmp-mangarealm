@@ -257,7 +257,7 @@ class MangaDexImpl(
     }
 
     override suspend fun deleteCustomList(customListId: String): Boolean =
-        delete<SimpleResponse>(
+        delete<SimpleResponse<Unit>?>(
             url = "${ApiConstant.CUSTOM_LIST_ACTION}/$customListId",
             methodName = "deleteCustomList"
         ).run {
@@ -265,7 +265,7 @@ class MangaDexImpl(
         }
 
     override suspend fun addMangaToCustomList(mangaId: String, customListId: String): Boolean =
-        post<SimpleResponse?>(
+        post<SimpleResponse<Unit>?>(
             url = ApiConstant.mangaToCustomList(mangaId, customListId),
             methodName = "addMangaToCustomList"
         ).run {
@@ -273,13 +273,38 @@ class MangaDexImpl(
         }
 
     override suspend fun removeMangaFromCustomList(mangaId: String, customListId: String): Boolean =
-        delete<SimpleResponse?>(
+        delete<SimpleResponse<Unit>?>(
             url = ApiConstant.mangaToCustomList(mangaId, customListId),
             methodName = "removeMangaFromCustomList"
         ).run {
             this != null && errors == null
         }
 
+    override suspend fun getMangaReadMarkers(mangaId: String): SimpleResponse<List<String>>? =
+        get<SimpleResponse<List<String>>?>(
+            url = ApiConstant.mangaReadMarkers(mangaId),
+            methodName = "getMangaReadMarkers",
+            auth = true
+        )
+
+    override suspend fun updateMangaReadMarkers(
+        mangaId: String,
+        readIds: List<String>,
+        unreadIds: List<String>
+    ): Boolean {
+        if (readIds.isEmpty() && unreadIds.isEmpty()) return false
+        val res =  post<SimpleResponse<Unit>?>(
+            url = ApiConstant.mangaReadMarkers(mangaId),
+            methodName = "updateMangaReadMarkers",
+            body = mapOf(
+                "chapterIdsRead" to readIds,
+                "chapterIdsUnread" to unreadIds
+            )
+        )?.also {
+            Log.d("POST (updateMangaReadMarkers) manga read markers updated")
+        }
+        return res != null && res.errors == null
+    }
 
     private inner class Paging : MangaDex.Paging {
         private inline fun <R> nextPage(
