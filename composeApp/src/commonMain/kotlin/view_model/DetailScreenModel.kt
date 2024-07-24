@@ -60,8 +60,8 @@ class DetailScreenModel(
     }
 
     fun onRead(nav: Navigator) {
-        readClicked = true
         screenModelScope.launch {
+            readClicked = true
             val availableLanguages = manga.data.attributes
                 .availableTranslatedLanguages
             val languages = availableLanguages.filterNotNull().filter {
@@ -88,6 +88,7 @@ class DetailScreenModel(
                 queries = q,
                 onFailure = {
                     screenModelScope.launch { showWarning() }
+                    readClicked = false
                 }
             ) {
                 screenModelScope.launch {
@@ -99,9 +100,9 @@ class DetailScreenModel(
                     )
                     if (it.data.isNotEmpty()) navigateToReader(nav, ChapterList(0, it.data))
                         else showWarning()
+                    readClicked = false
                 }
             }
-            readClicked = false
         }
     }
 

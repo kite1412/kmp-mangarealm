@@ -60,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
@@ -89,6 +90,7 @@ import assets.`Bxs-book-bookmark`
 import assets.`Chevron-right`
 import assets.`Heart-outline`
 import assets.List
+import assets.`Magic-wand`
 import assets.`Magnifying-glass`
 import assets.Person
 import assets.Settings
@@ -110,12 +112,12 @@ import util.undoEdgeToEdge
 import view_model.main.MainViewModel
 import view_model.main.bottomBarTotalHeight
 import view_model.main.state.HomeState
+import kotlin.math.roundToInt
 
 private const val imageRatio = 2f / 3f
 private val parentHorizontalPadding = 16.dp
 private val tagsHorizontalPadding = 8.dp
 private const val tagsRowCount = 2
-private const val tagsColumnCount = 2
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -207,7 +209,13 @@ fun Home(
                             )
                             Suggestions(
                                 state = state,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                items = listOf(
+                                    { RomComTag(state) },
+                                    { PsyMysTag(state) },
+                                    { AdvComTag(state) },
+                                    { IsekaiTag(state) }
+                                )
                             )
                         }
                         Spacer(modifier = Modifier.height(bottomBarTotalHeight - 8.dp))
@@ -809,22 +817,20 @@ fun tagBoxSize(): Dp = LocalScreenSize.current.width / 2 - parentHorizontalPaddi
 @Composable
 private fun Suggestions(
     state: HomeState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    items: List<@Composable () -> Unit>,
 ) {
     val tagBoxSize = tagBoxSize()
     SubcomposeLayout(modifier = modifier) { constraints ->
         val verticalArrangement = 8.dp
+        val tagsColumnCount = (items.size / 2f).roundToInt()
         val measurable = subcompose("grid") {
             LazyHorizontalGrid(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(verticalArrangement),
-                rows = GridCells.Fixed(2),
+                rows = GridCells.Fixed(tagsColumnCount),
                 modifier = Modifier.fillMaxWidth()
-            ) {
-                item { RomComTag(state) }
-                item { PsyMysTag(state) }
-                item { AdvComTag(state) }
-            }
+            ) { items.forEach { item { it() } } }
         }
         val placeable = measurable.map {
             it.measure(
@@ -971,6 +977,36 @@ fun PsyMysTag(
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .offset(x = -(it / 11f), y = it / 10f)
+                .size(it / 1.5f)
+        )
+    }
+}
+
+@Composable
+fun IsekaiTag(
+    state: HomeState,
+    modifier: Modifier = Modifier
+) {
+    Tag(
+        tag = "Isekai",
+        backgroundGradient = Color(0xFF4B0082) to Color(0xFF87CEEB),
+        onClick = {
+            state.beginSession(
+                queries = state.setIncludedExcludedTags(
+                    tags = state.iseTags.first,
+                    excludedTags = state.iseTags.second
+                )
+            )
+        }
+    ) {
+        Icon(
+            imageVector = Assets.`Magic-wand`,
+            contentDescription = "isekai",
+            tint = Color(0xFF6A5ACD),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .scale(scaleX = -1f, scaleY = 1f)
+                .offset(y = it / 4f)
                 .size(it / 1.5f)
         )
     }
