@@ -1,4 +1,5 @@
 import androidx.compose.ui.graphics.vector.ImageVector
+import assets.Atom
 import assets.Books
 import assets.Clipboard
 import assets.Cross
@@ -52,7 +53,7 @@ public val Assets.Assets: ____KtList<ImageVector>
     if (__Assets != null) {
       return __Assets!!
     }
-    __Assets= listOf(`Arrow-left-solid`, `Book-bookmark`, `Book-close`, `Book-open`,
+    __Assets= listOf(`Arrow-left-solid`, Atom, `Book-bookmark`, `Book-close`, `Book-open`,
         `Bookmark-alt-fill`, `Bookmark-alt`, Books, `Box-open`, `Bxs-book-bookmark`,
         `Chevron-right-bold`, `Chevron-right`, Clipboard, `Collapse-solid`, Cross, `Expand-solid`,
         Eye, Eyeshut, Flower, `Heart-outline`, Height, Home, Info, `List-add`, `List-check`, List,

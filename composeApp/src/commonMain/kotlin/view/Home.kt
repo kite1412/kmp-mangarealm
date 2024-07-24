@@ -85,6 +85,7 @@ import api.mangadex.util.getDesc
 import api.mangadex.util.getTags
 import api.mangadex.util.getTitle
 import api.mangadex.util.obstruct
+import assets.Atom
 import assets.`Book-bookmark`
 import assets.`Bxs-book-bookmark`
 import assets.`Chevron-right`
@@ -213,8 +214,9 @@ fun Home(
                                 items = listOf(
                                     { RomComTag(state) },
                                     { PsyMysTag(state) },
+                                    { SciFiTag(state) },
                                     { AdvComTag(state) },
-                                    { IsekaiTag(state) }
+                                    { IsekaiTag(state) },
                                 )
                             )
                         }
@@ -983,7 +985,7 @@ fun PsyMysTag(
 }
 
 @Composable
-fun IsekaiTag(
+private fun IsekaiTag(
     state: HomeState,
     modifier: Modifier = Modifier
 ) {
@@ -1008,6 +1010,35 @@ fun IsekaiTag(
                 .scale(scaleX = -1f, scaleY = 1f)
                 .offset(y = it / 4f)
                 .size(it / 1.5f)
+        )
+    }
+}
+
+@Composable
+private fun SciFiTag(
+    state: HomeState,
+    modifier: Modifier = Modifier
+) {
+    Tag(
+        tag = "Sci-Fi",
+        backgroundGradient = Color(0xFFFF6347) to Color(0xFF4682B4),
+        onClick = {
+            state.beginSession(
+                queries = state.setIncludedExcludedTags(
+                    tags = state.sciTags.first,
+                    excludedTags = state.sciTags.second
+                )
+            )
+        }
+    ) {
+        Icon(
+            imageVector = Assets.Atom,
+            contentDescription = "sci-fi",
+            tint = Color(0xFFCC4C3C),
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .size(it / 1.7f)
+                .rotate(-30f)
         )
     }
 }
