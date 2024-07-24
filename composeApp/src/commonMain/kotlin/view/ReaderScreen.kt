@@ -82,7 +82,6 @@ import shared.adjustStatusBarColor
 import shared.disableEdgeToEdge
 import util.APP_BAR_HEIGHT
 import util.ImageQuality
-import util.Log
 import util.swipeToPop
 import view_model.Layout
 import view_model.LayoutBarStatus
@@ -468,25 +467,20 @@ class ReaderScreen : Screen {
         BoxWithConstraints(modifier = modifier) {
             val imageHeight = maxHeight / 1.5f
             val density = LocalDensity.current
-            val verticalPadding = imageHeight / 4
+            val pageFraction = imageHeight / 3
             val pageChanged by remember {
                 derivedStateOf {
                     with(density) {
-                        state.firstVisibleItemScrollOffset.toDp() <= verticalPadding
+                        state.firstVisibleItemScrollOffset.toDp() <= pageFraction
                     }
                 }
             }
             LaunchedEffect(pageChanged) {
                 if (pageChanged) sm.currentPage = state.firstVisibleItemIndex + 1
             }
-            LaunchedEffect(state.firstVisibleItemScrollOffset) {
-                with(density) {
-                    Log.w("${state.firstVisibleItemScrollOffset.toDp()} : $verticalPadding")
-                }
-            }
             LazyColumn(
                 state = state,
-                contentPadding = PaddingValues(vertical = verticalPadding),
+                contentPadding = PaddingValues(vertical = pageFraction),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(sm.images.size) {

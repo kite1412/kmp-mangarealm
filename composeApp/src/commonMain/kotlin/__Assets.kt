@@ -29,6 +29,7 @@ import assets.`Expand-solid`
 import assets.`Heart-outline`
 import assets.`List-add`
 import assets.`List-check`
+import assets.`Magic-wand`
 import assets.`Magnifying-glass`
 import assets.`Menu-outline`
 import assets.`Other-1-solid`
@@ -55,7 +56,7 @@ public val Assets.Assets: ____KtList<ImageVector>
         `Bookmark-alt-fill`, `Bookmark-alt`, Books, `Box-open`, `Bxs-book-bookmark`,
         `Chevron-right-bold`, `Chevron-right`, Clipboard, `Collapse-solid`, Cross, `Expand-solid`,
         Eye, Eyeshut, Flower, `Heart-outline`, Height, Home, Info, `List-add`, `List-check`, List,
-        Logo, `Magnifying-glass`, `Menu-outline`, `Other-1-solid`, Person, Search,
+        Logo, `Magic-wand`, `Magnifying-glass`, `Menu-outline`, `Other-1-solid`, Person, Search,
         `Settings-adjust-solid`, `Settings-horizontal`, `Settings-vertical`, Settings,
         `Shelf-outline`, `Shelf-solid`, `Text-align-right`, `Trash-solid`, `Treasure-map`, Width)
     return __Assets!!

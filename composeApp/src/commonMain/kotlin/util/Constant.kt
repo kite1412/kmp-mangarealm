@@ -1,6 +1,5 @@
 package util
 
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 // Kottage's keys
@@ -16,6 +15,8 @@ object KottageConst {
     const val ADVENTURE_TAG_ID = "tags:adv"
     const val PSYCHOLOGICAL_TAG_ID = "tags:psy"
     const val MYSTERY_TAG_ID = "tags:mys"
+    const val SCI_FI_TAG_ID = "tags:sci"
+    const val ISEKAI_TAG_ID = "tags:ise"
     const val TAGS_LIST = "api:tags"
     const val HISTORY_LIST = "local:history"
 }
@@ -28,11 +29,11 @@ const val COMEDY_TAG = "Comedy"
 const val ADVENTURE_TAG = "Adventure"
 const val PSYCHOLOGICAL_TAG = "Psychological"
 const val MYSTERY_TAG = "Mystery"
+const val SCI_FI = "Sci-Fi"
+const val ISEKAI = "Isekai"
 const val ASCENDING = "asc"
 const val DESCENDING = "desc"
 const val DEFAULT_COLLECTION_SIZE = 50
 const val popNoticeDuration = 2000L
-
-val BLUR_TINT = Color.LightGray.copy(alpha = 0.4f)
 
 val APP_BAR_HEIGHT = 62.dp

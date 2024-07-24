@@ -27,10 +27,12 @@ import model.toMangaList
 import util.ADVENTURE_TAG
 import util.COMEDY_TAG
 import util.DEFAULT_COLLECTION_SIZE
+import util.ISEKAI
 import util.KottageConst
 import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
+import util.SCI_FI
 import util.StatusUpdater
 import util.retry
 import view_model.SharedViewModel
@@ -61,6 +63,8 @@ class HomeState(
     var romComTags = listOf<String>() to listOf<String>()
     var advComTags = listOf<String>() to listOf<String>()
     var psyMysTags = listOf<String>() to listOf<String>()
+    var sciTags = listOf<String>() to listOf<String>()
+    var iseTags = listOf<String>() to listOf<String>()
     val session = MangaSession()
     private var sessionQueries = ""
     var showOptions by mutableStateOf(false)
@@ -75,6 +79,8 @@ class HomeState(
         psyMysTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!) to listOf(tags[COMEDY_TAG]!!)
         romComTags = listOf(tags[ROMANCE_TAG]!!, tags[COMEDY_TAG]!!) to psyMysTags.first
         advComTags = listOf(tags[ADVENTURE_TAG]!!, tags[COMEDY_TAG]!!) to (psyMysTags.first + listOf(tags[ROMANCE_TAG]!!))
+        sciTags = listOf(tags[SCI_FI]!!) to listOf()
+        iseTags = listOf(tags[ISEKAI]!!, tags[ADVENTURE_TAG]!!) to listOf()
     }
 
     fun initLatestUpdatesData() {

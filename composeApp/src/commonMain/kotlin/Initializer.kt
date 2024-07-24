@@ -10,11 +10,13 @@ import io.github.irgaly.kottage.put
 import model.Tag
 import util.ADVENTURE_TAG
 import util.COMEDY_TAG
+import util.ISEKAI
 import util.KottageConst
 import util.Log
 import util.MYSTERY_TAG
 import util.PSYCHOLOGICAL_TAG
 import util.ROMANCE_TAG
+import util.SCI_FI
 
 class Initializer(
     private val mangaDex: MangaDex = Libs.mangaDex,
@@ -74,17 +76,29 @@ class Initializer(
             val res = filterTags(name = MYSTERY_TAG, kl = tags)
             if (res != null) kottage.put(KottageConst.MYSTERY_TAG_ID, res)
         }
+        if (!kottage.exists(KottageConst.SCI_FI_TAG_ID)) {
+            val res = filterTags(name = SCI_FI, kl = tags)
+            if (res != null) kottage.put(KottageConst.SCI_FI_TAG_ID, res)
+        }
+        if (!kottage.exists(KottageConst.ISEKAI_TAG_ID)) {
+            val res = filterTags(name = ISEKAI, kl = tags)
+            if (res != null) kottage.put(KottageConst.ISEKAI_TAG_ID, res)
+        }
         val romId = kottage.get<String>(KottageConst.ROMANCE_TAG_ID)
         val comId = kottage.get<String>(KottageConst.COMEDY_TAG_ID)
         val advId = kottage.get<String>(KottageConst.ADVENTURE_TAG_ID)
         val psyId = kottage.get<String>(KottageConst.PSYCHOLOGICAL_TAG_ID)
         val mysId = kottage.get<String>(KottageConst.MYSTERY_TAG_ID)
+        val sciId = kottage.get<String>(KottageConst.SCI_FI_TAG_ID)
+        val iseId = kottage.get<String>(KottageConst.ISEKAI_TAG_ID)
         mandatoryTags.putAll(mapOf(
             ROMANCE_TAG to romId,
             COMEDY_TAG to comId,
             ADVENTURE_TAG to advId,
             PSYCHOLOGICAL_TAG to psyId,
             MYSTERY_TAG to mysId,
+            SCI_FI to sciId,
+            ISEKAI to iseId
         ))
         postSetup(mandatoryTags)
     }
