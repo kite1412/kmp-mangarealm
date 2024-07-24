@@ -79,7 +79,7 @@ class HomeState(
         psyMysTags = listOf(tags[PSYCHOLOGICAL_TAG]!!, tags[MYSTERY_TAG]!!) to listOf(tags[COMEDY_TAG]!!)
         romComTags = listOf(tags[ROMANCE_TAG]!!, tags[COMEDY_TAG]!!) to psyMysTags.first
         advComTags = listOf(tags[ADVENTURE_TAG]!!, tags[COMEDY_TAG]!!) to (psyMysTags.first + listOf(tags[ROMANCE_TAG]!!))
-        sciTags = listOf(tags[SCI_FI]!!) to listOf()
+        sciTags = listOf(tags[SCI_FI]!!) to listOf(tags[ROMANCE_TAG]!!)
         iseTags = listOf(tags[ISEKAI]!!, tags[ADVENTURE_TAG]!!) to listOf()
     }
 
