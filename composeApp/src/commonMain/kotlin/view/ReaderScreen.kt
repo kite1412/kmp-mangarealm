@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -26,11 +27,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerSnapDistance
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -42,7 +45,9 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -76,6 +82,7 @@ import shared.adjustStatusBarColor
 import shared.disableEdgeToEdge
 import util.APP_BAR_HEIGHT
 import util.ImageQuality
+import util.Log
 import util.swipeToPop
 import view_model.Layout
 import view_model.LayoutBarStatus
@@ -422,29 +429,64 @@ class ReaderScreen : Screen {
             if (sm.zoomIn) pagerState.scrollToPage(currentIndex, )
                 else state.scrollToItem(currentIndex)
         }
-        if (sm.images.isNotEmpty()) if (sm.zoomIn) {
-            LaunchedEffect(pagerState.currentPage) {
-                sm.currentPage = pagerState.currentPage + 1
-                sm.togglePageIndicator()
+        if (sm.images.isNotEmpty()) if (sm.zoomIn) SwipeableColumnLayout(sm, pagerState, modifier)
+            else ScrollableColumnLayout(sm, state, modifier)
+    }
+
+    @OptIn(ExperimentalFoundationApi::class)
+    @Composable
+    private fun SwipeableColumnLayout(
+        sm: ReaderScreenModel,
+        pagerState: PagerState,
+        modifier: Modifier = Modifier
+    ) {
+        LaunchedEffect(pagerState.currentPage) {
+            sm.currentPage = pagerState.currentPage + 1
+            sm.togglePageIndicator()
+        }
+        VerticalPager(
+            state = pagerState,
+            modifier = modifier,
+            beyondBoundsPageCount = 1
+        ) {
+            PageImageLoader(
+                sm = sm,
+                index = it,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Transparent)
+            ) { sm.handleLayoutBar() }
+        }
+    }
+
+    @Composable
+    private fun ScrollableColumnLayout(
+        sm: ReaderScreenModel,
+        state: LazyListState,
+        modifier: Modifier = Modifier
+    ) {
+        BoxWithConstraints(modifier = modifier) {
+            val imageHeight = maxHeight / 1.5f
+            val density = LocalDensity.current
+            val verticalPadding = imageHeight / 4
+            val pageChanged by remember {
+                derivedStateOf {
+                    with(density) {
+                        state.firstVisibleItemScrollOffset.toDp() <= verticalPadding
+                    }
+                }
             }
-            VerticalPager(
-                state = pagerState,
-                modifier = modifier,
-                beyondBoundsPageCount = 1
-            ) {
-                PageImageLoader(
-                    sm = sm,
-                    index = it,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Transparent)
-                ) { sm.handleLayoutBar() }
+            LaunchedEffect(pageChanged) {
+                if (pageChanged) sm.currentPage = state.firstVisibleItemIndex + 1
             }
-        } else Box(modifier = modifier) {
-            val screenSize = LocalScreenSize.current
-            val imageHeight = screenSize.height / 1.5f
+            LaunchedEffect(state.firstVisibleItemScrollOffset) {
+                with(density) {
+                    Log.w("${state.firstVisibleItemScrollOffset.toDp()} : $verticalPadding")
+                }
+            }
             LazyColumn(
                 state = state,
+                contentPadding = PaddingValues(vertical = verticalPadding),
                 modifier = Modifier.fillMaxSize()
             ) {
                 items(sm.images.size) {
@@ -493,7 +535,14 @@ class ReaderScreen : Screen {
             contentScale = ContentScale.Fit,
             modifier = modifier
         ) {
-            Box(modifier = modifier) {
+            val interactionSource = remember { MutableInteractionSource() }
+            Box(
+                modifier = modifier.clickable(
+                    indication = null,
+                    interactionSource = interactionSource,
+                    onClick = { onTap?.invoke(Offset.Zero) }
+                )
+            ) {
                 LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
                     Text(
                         "loading page...",
