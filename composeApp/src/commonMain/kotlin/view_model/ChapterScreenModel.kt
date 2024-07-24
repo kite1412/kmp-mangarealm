@@ -92,8 +92,9 @@ class ChapterScreenModel(
         val queriesMap = sharedViewModel.chapterDefaultQueries(language, order)
         sharedViewModel.beginChapterSession(
             manga = manga,
-            queries = queriesMap
-        ) { s -> fetchingChaptersReadMarker = !s }
+            queries = queriesMap,
+            readMarkerFetchState = { s -> fetchingChaptersReadMarker = !s }
+        )
     }
 
     fun onSettingClick() {

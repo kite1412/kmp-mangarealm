@@ -393,7 +393,7 @@ class ReaderScreen : Screen {
             ) {
                 sm.updatePainter(index, it)
             }
-            ZoomedInPage(
+            Page(
                 painter = image.painter,
                 onTap = onTap,
                 contentDescription = image.fileUrl,
@@ -429,6 +429,9 @@ class ReaderScreen : Screen {
                 PageImageLoader(
                     sm = sm,
                     index = it,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Transparent)
                 ) { sm.handleLayoutBar() }
             }
         } else LazyColumn(modifier = modifier) {
@@ -442,35 +445,26 @@ class ReaderScreen : Screen {
     }
 
     @Composable
-    private fun ZoomedInPage(
+    private fun Page(
         painter: Painter?,
         contentDescription: String = "",
         modifier: Modifier = Modifier,
         onTap: ((Offset) -> Unit)? = null
     ) {
-        val common = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent)
         ZoomableImage(
             painter = painter,
             onTap = onTap,
             contentDescription = contentDescription,
             contentScale = ContentScale.Fit,
-            modifier = modifier.then(common)
+            modifier = modifier
         ) {
-            Box(modifier = modifier.then(common)) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.align(Alignment.Center)
-                ) {
-                    LoadingIndicator {
-                        Text(
-                            "loading page...",
-                            color = Color.White,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+            Box(modifier = modifier) {
+                LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
+                    Text(
+                        "loading page...",
+                        color = Color.White,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }

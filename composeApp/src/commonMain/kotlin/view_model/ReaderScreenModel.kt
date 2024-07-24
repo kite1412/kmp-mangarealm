@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.lifecycle.viewModelScope
 import api.mangadex.service.MangaDex
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -80,7 +81,7 @@ class ReaderScreenModel(
                     )
                     cache.chapterImages[index] = chapterImages
                     this@ReaderScreenModel.images.addAll(chapterImages())
-                    launch {
+                    sharedViewModel.viewModelScope.launch {
                         retry(
                             count = 3,
                             predicate = { false }

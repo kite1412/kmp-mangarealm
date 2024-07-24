@@ -143,11 +143,11 @@ class SharedViewModel(
         state: (Boolean) -> Unit = {}
     ) {
         viewModelScope.launch {
+            state(false)
             retry(
                 count = 3,
                 predicate = { r -> r == null || r.errors != null }
             ) {
-                state(false)
                 mangaDex.getMangaReadMarkers(mangaId)
             }?.let { r ->
                 if (r.data!!.isNotEmpty()) chapters.forEach {
@@ -161,7 +161,9 @@ class SharedViewModel(
     fun beginChapterSession(
         manga: Manga,
         queries: Map<String, Any>,
-        readMarkerFetchState: (Boolean) -> Unit = {}
+        readMarkerFetchState: (Boolean) -> Unit = {},
+        onFailure: () -> Unit = {},
+        onSuccess: (ChapterSession) -> Unit = {}
     ) {
         viewModelScope.launch {
             val q = generateQuery(queries)
@@ -170,16 +172,18 @@ class SharedViewModel(
                 chapterSessions[currentChapterSessionKey] = ChapterSession(manga.data.id)
                 val s = chapterSessions[currentChapterSessionKey]!!
                 s.init(queries)
-                retry<ListResponse<ChapterAttributes>?>(
+                val res = retry<ListResponse<ChapterAttributes>?>(
                     count = 3,
                     predicate = { it == null || it.errors != null }
                 ) {
                     mangaDex.getMangaChapters(manga.data.id, q)
-                }?.let {
-                    s.setActive(it, it.toChapters())
-                    updateChapterReadMarker(manga.data.id, s.data, readMarkerFetchState)
                 }
+                if (res != null) {
+                    s.setActive(res, res.toChapters())
+                    updateChapterReadMarker(manga.data.id, s.data, readMarkerFetchState)
+                } else return@launch onFailure()
             }
+            return@launch onSuccess(chapterSessions[currentChapterSessionKey]!!)
         }
     }
 }
