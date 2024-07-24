@@ -102,7 +102,7 @@ class ChapterScreen : Screen {
                 )
                 Warning(
                     message = "Loading read markers...",
-                    height = APP_BAR_HEIGHT / 2,
+                    height = APP_BAR_HEIGHT,
                     show = sm.fetchingChaptersReadMarker,
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )
@@ -136,7 +136,7 @@ class ChapterScreen : Screen {
                             top = APP_BAR_HEIGHT + 4.dp,
                             bottom = APP_BAR_HEIGHT + 24.dp
                         ),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         val chapter = session!!.data[it]

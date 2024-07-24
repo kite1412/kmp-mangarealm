@@ -24,7 +24,6 @@ import model.CustomList
 import model.MangaStatus
 import model.Status
 import model.session.isEmpty
-import model.toChapters
 import model.toCustomList
 import util.ASCENDING
 import util.StatusUpdater
@@ -81,39 +80,27 @@ class DetailScreenModel(
                 l =  if (availableLanguages.isNotEmpty()) manga.data.attributes
                     .availableTranslatedLanguages[0]!! else return@launch showWarning("No chapters found")
             }
-            val chapterSession = sharedViewModel.chapterSessions[
-                ChapterKey(
-                    mangaId = manga.data.id,
-                    queries = generateQuery(sharedViewModel.chapterDefaultQueries(l, ASCENDING))
-                )
-            ]
-            if (chapterSession == null) {
-                val lang = generateQuery(mapOf("translatedLanguage[]" to l))
-                val res = mangaDex.getMangaChapters(
-                    mangaId = manga.data.id,
-                    queries = generateQuery(
-                        queryParams = mapOf("order[chapter]" to ASCENDING),
-                        otherParams = lang
-                    )
-                )
-                if (res != null) {
-                    if (res.errors != null) return@launch showWarning()
-                    val chapterList = ChapterList(chapters = res.toChapters())
+            val q = sharedViewModel.chapterDefaultQueries(l, ASCENDING)
+            val key = ChapterKey(manga.data.id, generateQuery(q))
+            sharedViewModel.currentChapterSessionKey = key
+            sharedViewModel.beginChapterSession(
+                manga = manga,
+                queries = q,
+                onFailure = {
+                    screenModelScope.launch { showWarning() }
+                }
+            ) {
+                screenModelScope.launch {
                     cache.chapters[manga.data.id] = Chapters(
                         language = l,
                         order = ASCENDING,
-                        response = res,
-                        data = res.data.toMutableList()
+                        response = it.response,
+                        data = it.response.data.toMutableList()
                     )
-                    if (res.data.isNotEmpty()) navigateToReader(
-                        nav = nav,
-                        chapterList = chapterList
-                    )
-                } else return@launch showWarning()
-            } else navigateToReader(
-                nav = nav,
-                chapterList = ChapterList(chapters = chapterSession.data)
-            )
+                    if (it.data.isNotEmpty()) navigateToReader(nav, ChapterList(0, it.data))
+                        else showWarning()
+                }
+            }
             readClicked = false
         }
     }

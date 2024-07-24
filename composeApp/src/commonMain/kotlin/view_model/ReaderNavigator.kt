@@ -8,7 +8,7 @@ import view.ReaderScreen
 interface ReaderNavigator {
     fun navigateToReader(
         nav: Navigator,
-        chapterList: ChapterList
+        chapterList: ChapterList,
     ) {
         SharedObject.chapterList = chapterList
         nav.push(ReaderScreen())
