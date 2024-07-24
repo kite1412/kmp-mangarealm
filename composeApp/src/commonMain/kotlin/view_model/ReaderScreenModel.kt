@@ -174,6 +174,12 @@ class ReaderScreenModel(
         images.clear()
         getChapterImages()
     }
+
+    suspend fun togglePageIndicator() {
+        showPageIndicator = true
+        delay(1000)
+        showPageIndicator = false
+    }
 }
 
 enum class LayoutBarStatus {

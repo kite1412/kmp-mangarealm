@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -408,18 +409,23 @@ class ReaderScreen : Screen {
         sm: ReaderScreenModel,
         modifier: Modifier = Modifier
     ) {
+        val currentIndex = sm.currentPage - 1
+        val pagerState = rememberPagerState(initialPage = currentIndex) { sm.images.size }
+        val state = rememberLazyListState(initialFirstVisibleItemIndex = currentIndex)
+        LaunchedEffect(sm.pageNavigatorIndex) {
+            delay(500)
+            sm.currentPage = sm.pageNavigatorIndex + 1
+            if (sm.zoomIn) pagerState.scrollToPage(sm.pageNavigatorIndex)
+                else state.scrollToItem(sm.pageNavigatorIndex)
+        }
+        LaunchedEffect(sm.zoomIn) {
+            if (sm.zoomIn) pagerState.scrollToPage(currentIndex, )
+                else state.scrollToItem(currentIndex)
+        }
         if (sm.images.isNotEmpty()) if (sm.zoomIn) {
-            val pagerState = rememberPagerState(initialPage = sm.currentPage - 1) { sm.images.size }
             LaunchedEffect(pagerState.currentPage) {
                 sm.currentPage = pagerState.currentPage + 1
-                sm.showPageIndicator = true
-                delay(1000)
-                sm.showPageIndicator = false
-            }
-            LaunchedEffect(sm.pageNavigatorIndex) {
-                delay(500)
-                sm.currentPage = sm.pageNavigatorIndex + 1
-                pagerState.scrollToPage(sm.pageNavigatorIndex)
+                sm.togglePageIndicator()
             }
             VerticalPager(
                 state = pagerState,
@@ -434,8 +440,37 @@ class ReaderScreen : Screen {
                         .background(Color.Transparent)
                 ) { sm.handleLayoutBar() }
             }
-        } else LazyColumn(modifier = modifier) {
-
+        } else Box(modifier = modifier) {
+            val screenSize = LocalScreenSize.current
+            val imageHeight = screenSize.height / 1.5f
+            LazyColumn(
+                state = state,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(sm.images.size) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(imageHeight)
+                    ) {
+                        Text(
+                            "${it + 1} / ${sm.images.size}",
+                            color = Color.White,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.Black)
+                                .padding(vertical = 2.dp)
+                        )
+                        PageImageLoader(
+                            sm = sm,
+                            index = it,
+                            modifier = Modifier.fillMaxSize()
+                        ) { sm.handleLayoutBar() }
+                    }
+                }
+            }
         }
     }
 
@@ -523,7 +558,9 @@ class ReaderScreen : Screen {
                     applySpace = true,
                     modifier = Modifier.weight(0.3f)
                 )
-                ZoomMode(sm.zoomIn, modifier = Modifier.weight(0.1f)) {}
+                ZoomMode(sm.zoomIn, modifier = Modifier.weight(0.1f)) {
+                    sm.zoomIn = !sm.zoomIn
+                }
                 PageIndicator(
                     sm = sm,
                     modifier = Modifier
