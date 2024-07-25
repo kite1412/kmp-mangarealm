@@ -20,6 +20,7 @@ import io.github.irgaly.kottage.getOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import model.AppSettings
 import model.ChapterList
 import model.Manga
 import model.emptyManga
@@ -42,6 +43,7 @@ data class ScreenSize(
 val LocalScreenSize = compositionLocalOf { ScreenSize(0.dp, 0.dp) }
 val LocalMainViewModel = compositionLocalOf { MainViewModel(SharedViewModel()) }
 val LocalSharedViewModel = compositionLocalOf { SharedViewModel() }
+val LocalAppSettings = compositionLocalOf { AppSettings() }
 
 object Libs {
     val kottageStorage = Kottage(
@@ -97,9 +99,10 @@ fun App() {
             mainViewModel.homeState.updateUsername()
         }
     }
-    AppTheme {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            CompositionLocalProvider(LocalSharedViewModel provides sharedViewModel) {
+    CompositionLocalProvider(LocalSharedViewModel provides sharedViewModel) {
+        AppTheme {
+            adjustStatusBarColor(MaterialTheme.colors.onBackground)
+            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 CompositionLocalProvider(LocalScreenSize provides ScreenSize(height = this.maxHeight, width = this.maxWidth)) {
                     if (!isLoggedIn.value) {
                         LoginScreen(onSuccess = {

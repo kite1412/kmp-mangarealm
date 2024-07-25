@@ -124,7 +124,7 @@ class DetailScreen : Screen {
                     .swipeToPop(nav, enabled = !sm.updating)
             ) {
                 val aboveBottomBar = APP_BAR_HEIGHT + 16.dp
-                Background()
+//                Background()
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxSize().padding(bottom = sm.chapterListHeight.dp)
@@ -291,14 +291,14 @@ class DetailScreen : Screen {
                     ) {
                         Text(
                             "Read",
-                            color = MaterialTheme.colors.background,
+                            color = Color.White,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Icon(
                             imageVector = Assets.`Book-open`,
                             contentDescription = "read",
-                            tint = MaterialTheme.colors.background
+                            tint = Color.White
                         )
                     }
                 }

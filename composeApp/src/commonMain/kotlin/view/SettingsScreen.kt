@@ -1,5 +1,6 @@
 package view
 
+import LocalSharedViewModel
 import SharedObject
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,7 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +35,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import util.APP_BAR_HEIGHT
 import util.popNoticeDuration
 import util.swipeToPop
 import view_model.SettingsScreenModel
@@ -43,7 +44,8 @@ class SettingsScreen : Screen {
     @OptIn(ExperimentalVoyagerApi::class)
     @Composable
     override fun Content() {
-        val sm = rememberScreenModel { SettingsScreenModel() }
+        val sharedViewModel = LocalSharedViewModel.current
+        val sm = rememberScreenModel { SettingsScreenModel(sharedViewModel) }
         val nav = LocalNavigator.currentOrThrow
         LifecycleEffectOnce {
             val count = SharedObject.popNotifierCount--
@@ -55,16 +57,19 @@ class SettingsScreen : Screen {
         }
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            "Settings",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    },
-                    backgroundColor = MaterialTheme.colors.background
-                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(APP_BAR_HEIGHT)
+                        .background(MaterialTheme.colors.background)
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        "Settings",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             },
             modifier = Modifier.swipeToPop(nav)
         ) {

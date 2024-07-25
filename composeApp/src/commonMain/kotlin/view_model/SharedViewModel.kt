@@ -11,7 +11,10 @@ import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.ChapterAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
+import io.github.irgaly.kottage.KottageStorage
+import io.github.irgaly.kottage.getOrNull
 import kotlinx.coroutines.launch
+import model.AppSettings
 import model.Chapter
 import model.ChapterKey
 import model.CustomList
@@ -24,20 +27,30 @@ import model.session.CustomListSession
 import model.session.isEmpty
 import model.toChapters
 import model.toCustomList
+import util.KottageConst
 import util.retry
 
 class SharedViewModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
+    private val kottageStorage: KottageStorage = Libs.kottageStorage
 ) : ViewModel() {
     val mangaStatus = mutableMapOf<Status, SnapshotStateList<Manga>>()
     val customListSession = CustomListSession()
     val chapterSessions = mutableStateMapOf<ChapterKey, ChapterSession>()
     var currentChapterSessionKey = ChapterKey()
+    val appSettings = AppSettings()
 
     init {
-        MangaStatus(true).forEach {
-            mangaStatus[it] = mutableStateListOf()
+        viewModelScope.launch {
+            MangaStatus(true).forEach {
+                mangaStatus[it] = mutableStateListOf()
+            }
+            loadAppSettings()
         }
+    }
+
+    private suspend fun loadAppSettings() {
+        appSettings.isDarkMode.value = kottageStorage.getOrNull<Boolean>(KottageConst.THEME_MODE) ?: false
     }
 
     fun onMangaStatusPainterLoaded(status: Status, painter: Painter, index: Int) {
