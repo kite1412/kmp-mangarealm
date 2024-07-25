@@ -31,6 +31,7 @@ expect val currentTimeMillis: Long
 expect fun ZoomableImage(
     painter: Painter?,
     contentDescription: String = "",
+    applyReadMode: Boolean = true,
     contentScale: ContentScale? = null,
     alignment: Alignment? = null,
     modifier: Modifier = Modifier,

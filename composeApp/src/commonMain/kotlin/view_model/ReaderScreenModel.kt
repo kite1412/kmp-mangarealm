@@ -39,7 +39,7 @@ class ReaderScreenModel(
     var showPageNavigator by mutableStateOf(false)
     var pageNavigatorIndex by mutableIntStateOf(0)
     val images = mutableStateListOf<ChapterImage>()
-    private var index by mutableStateOf("")
+    var index by mutableStateOf("")
     var showChapterList by mutableStateOf(false)
     var showWarning by mutableStateOf(false)
 
@@ -113,10 +113,7 @@ class ReaderScreenModel(
 
     fun onPromptClick(q: String) {
         showPrompt = false
-        when(q) {
-            ImageQuality.HIGH -> imageQuality = ImageQuality.HIGH
-            ImageQuality.DATA_SAVER -> imageQuality = ImageQuality.DATA_SAVER
-        }
+        imageQuality = q
         getChapterImages()
     }
 
@@ -130,18 +127,14 @@ class ReaderScreenModel(
 
     fun changeLayout(layout: Layout) {
         layoutBarOnUpdate()
-        defaultLayout = when(layout) {
-            Layout.COLUMN -> true
-            Layout.ROW -> false
-        }
+        defaultLayout = layout == Layout.COLUMN
     }
 
     fun handleLayoutBar() {
         if (!showChapterList) {
             if (layoutBarDismissible) {
                 showLayoutBar = when(showLayoutBar) {
-                    LayoutBarStatus.SHOW -> LayoutBarStatus.HIDE
-                    LayoutBarStatus.UPDATE -> LayoutBarStatus.HIDE
+                    LayoutBarStatus.SHOW, LayoutBarStatus.UPDATE -> LayoutBarStatus.HIDE
                     else -> LayoutBarStatus.SHOW
                 }
             } else {
@@ -192,8 +185,6 @@ enum class Layout {
     COLUMN,
     ROW;
 
-    override fun toString(): String = when(this) {
-        COLUMN -> "Column"
-        ROW -> "Row"
-    }
+    override fun toString(): String =
+        if (this == COLUMN) "Column" else "Row"
 }

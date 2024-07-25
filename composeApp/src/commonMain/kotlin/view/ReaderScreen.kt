@@ -385,6 +385,7 @@ class ReaderScreen : Screen {
     private fun PageImageLoader(
         sm: ReaderScreenModel,
         index: Int,
+        applyReadMode: Boolean = true,
         modifier: Modifier = Modifier,
         onTap: ((Offset) -> Unit)? = null
     ) {
@@ -403,6 +404,7 @@ class ReaderScreen : Screen {
             Page(
                 painter = image.painter,
                 onTap = onTap,
+                applyReadMode = applyReadMode,
                 contentDescription = image.fileUrl,
                 modifier = modifier
             )
@@ -424,8 +426,8 @@ class ReaderScreen : Screen {
             if (sm.zoomIn) pagerState.scrollToPage(sm.pageNavigatorIndex)
                 else state.scrollToItem(sm.pageNavigatorIndex)
         }
-        LaunchedEffect(sm.zoomIn) {
-            if (sm.zoomIn) pagerState.scrollToPage(currentIndex, )
+        LaunchedEffect(sm.zoomIn, sm.index) {
+            if (sm.zoomIn) pagerState.scrollToPage(currentIndex)
                 else state.scrollToItem(currentIndex)
         }
         if (sm.images.isNotEmpty()) if (sm.zoomIn) SwipeableColumnLayout(sm, pagerState, modifier)
@@ -502,6 +504,7 @@ class ReaderScreen : Screen {
                         PageImageLoader(
                             sm = sm,
                             index = it,
+                            applyReadMode = false,
                             modifier = Modifier.fillMaxSize()
                         ) { sm.handleLayoutBar() }
                     }
@@ -519,12 +522,14 @@ class ReaderScreen : Screen {
     private fun Page(
         painter: Painter?,
         contentDescription: String = "",
+        applyReadMode: Boolean = true,
         modifier: Modifier = Modifier,
         onTap: ((Offset) -> Unit)? = null
     ) {
         ZoomableImage(
             painter = painter,
             onTap = onTap,
+            applyReadMode = applyReadMode,
             contentDescription = contentDescription,
             contentScale = ContentScale.Fit,
             modifier = modifier

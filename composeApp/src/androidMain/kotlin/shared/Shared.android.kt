@@ -71,6 +71,7 @@ actual fun disableEdgeToEdge() {
 actual fun ZoomableImage(
     painter: Painter?,
     contentDescription: String,
+    applyReadMode: Boolean,
     contentScale: ContentScale?,
     alignment: Alignment?,
     modifier: Modifier,
@@ -80,7 +81,7 @@ actual fun ZoomableImage(
     if (painter != null) ZoomImage(
         painter = painter,
         state = rememberZoomState().apply {
-            zoomable.readMode = ReadMode.Default
+            if (applyReadMode) zoomable.readMode = ReadMode.Default
         },
         contentDescription = contentDescription,
         contentScale = contentScale ?: ContentScale.Fit,

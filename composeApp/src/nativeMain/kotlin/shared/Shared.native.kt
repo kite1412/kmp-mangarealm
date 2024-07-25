@@ -38,6 +38,7 @@ actual fun disableEdgeToEdge() {
 actual fun ZoomableImage(
     painter: Painter?,
     contentDescription: String,
+    applyReadMode: Boolean,
     contentScale: ContentScale?,
     alignment: Alignment?,
     modifier: Modifier,
