@@ -51,6 +51,7 @@ class SharedViewModel(
 
     private suspend fun loadAppSettings() {
         appSettings.isDarkMode.value = kottageStorage.getOrNull<Boolean>(KottageConst.THEME_MODE) ?: false
+        appSettings.initialized.value = true
     }
 
     fun onMangaStatusPainterLoaded(status: Status, painter: Painter, index: Int) {

@@ -4,7 +4,6 @@ import Assets
 import LocalScreenSize
 import LocalSharedViewModel
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,7 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -54,17 +52,15 @@ import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import mangarealm.composeapp.generated.resources.Res
-import mangarealm.composeapp.generated.resources.white_textured_concrete
 import model.Chapter
 import model.session.SessionState
 import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
 import util.APP_BAR_HEIGHT
 import util.ASCENDING
 import util.DESCENDING
+import util.appGray
 import util.edgeToEdge
-import util.isInDarkMode
+import util.isDarkMode
 import util.mapLanguage
 import util.session_handler.ChapterSessionHandler
 import util.swipeToPop
@@ -160,18 +156,13 @@ class ChapterScreen : Screen {
             modifier = modifier
                 .fillMaxWidth()
                 .height(height)
+                .background(MaterialTheme.colors.onBackground)
         ) {
-            Image(
-                painter = painterResource(Res.drawable.white_textured_concrete),
-                contentDescription = null,
-                contentScale = ContentScale.FillWidth,
-                alpha = 0.8f,
-                modifier = Modifier.fillMaxSize()
-            )
             Text(
                 "Chapter List",
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Medium,
+                color = Color.White,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 8.dp)
@@ -179,7 +170,6 @@ class ChapterScreen : Screen {
         }
     }
 
-    @OptIn(ExperimentalResourceApi::class)
     @Composable
     private fun ChapterSettings(
         sm: ChapterScreenModel,
@@ -197,13 +187,8 @@ class ChapterScreen : Screen {
                     .height(settingHeight)
                     .padding(start = 8.dp)
                     .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colors.onBackground)
             ) {
-                Image(
-                    painter = painterResource(Res.drawable.white_textured_concrete),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
-                    modifier = Modifier.fillMaxSize()
-                )
                 Box {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Row(
@@ -214,15 +199,16 @@ class ChapterScreen : Screen {
                                 .padding(start = 16.dp)
                         ) {
                             Text(
-                                "Search Settings",
+                                "Chapter Settings",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
                                 fontStyle = FontStyle.Italic
                             )
                             IconButton(onClick = sm::onSettingClick) {
                                 Icon(
                                     imageVector = Assets.Cross,
-                                    contentDescription = "next page",
+                                    contentDescription = "cancel",
                                     tint = Color.Red,
                                 )
                             }
@@ -262,19 +248,13 @@ class ChapterScreen : Screen {
                 modifier = Modifier
                     .size(APP_BAR_HEIGHT)
                     .clip(CircleShape)
+                    .background(MaterialTheme.colors.secondary)
                     .clickable(onClick = sm::onSettingClick)
             ) {
-                Image(
-                    painter = painterResource(Res.drawable.white_textured_concrete),
-                    contentDescription = null,
-                    contentScale = ContentScale.FillBounds,
-                    alpha = 0.8f,
-                    modifier = Modifier.fillMaxSize()
-                )
                 Icon(
                     imageVector = Assets.`Settings-adjust-solid`,
                     contentDescription = "settings",
-                    tint = Color.Black,
+                    tint = Color.White,
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
@@ -343,6 +323,7 @@ class ChapterScreen : Screen {
                 label,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp,
+                color = Color.White,
                 modifier = Modifier.padding(start = 4.dp)
             )
             FlowRow(
@@ -360,9 +341,10 @@ class ChapterScreen : Screen {
         onClick: () -> Unit
     ) {
         val clip = RoundedCornerShape(6.dp)
+        val gray = appGray()
         val outer = if (!selected) Modifier.border(
             width = 1.dp,
-            color = Color.DarkGray,
+            color = gray,
             shape = clip
         )
             else Modifier
@@ -370,12 +352,13 @@ class ChapterScreen : Screen {
             modifier = modifier
                 .clip(clip)
                 .clickable(onClick = onClick)
-                .background(if (selected) Color.DarkGray else Color.Transparent)
+                .background(if (selected) gray else Color.Transparent)
                 .then(outer)
         ) {
             Text(
                 label,
-                color = if (selected) Color.White else Color.DarkGray,
+                color = if (selected) Color.White else gray,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
             )
         }
@@ -390,7 +373,7 @@ class ChapterScreen : Screen {
     ) {
         Card(
             backgroundColor = if (chapter.isRead.value)
-                if (!isInDarkMode()) Color(0xFFA39C8E) else Color(0xFF0A0A0A)
+                if (!isDarkMode()) Color(0xFFA39C8E) else Color(0xFF0A0A0A)
                     else MaterialTheme.colors.background ,
             elevation = 6.dp,
             shape = RoundedCornerShape(4.dp),

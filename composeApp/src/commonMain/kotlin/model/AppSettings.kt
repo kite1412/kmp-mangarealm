@@ -4,5 +4,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 
 data class AppSettings(
-    var isDarkMode: MutableState<Boolean> = mutableStateOf(false)
+    var isDarkMode: MutableState<Boolean> = mutableStateOf(false),
+    var initialized: MutableState<Boolean> = mutableStateOf(false)
 )
