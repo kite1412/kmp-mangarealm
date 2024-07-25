@@ -23,6 +23,7 @@ import util.retry
 import view_model.ChapterNavigator
 import view_model.CustomListNavigator
 import view_model.DetailNavigator
+import view_model.SettingsNavigator
 import view_model.SharedViewModel
 import view_model.main.state.DiscoveryState
 import view_model.main.state.HomeState
@@ -35,7 +36,7 @@ class MainViewModel(
     mangaDex: MangaDex = Libs.mangaDex,
     kottageStorage: KottageStorage = Libs.kottageStorage,
     cache: Cache = Libs.cache
-) : ViewModel(), DetailNavigator, ChapterNavigator, CustomListNavigator {
+) : ViewModel(), DetailNavigator, ChapterNavigator, CustomListNavigator, SettingsNavigator {
     val menuStack = mutableStateStackOf(Menu.HOME)
     val currentPage by derivedStateOf { menuStack.lastItemOrNull }
     var undoEdgeToEdge by mutableStateOf(false)

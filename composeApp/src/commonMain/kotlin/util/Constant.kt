@@ -19,6 +19,7 @@ object KottageConst {
     const val ISEKAI_TAG_ID = "tags:ise"
     const val TAGS_LIST = "api:tags"
     const val HISTORY_LIST = "local:history"
+    const val THEME_MODE = "setting:theme:mode"
 }
 
 const val SPLASH_TIME = 2000
