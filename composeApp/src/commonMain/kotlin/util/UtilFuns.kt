@@ -1,5 +1,6 @@
 package util
 
+import LocalSharedViewModel
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -91,3 +92,13 @@ fun defaultMangaRequestQueries(queries: Map<String, Any> = mapOf()): Map<String,
     "includes[]" to listOf("cover_art", "author"),
 ).also { it.putAll(queries) }
 
+@Composable
+fun isInDarkMode(): Boolean = LocalSharedViewModel.current.appSettings.isDarkMode.value
+
+@Composable
+fun appGray(): Color = if (isInDarkMode())
+    Color.Gray else Color.DarkGray
+
+@Composable
+fun reverseAppGray(): Color = if (isInDarkMode())
+    Color.DarkGray else Color.Gray

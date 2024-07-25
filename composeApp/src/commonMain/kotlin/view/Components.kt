@@ -111,10 +111,12 @@ import model.SwipeAction
 import model.session.Session
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import util.isInDarkMode
 import util.publicationDemographic
 import util.publicationDemographicColor
 import util.publicationStatus
 import util.publicationStatusColor
+import util.reverseAppGray
 import util.session_handler.SessionHandler
 
 @Composable
@@ -199,7 +201,7 @@ fun Action(
     content: @Composable BoxScope.() -> Unit
 ) {
     val outer: Modifier = if (fill) Modifier.background(
-        color = if (enabled) color else Color.Gray
+        color = if (enabled) color else reverseAppGray()
     )
     else Modifier.border(
         width = borderWidth,
@@ -760,23 +762,25 @@ fun PopNotice(
     val startPadding = 4.dp
     val screenSize = LocalScreenSize.current
     val popAnimation by animateDpAsState(if (show) 0f.dp else -(screenSize.width.value / 2f).dp)
+    val isInDarkMode = isInDarkMode()
+    val color = if (isInDarkMode) Color.Black else Color.White
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .offset(x = popAnimation)
             .padding(start = startPadding)
             .clip(CircleShape)
-            .background(Color.Black.copy(alpha = 0.5f))
+            .background(if (!isInDarkMode) Color.Black else Color.White)
             .padding(start = 8.dp, end = 4.dp, top = 2.dp, bottom = 2.dp)
     ) {
         Text(
             "Swipe to pop",
-            color = Color.White
+            color = color
         )
         Icon(
             imageVector = Assets.`Chevron-right`,
             contentDescription = "back",
-            tint = Color.White,
+            tint = color,
             modifier = Modifier.size(16.dp)
         )
     }
@@ -934,6 +938,7 @@ fun AddCustomListPrompt(
                     bottomEnd = 16.dp,
                 ))
                 .background(MaterialTheme.colors.background)
+                .clickable(enabled = false) {}
                 .padding(40.dp)
         ) {
             Text(

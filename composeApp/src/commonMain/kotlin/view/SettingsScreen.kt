@@ -22,7 +22,6 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -36,6 +35,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import util.APP_BAR_HEIGHT
+import util.appGray
 import util.popNoticeDuration
 import util.swipeToPop
 import view_model.SettingsScreenModel
@@ -118,9 +118,10 @@ class SettingsScreen : Screen {
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = modifier
         ) {
+            val color = appGray()
             Text(
                 header,
-                color = Color.Gray,
+                color = color,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -128,7 +129,7 @@ class SettingsScreen : Screen {
                 Modifier
                     .fillMaxWidth()
                     .height(1.dp)
-                    .background(Color.Gray)
+                    .background(color)
             )
         }
     }

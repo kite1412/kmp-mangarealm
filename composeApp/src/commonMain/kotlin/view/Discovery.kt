@@ -44,6 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -66,6 +67,7 @@ import cafe.adriel.voyager.navigator.internal.BackHandler
 import model.Manga
 import model.session.SessionState
 import model.session.isNotEmpty
+import shared.adjustStatusBarColor
 import util.APP_BAR_HEIGHT
 import util.session_handler.MangaSessionHandler
 import view_model.main.MainViewModel
@@ -80,6 +82,7 @@ fun Discovery(
     val state = vm.discoveryState
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    adjustStatusBarColor(MaterialTheme.colors.background)
     LaunchedEffect(true) { state.init() }
     Box(
         modifier = modifier
@@ -152,7 +155,7 @@ private fun TopBar(
                 Icon(
                     imageVector = Assets.`Arrow-left-solid`,
                     contentDescription = "back",
-                    tint = Color.Black,
+                    tint = MaterialTheme.typography.body1.color,
                     modifier = Modifier
                         .weight(0.1f)
                         .size(40.dp)
@@ -179,6 +182,7 @@ private fun TopBar(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         ),
+                        cursorBrush = SolidColor(MaterialTheme.typography.body1.color),
                         keyboardActions = KeyboardActions(onSearch = onSearch),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                         modifier = Modifier.weight(0.9f).padding(start = 8.dp)
@@ -195,7 +199,7 @@ private fun TopBar(
                     Icon(
                         imageVector = if (showPlaceholder) Assets.Search else Assets.Cross,
                         contentDescription = "search",
-                        tint = Color.Black,
+                        tint = MaterialTheme.typography.body1.color,
                         modifier = Modifier
                             .weight(0.1f)
                             .clickable { if (!showPlaceholder) onClear() }
@@ -294,7 +298,7 @@ private fun Histories(
                 fontWeight = FontWeight.SemiBold,
                 color = animateColorAsState(
                     if (state.historyEditing) MaterialTheme.colors.secondary
-                    else Color.Black
+                        else MaterialTheme.typography.body1.color
                 ).value,
                 fontStyle = if (state.historyEditing) FontStyle.Italic else FontStyle.Normal,
                 modifier = Modifier.padding(start = 4.dp)
@@ -333,7 +337,7 @@ private fun Histories(
                             color =  animateColorAsState(
                                 if (state.historyEditing)
                                     if (!state.selectedHistory.contains(history)) MaterialTheme.colors.secondary
-                                else Color.White else Color.Black
+                                        else Color.White else MaterialTheme.typography.body1.color
                             ).value,
                             modifier = Modifier.align(Alignment.Center)
                         )
@@ -365,7 +369,7 @@ private fun Histories(
                     Icon(
                         imageVector = Assets.`Other-1-solid`,
                         contentDescription = "options",
-                        tint = Color.Black,
+                        tint = MaterialTheme.typography.body1.color,
                         modifier = Modifier
                             .width(26.dp)
                             .clip(CircleShape)
@@ -396,7 +400,7 @@ private fun Histories(
                         Icon(
                             imageVector = Assets.Cross,
                             contentDescription = "cancel",
-                            tint = Color.Black,
+                            tint = MaterialTheme.typography.body1.color,
                             modifier = Modifier
                                 .width(26.dp)
                                 .clip(CircleShape)

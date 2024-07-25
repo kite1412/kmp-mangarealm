@@ -2,6 +2,7 @@ package view
 
 import Assets
 import LocalMainViewModel
+import LocalSharedViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,9 +19,11 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import assets.`Book-close`
@@ -34,8 +37,6 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.internal.BackHandler
-import theme.selectedButton
-import theme.unselectedButton
 import util.APP_BAR_HEIGHT
 import util.undoEdgeToEdge
 import view_model.main.Menu
@@ -130,11 +131,15 @@ class MainScreen : Screen {
         onClick: (Menu) -> Unit,
         modifier: Modifier = Modifier
     ) {
+        val isDarkMode by LocalSharedViewModel.current.appSettings.isDarkMode
+
+        val unselectedButton = Color(0xFFD1C5B4)
+        val selectedButton = Color(0xFF322C00)
         Icon(
             imageVector = imageVector,
             contentDescription = contentDescription,
-            tint = if (selected) MaterialTheme.colors.selectedButton
-            else MaterialTheme.colors.unselectedButton,
+            tint = if (!selected) if (isDarkMode) unselectedButton else Color(0xFFE2D6C6)
+                    else selectedButton,
             modifier = modifier
                 .size(32.dp)
                 .clickable{ onClick(page) }

@@ -1,6 +1,5 @@
 package theme
 
-import androidx.compose.material.Colors
 import androidx.compose.material.darkColors
 import androidx.compose.material.lightColors
 import androidx.compose.ui.graphics.Color
@@ -18,14 +17,7 @@ val lightColors = lightColors(
 
 val darkColors = darkColors(
     primary = lightBeige,
-//    background = Color(0xFF2C2C2C),
     background = Color(0xFF121212),
     onBackground = Color(0xFF7A5E42),
     secondary = Color(0xFF3881E5)
 )
-
-val Colors.unselectedButton: Color
-    get() = Color(0xFFD1C5B4)
-
-val Colors.selectedButton: Color
-    get() = Color(0xFF322C00)
