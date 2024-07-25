@@ -1,3 +1,4 @@
+
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.attribute.TagAttributes
 import api.mangadex.service.MangaDex

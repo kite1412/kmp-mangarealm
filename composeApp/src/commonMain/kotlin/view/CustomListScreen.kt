@@ -30,8 +30,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.RadioButton
-import androidx.compose.material.RadioButtonDefaults
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
@@ -48,7 +46,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import api.mangadex.model.request.Visibility
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.CustomListAttributes
 import assets.Books
@@ -356,7 +353,7 @@ class CustomListScreen : Screen {
                     Icon(
                         imageVector = Assets.Cross,
                         contentDescription = "back",
-                        tint = Color.Black,
+                        tint = MaterialTheme.typography.body1.color,
                         modifier = Modifier.size(26.dp)
                     )
                 }

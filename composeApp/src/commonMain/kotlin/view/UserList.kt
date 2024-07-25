@@ -45,7 +45,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import model.MangaStatus
 import model.Status
 import shared.adjustStatusBarColor
-import theme.selectedButton
 import util.APP_BAR_HEIGHT
 import view_model.main.MainViewModel
 import view_model.main.bottomBarTotalHeight
@@ -144,7 +143,7 @@ private fun TopBar(
     val transition = updateTransition(sizeRatio)
     val height by transition.animateDp { defaultHeight * it }
     val startPadding by transition.animateDp { 24.dp * sizeRatio }
-    val iconSize by transition.animateDp { 32.dp * sizeRatio }
+    val iconSize by transition.animateDp { 30.dp * sizeRatio }
     val headerSize by transition.animateFloat { 24 * sizeRatio }
     Box(
         modifier = modifier.fillMaxWidth().height(height)
@@ -152,7 +151,7 @@ private fun TopBar(
         if (state.selectedStatus != MangaStatus.None) Icon(
             imageVector = Assets.`Settings-horizontal`,
             contentDescription = "show options",
-            tint = Color.Black,
+            tint = MaterialTheme.typography.body1.color,
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .padding(start = startPadding)
@@ -216,7 +215,6 @@ private fun StatusSelection(
     ) {
         Text(
             "Select Status",
-            color = MaterialTheme.colors.selectedButton,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             fontStyle = FontStyle.Italic,

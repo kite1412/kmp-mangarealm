@@ -319,7 +319,7 @@ private fun Header(
         Icon(
             imageVector = Assets.`Text-align-right`,
             contentDescription = "options",
-            tint = Color.Black,
+            tint = MaterialTheme.typography.body1.color,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(32.dp)
@@ -580,7 +580,7 @@ private fun ContinueReading(
             Icon(
                 imageVector = Assets.`Chevron-right`,
                 contentDescription = null,
-                tint = Color.Black,
+                tint = MaterialTheme.typography.body1.color,
                 modifier = Modifier
                     .height(16.dp)
                     .offset(y = 1.dp)
