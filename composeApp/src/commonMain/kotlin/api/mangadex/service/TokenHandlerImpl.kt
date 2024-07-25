@@ -52,6 +52,7 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
             if (res == null ||res.error != null) {
                 Log.w("(refreshToken) ${res?.error}")
                 useReserve = true
+                Log.w("(refreshToken) using reserved refresh token")
                 res = refresh(request, true)
             }
             if (res == null || res.error != null) throw UnableRefreshTokenException()

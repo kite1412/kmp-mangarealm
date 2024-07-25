@@ -163,7 +163,7 @@ class HomeState(
     fun onPainterLoaded(i: Int, p: Painter) {
         val new = session.data[i].copy(painter = p)
         session.data[i] = new
-        cache.latestMangaSearch[sessionQueries]!!.data[i] = new
+        cache.latestMangaSearch[sessionQueries]?.data?.set(i, new)
     }
 
     fun onStatusUpdate(reading: Boolean, index: Int) {

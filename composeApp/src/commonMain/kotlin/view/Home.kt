@@ -97,7 +97,9 @@ import assets.Person
 import assets.Settings
 import assets.`Text-align-right`
 import assets.`Treasure-map`
+import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.internal.BackHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.Manga
@@ -1046,9 +1048,9 @@ private fun SciFiTag(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, InternalVoyagerApi::class)
 @Composable
-fun MangaPage(
+private fun MangaPage(
     session: MangaSession,
     onSessionLoaded: (Session<Manga, MangaAttributes>) -> Unit,
     pop: () -> Unit,
@@ -1059,14 +1061,19 @@ fun MangaPage(
     modifier: Modifier = Modifier
 ) {
     edgeToEdge()
+    val sessionState by session.state
     val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    BackHandler(
+        enabled = sessionState != SessionState.FETCHING,
+        onBack = pop
+    )
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
             .padding(bottom = navBarHeight)
-            .swipeToPop(action = pop)
+            .swipeToPop(action = pop, enabled = sessionState != SessionState.FETCHING)
     ) {
-        when(session.state.value) {
+        when(sessionState) {
             SessionState.FETCHING -> {
                 Box(
                     modifier = Modifier
@@ -1111,7 +1118,7 @@ fun MangaPage(
 }
 
 @Composable
-fun MangaPageDisplay(
+private fun MangaPageDisplay(
     manga: Manga,
     onChapterListClick: (Manga) -> Unit,
     chapterHeight: (Dp) -> Unit,
