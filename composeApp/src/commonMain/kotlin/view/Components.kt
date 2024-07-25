@@ -521,6 +521,7 @@ fun TagBar(
         tag,
         fontSize = fontSize,
         color = fontColor,
+        fontWeight = FontWeight.Medium,
         modifier = modifier
             .clip(RoundedCornerShape(cornerRadius))
             .background(Color(229, 228, 226, 100))

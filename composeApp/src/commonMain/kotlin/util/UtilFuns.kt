@@ -39,9 +39,10 @@ fun <K, V> List<Map<K, V>>.toMap(): Map<K, V> {
     return m
 }
 
-fun Modifier.swipeToPop(nav: Navigator? = null, enabled: Boolean = true, action: () -> Unit = {}): Modifier = pointerInput(true) {
+fun Modifier.swipeToPop(nav: Navigator? = null, enabled: Boolean = true, action: () -> Unit = {}): Modifier = pointerInput(enabled) {
     detectHorizontalDragGestures { _, dragAmount ->
-        if (dragAmount > 30 && enabled) nav?.pop() ?: action()
+        if (dragAmount > 30 && enabled)
+            if (nav == null) action() else nav.pop()
     }
 }
 
