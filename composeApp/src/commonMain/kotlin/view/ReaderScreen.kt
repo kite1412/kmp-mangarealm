@@ -82,6 +82,7 @@ import shared.adjustStatusBarColor
 import shared.disableEdgeToEdge
 import util.APP_BAR_HEIGHT
 import util.ImageQuality
+import util.appGray
 import util.swipeToPop
 import view_model.Layout
 import view_model.LayoutBarStatus
@@ -313,7 +314,7 @@ class ReaderScreen : Screen {
                         )
                         Text(
                             "Choose chapter's images quality",
-                            color = Color.DarkGray
+                            color = appGray()
                         )
                     }
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

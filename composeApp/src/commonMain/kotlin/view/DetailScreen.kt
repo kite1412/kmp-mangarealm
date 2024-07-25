@@ -90,6 +90,7 @@ import model.MangaStatus
 import model.Status
 import model.session.SessionState
 import util.APP_BAR_HEIGHT
+import util.appGray
 import util.edgeToEdge
 import util.popNoticeDuration
 import util.publicationStatus
@@ -626,7 +627,7 @@ class DetailScreen : Screen {
             modifier = modifier.fillMaxWidth()
         ) {
             MangaStatus().forEach {
-                StatusBar(it, Color.DarkGray, sm.status == it) {
+                StatusBar(it, appGray(), sm.status == it) {
                     sm.status = it
                 }
             }
@@ -643,7 +644,7 @@ class DetailScreen : Screen {
     ) {
         val textColor = if (selected) Color.White else color
         val corner = RoundedCornerShape(6.dp)
-        val outer = if (selected) Modifier.background(Color.DarkGray) else
+        val outer = if (selected) Modifier.background(color) else
             Modifier.border(width = 2.dp, color = color, shape = corner)
         Text(
             status.status,

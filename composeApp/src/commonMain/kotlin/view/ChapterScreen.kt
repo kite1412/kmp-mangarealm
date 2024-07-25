@@ -64,6 +64,7 @@ import util.APP_BAR_HEIGHT
 import util.ASCENDING
 import util.DESCENDING
 import util.edgeToEdge
+import util.isInDarkMode
 import util.mapLanguage
 import util.session_handler.ChapterSessionHandler
 import util.swipeToPop
@@ -388,7 +389,9 @@ class ChapterScreen : Screen {
         onClick: (Chapter) -> Unit
     ) {
         Card(
-            backgroundColor = if (chapter.isRead.value) Color(0xFFA39C8E) else MaterialTheme.colors.background ,
+            backgroundColor = if (chapter.isRead.value)
+                if (!isInDarkMode()) Color(0xFFA39C8E) else Color(0xFF0A0A0A)
+                    else MaterialTheme.colors.background ,
             elevation = 6.dp,
             shape = RoundedCornerShape(4.dp),
             modifier = modifier.fillMaxWidth(),

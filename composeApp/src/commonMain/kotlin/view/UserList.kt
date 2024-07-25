@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -46,6 +47,7 @@ import model.MangaStatus
 import model.Status
 import shared.adjustStatusBarColor
 import util.APP_BAR_HEIGHT
+import util.appGray
 import view_model.main.MainViewModel
 import view_model.main.bottomBarTotalHeight
 import view_model.main.state.UserListState
@@ -57,12 +59,12 @@ fun UserList(
 ) {
     val state = vm.userListState
     val screenSize = LocalScreenSize.current
-    if (state.showOptions) adjustStatusBarColor(Color.White)
+    if (state.showOptions) adjustStatusBarColor(MaterialTheme.colors.onBackground)
         else adjustStatusBarColor(MaterialTheme.colors.background)
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colors.onBackground)
     ) {
         StatusSelection(
             state = state,
@@ -128,7 +130,11 @@ fun List(
         if (state.showOptions) Box(
             Modifier
                 .fillMaxSize()
-                .clickable { state.onOptionDismiss() }
+                .clickable(
+                    enabled = state.selectedStatus != MangaStatus.None,
+                    indication = null,
+                    interactionSource = MutableInteractionSource()
+                ) { state.onOptionDismiss() }
         )
     }
 }
@@ -251,11 +257,11 @@ private fun StatusOption(
 ) {
     val transition = updateTransition(selected)
     val background by transition.animateColor {
-        if (it) MaterialTheme.colors.onBackground
+        if (it) MaterialTheme.colors.secondary
             else MaterialTheme.colors.background.copy(alpha = 0.7f)
     }
     val fontColor by transition.animateColor {
-        if (it) Color.White else Color.Gray
+        if (it) Color.White else appGray()
     }
     Text(
         text = status.status,
