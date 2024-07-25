@@ -20,6 +20,7 @@ import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.snapping.SnapFlingBehavior
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -111,7 +112,7 @@ import model.SwipeAction
 import model.session.Session
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
-import util.isInDarkMode
+import util.isDarkMode
 import util.publicationDemographic
 import util.publicationDemographicColor
 import util.publicationStatus
@@ -762,7 +763,7 @@ fun PopNotice(
     val startPadding = 4.dp
     val screenSize = LocalScreenSize.current
     val popAnimation by animateDpAsState(if (show) 0f.dp else -(screenSize.width.value / 2f).dp)
-    val isInDarkMode = isInDarkMode()
+    val isInDarkMode = isDarkMode()
     val color = if (isInDarkMode) Color.Black else Color.White
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -938,7 +939,7 @@ fun AddCustomListPrompt(
                     bottomEnd = 16.dp,
                 ))
                 .background(MaterialTheme.colors.background)
-                .clickable(enabled = false) {}
+                .clickable(indication = null, interactionSource = MutableInteractionSource()) {}
                 .padding(40.dp)
         ) {
             Text(

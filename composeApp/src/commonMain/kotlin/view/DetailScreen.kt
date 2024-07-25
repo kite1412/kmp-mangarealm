@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import api.mangadex.model.response.attribute.MangaAttributes
@@ -125,14 +126,17 @@ class DetailScreen : Screen {
                     .swipeToPop(nav, enabled = !sm.updating)
             ) {
                 val aboveBottomBar = APP_BAR_HEIGHT + 16.dp
-//                Background()
+                val screenSize = LocalScreenSize.current
+                val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+                val coverDisplayHeight = (screenSize.height / 2.5f) - statusBarsHeight
+                CoverArtDisplay(sm, nav, coverDisplayHeight)
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize().padding(bottom = sm.chapterListHeight.dp)
+                    modifier = Modifier.fillMaxSize().padding(
+                        top = coverDisplayHeight + 16.dp,
+                        bottom = sm.chapterListHeight.dp
+                    )
                 ) {
-                    item {
-                        CoverArtDisplay(sm, nav)
-                    }
                     item {
                         Column(
                             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -191,11 +195,11 @@ class DetailScreen : Screen {
     private fun CoverArtDisplay(
         sm: DetailScreenModel,
         nav: Navigator,
+        totalHeight: Dp,
         modifier: Modifier = Modifier
     ) {
         val screenSize = LocalScreenSize.current
         val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val totalHeight = (screenSize.height / 2.5f) - statusBarsHeight
         val backgroundHeight = totalHeight / 1.25f
         val coverArtHeight = totalHeight / 1.5f
         val coverArtWidth = (coverArtHeight * 2) / 3

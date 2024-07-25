@@ -6,8 +6,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -74,10 +76,10 @@ private suspend fun isLoggedIn(): Boolean {
 @Composable
 @Preview
 fun App() {
-    val isLoggedIn = remember {
+    var isLoggedIn by remember {
         mutableStateOf(false)
     }
-    val isShowingSplash = remember {
+    var isShowingSplash by remember {
         mutableStateOf(true)
     }
     val sharedViewModel = remember { SharedViewModel() }
@@ -88,14 +90,14 @@ fun App() {
     }
     // check for login info
     LaunchedEffect(true) {
-        isLoggedIn.value = isLoggedIn()
+        isLoggedIn = isLoggedIn()
         delay(util.SPLASH_TIME.toLong())
-        isShowingSplash.value = false
+        isShowingSplash = false
         mainViewModel.undoEdgeToEdge = true
     }
     // perform actions after logged in
-    LaunchedEffect(isLoggedIn.value) {
-        if (isLoggedIn.value) {
+    LaunchedEffect(isLoggedIn) {
+        if (isLoggedIn) {
             mainViewModel.homeState.updateUsername()
         }
     }
@@ -104,16 +106,16 @@ fun App() {
             adjustStatusBarColor(MaterialTheme.colors.onBackground)
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 CompositionLocalProvider(LocalScreenSize provides ScreenSize(height = this.maxHeight, width = this.maxWidth)) {
-                    if (!isLoggedIn.value) {
+                    if (!isLoggedIn) {
                         LoginScreen(onSuccess = {
-                            isLoggedIn.value = true
+                            isLoggedIn = true
                         })
                     } else {
                         CompositionLocalProvider(LocalMainViewModel provides mainViewModel) {
                             Navigator(MainScreen())
                         }
                     }
-                    if (isShowingSplash.value) {
+                    if (isShowingSplash) {
                         SplashScreen()
                     } else {
                         adjustStatusBarColor(MaterialTheme.colors.background)

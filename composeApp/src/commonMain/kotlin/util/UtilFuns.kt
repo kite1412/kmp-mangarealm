@@ -93,12 +93,12 @@ fun defaultMangaRequestQueries(queries: Map<String, Any> = mapOf()): Map<String,
 ).also { it.putAll(queries) }
 
 @Composable
-fun isInDarkMode(): Boolean = LocalSharedViewModel.current.appSettings.isDarkMode.value
+fun isDarkMode(): Boolean = LocalSharedViewModel.current.appSettings.isDarkMode.value
 
 @Composable
-fun appGray(): Color = if (isInDarkMode())
+fun appGray(): Color = if (isDarkMode())
     Color.Gray else Color.DarkGray
 
 @Composable
-fun reverseAppGray(): Color = if (isInDarkMode())
+fun reverseAppGray(): Color = if (isDarkMode())
     Color.DarkGray else Color.Gray
