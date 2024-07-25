@@ -229,7 +229,8 @@ fun Home(
                             .padding(top = headerHeight + 16.dp)
                     ) {
                         Options(
-                            onMyListClick = { state.navigateToCustomListScreen(nav) }
+                            onMyListClick = { state.navigateToCustomListScreen(nav) },
+                            onSettingsClick = { state.navigateToSettingsScreen(nav) }
                         )
                     }
                 }
@@ -330,6 +331,7 @@ private fun Header(
 @Composable
 private fun Options(
     onMyListClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -348,8 +350,9 @@ private fun Options(
         Option(
             action = "Settings",
             icon = Assets.Settings,
-            modifier = Modifier.fillMaxWidth()
-        ) {  }
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onSettingsClick
+        )
     }
 }
 

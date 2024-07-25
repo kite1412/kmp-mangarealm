@@ -183,5 +183,10 @@ class HomeState(
         vm.navigateToCustomList(nav)
         showOptions = false
     }
+
+    fun navigateToSettingsScreen(nav: Navigator) {
+        vm.navigateToSettings(nav)
+        showOptions = false
+    }
 }
 

@@ -2,6 +2,7 @@ package view
 
 import Assets
 import LocalScreenSize
+import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
@@ -22,6 +23,7 @@ import androidx.compose.foundation.gestures.snapping.SnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -37,6 +39,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -1046,6 +1049,40 @@ private fun AddCustomListAction(
             fontWeight = FontWeight.Medium,
             color = Color.White,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+fun Toggle(
+    checked: Boolean,
+    onToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val width = 55.dp
+    val height = width / 2
+    val transition = updateTransition(checked)
+    val backgroundColor by transition.animateColor {
+        if (it) MaterialTheme.colors.secondary else Color.DarkGray
+    }
+    val thumbPosition by transition.animateDp {
+        if (!checked) 0.dp else width / 2
+    }
+    BoxWithConstraints(
+        modifier = modifier
+            .height(height)
+            .width(width)
+            .clip(CircleShape)
+            .background(backgroundColor)
+            .clickable(onClick = { onToggle(!checked) })
+            .padding(4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .offset(x = thumbPosition)
+                .size(maxHeight)
+                .clip(CircleShape)
+                .background(Color.White)
         )
     }
 }
