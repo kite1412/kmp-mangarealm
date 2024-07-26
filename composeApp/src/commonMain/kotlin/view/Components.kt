@@ -567,7 +567,11 @@ fun MangaDisplay(
         modifier = modifier
             .fillMaxWidth()
             .height(height)
-            .clickable(onClick = onClick)
+            .clickable(
+                indication = null,
+                interactionSource = MutableInteractionSource(),
+                onClick = onClick
+            )
     ) {
         Box(
             modifier = Modifier
@@ -801,7 +805,9 @@ fun Swipeable(
             .fillMaxWidth()
             .height(IntrinsicSize.Max)
     ) {
-        val fixed = actions.take(4)
+        val maxActions = 4
+        val fixed = actions.take(maxActions)
+        val actionWeight = 0.25f
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -810,7 +816,6 @@ fun Swipeable(
                 .padding(horizontal = 8.dp)
                 .clip(RoundedCornerShape(8.dp))
         ) {
-            val actionWeight = 0.25f
             if (fixed.isNotEmpty()) Box(
                 modifier = Modifier
                     .fillMaxHeight()
@@ -837,7 +842,7 @@ fun Swipeable(
                 .pointerInput(true) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
-                            val maxOffset = -(screenSize.width / 2)
+                            val maxOffset = -(screenSize.width * (actionWeight * fixed.size))
                             offset = if (offset < 0.dp && (!show || offset < maxOffset)) {
                                 show = true
                                 maxOffset
