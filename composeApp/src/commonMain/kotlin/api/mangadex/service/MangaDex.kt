@@ -51,7 +51,7 @@ interface MangaDex {
 
     suspend fun updateMangaReadMarkers(mangaId: String, readIds: List<String>, unreadIds: List<String> = listOf()): Boolean
 
-    suspend fun editCustomList(data: CustomListAttributes): EntityResponse<CustomListAttributes>?
+    suspend fun editCustomList(id: String, data: CustomListAttributes): EntityResponse<CustomListAttributes>?
 
     interface Paging {
         fun <R> nextPageExists(r: ListResponse<R>): Boolean =

@@ -141,11 +141,12 @@ class MangaDexImpl(
         url: String,
         methodName: String,
         body: Any? = null,
-        auth: Boolean = true
+        auth: Boolean = true,
     ): R? = try {
         client.put(url) {
             if (body != null) setBody(body)
             if (auth) authHeader()
+            contentType(type = ContentType.parse("application/json"))
         }.body<R?>()
     } catch (e: Exception) {
         e.message?.let {
@@ -324,9 +325,9 @@ class MangaDexImpl(
         return res != null && res.errors == null
     }
 
-    override suspend fun editCustomList(data: CustomListAttributes): EntityResponse<CustomListAttributes>? =
+    override suspend fun editCustomList(id: String, data: CustomListAttributes): EntityResponse<CustomListAttributes>? =
         put(
-            url = ApiConstant.CUSTOM_LIST_ACTION,
+            url = "${ApiConstant.CUSTOM_LIST_ACTION}/$id",
             body = data,
             methodName = "editCustomList"
         )

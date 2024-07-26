@@ -780,7 +780,7 @@ class DetailScreen : Screen {
                 .padding(8.dp)
         ) {
             Text(
-                customList.data.attributes.name,
+                customList.data.value.attributes.name,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.Medium,

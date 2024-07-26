@@ -7,8 +7,10 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import api.mangadex.model.response.EntityResponse
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.ChapterAttributes
+import api.mangadex.model.response.attribute.CustomListAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
 import io.github.irgaly.kottage.KottageStorage
@@ -28,6 +30,7 @@ import model.session.isEmpty
 import model.toChapters
 import model.toCustomList
 import util.KottageConst
+import util.Log
 import util.retry
 
 class SharedViewModel(
@@ -89,7 +92,7 @@ class SharedViewModel(
                             response = res,
                             data = res.data.map { it.toCustomList() }
                                 .map {
-                                    it.mangaIds.addAll(it.data.getMangaIds())
+                                    it.mangaIds.addAll(it.data.value.getMangaIds())
                                     it
                                 }
                         )
@@ -123,10 +126,10 @@ class SharedViewModel(
                 count = 3,
                 predicate = { false }
             ) {
-                mangaDex.addMangaToCustomList(manga.data.id, customList.data.id)
+                mangaDex.addMangaToCustomList(manga.data.id, customList.data.value.id)
             }.also {
                 if (!it) customList.manga.removeManga(manga)
-                    else customList.data.attributes.version++
+                    else customList.data.value.attributes.version++
             }
         }
     }
@@ -139,11 +142,24 @@ class SharedViewModel(
                 count = 3,
                 predicate = { false }
             ) {
-                mangaDex.removeMangaFromCustomList(manga.data.id, customList.data.id)
+                mangaDex.removeMangaFromCustomList(manga.data.id, customList.data.value.id)
             }.also {
                 if (!it) customList.manga.add(manga)
-                    else customList.data.attributes.version++
+                    else customList.data.value.attributes.version++
             }
+        }
+    }
+
+    suspend fun editCustomList(customList: CustomList, data: CustomListAttributes) {
+        retry<EntityResponse<CustomListAttributes>?>(
+            count = 3,
+            predicate = { it == null || it.errors != null }
+        ) {
+            mangaDex.editCustomList(customList.data.value.id, data)?.also {
+                it.errors?.joinToString()?.let { m -> Log.w(m) }
+            }
+        }?.also {
+            if (it.errors == null) customList.data.value = it.data!!
         }
     }
 
