@@ -11,6 +11,14 @@ enum class Visibility {
     PUBLIC,
     PRIVATE;
 
+    companion object {
+        fun fromString(value: String): Visibility = when(value) {
+            "public" -> PUBLIC
+            "private" -> PRIVATE
+            else -> throw IllegalArgumentException("Invalid visibility value: $value")
+        }
+    }
+
     override fun toString(): String = when(this) {
         PUBLIC -> "public"
         PRIVATE -> "private"

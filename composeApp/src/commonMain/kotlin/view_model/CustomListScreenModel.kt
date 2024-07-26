@@ -36,6 +36,8 @@ class CustomListScreenModel(
     var visibility by mutableStateOf(Visibility.PRIVATE)
     var showAddPrompt by mutableStateOf(false)
     var selectedCustomListIndex = 0
+    var isOnEditMode = false
+    private var editCustomList: CustomList? = null
 
     init {
         sharedViewModel.beginCustomListSession()
@@ -73,7 +75,7 @@ class CustomListScreenModel(
                 count = 3,
                 predicate = { false }
             ) {
-                mangaDex.deleteCustomList(customList.data.id)
+                mangaDex.deleteCustomList(customList.data.value.id)
             }
             if (success) {
                 sharedViewModel.customListSession.data[index] =
@@ -100,17 +102,30 @@ class CustomListScreenModel(
         showWarning(message)
     }
 
-    fun onAdd() {
+    fun onAddCustomList(customList: CustomList? = null) {
+        isOnEditMode = false
+        if (customList != null) {
+            editCustomList = customList
+            isOnEditMode = true
+            textFieldValue = customList.data.value.attributes.name
+            visibility = Visibility.fromString(customList.data.value.attributes.visibility)
+        }
+        showAddPrompt = true
+    }
+
+    fun addCustomList() {
         screenModelScope.launch {
             showUpdateLoading("Adding list...")
             val res = retry<EntityResponse<CustomListAttributes>?>(
                 count = 3,
                 predicate = { it == null || it.errors != null }
             ) {
-                mangaDex.createCustomList(CreateCustomList(
-                    name = textFieldValue,
-                    visibility = visibility
-                ))
+                mangaDex.createCustomList(
+                    CreateCustomList(
+                        name = textFieldValue,
+                        visibility = visibility
+                    )
+                )
             }
             dismissLoading {
                 textFieldValue = ""
@@ -120,6 +135,20 @@ class CustomListScreenModel(
                 sharedViewModel.customListSession.data.add(res.data!!.toCustomList())
                 dismissAddPrompt("List added")
             } else dismissAddPrompt("Failed to add list")
+        }
+    }
+
+    fun editCustomList() {
+        sharedViewModel.viewModelScope.launch {
+            showUpdateLoading("Updating list...")
+            sharedViewModel.editCustomList(
+                editCustomList!!,
+                editCustomList!!.data.value.attributes.copy(
+                    name = textFieldValue,
+                    visibility = visibility.toString()
+                )
+            )
+            dismissAddPrompt("List updated")
         }
     }
 

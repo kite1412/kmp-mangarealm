@@ -119,8 +119,12 @@ class CustomListScreen : Screen {
                     visibility = sm.visibility,
                     onValueChange = { sm.textFieldValue = it },
                     onVisibilityChange = { sm.visibility = it },
-                    onAdd = { sm.onAdd() },
-                    onDismiss = { sm.showAddPrompt = false }
+                    onAdd = {
+                        if (!sm.isOnEditMode) sm.addCustomList()
+                            else sm.editCustomList()
+                    },
+                    onDismiss = { sm.showAddPrompt = false },
+                    confirmAction = if (sm.isOnEditMode) "Submit" else "Add"
                 )
                 if (sm.showUpdateLoading) LoadingIndicator(
                     modifier = Modifier.align(Alignment.Center)
@@ -189,7 +193,7 @@ class CustomListScreen : Screen {
                                     actionName = "edit",
                                     icon = Icons.Rounded.Edit,
                                     backgroundColor = MaterialTheme.colors.secondary,
-                                    action = {}
+                                    action = { sm.onAddCustomList(customList) }
                                 ),
                                 SwipeAction(
                                     actionName = "delete",
@@ -233,11 +237,12 @@ class CustomListScreen : Screen {
                                             .fillMaxWidth()
                                             .padding(16.dp)
                                     ) {
+                                        val attributes = customList.data.value.attributes
                                         Column(
                                             verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
                                             modifier = Modifier.fillMaxHeight()
                                         ) {
-                                            val visibility = customList.data.attributes.visibility
+                                            val visibility = attributes.visibility
                                             Text(
                                                 visibility.replaceFirstChar { c -> c.uppercaseChar() },
                                                 fontWeight = FontWeight.Medium,
@@ -251,7 +256,7 @@ class CustomListScreen : Screen {
                                             )
                                         }
                                         Text(
-                                            customList.data.attributes.name,
+                                            attributes.name,
                                             fontSize = 22.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = Color.White,
@@ -269,7 +274,7 @@ class CustomListScreen : Screen {
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .padding(end = 16.dp, bottom = 24.dp)
-                            .clickable { sm.showAddPrompt = true }
+                            .clickable { sm.onAddCustomList() }
                     )
                 }
                 1 -> MangaList(sm, pagerState)
@@ -341,7 +346,7 @@ class CustomListScreen : Screen {
                 } else LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
                     Text("Loading list...", color = Color.White)
                 } else EmptyList(message = "No manga found", modifier = Modifier.align(Alignment.Center))
-            TopBar(customList.data.attributes.name) {
+            TopBar(customList.data.value.attributes.name) {
                 IconButton(
                     onClick = {
                         scope.launch { pagerState.animateScrollToPage(0) }

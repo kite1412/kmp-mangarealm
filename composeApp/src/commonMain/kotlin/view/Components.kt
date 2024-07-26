@@ -910,6 +910,7 @@ fun AddCustomListPrompt(
     onVisibilityChange: (Visibility) -> Unit,
     onAdd: () -> Unit,
     onDismiss: () -> Unit,
+    confirmAction: String = "Add",
     modifier: Modifier = Modifier
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -976,7 +977,7 @@ fun AddCustomListPrompt(
                     onClick = onDismiss
                 )
                 AddCustomListAction(
-                    action = "Add",
+                    action = confirmAction,
                     color = MaterialTheme.colors.secondary,
                     enabled = value.isNotEmpty(),
                     onClick = onAddWrapper
