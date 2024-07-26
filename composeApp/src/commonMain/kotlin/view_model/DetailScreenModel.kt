@@ -6,6 +6,7 @@ import SharedObject
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.TextFieldValue
 import api.mangadex.model.request.CreateCustomList
 import api.mangadex.model.request.Visibility
 import api.mangadex.model.response.EntityResponse
@@ -48,7 +49,7 @@ class DetailScreenModel(
     var showPopNotice by mutableStateOf(false)
     var showAddToList by mutableStateOf(false)
     var showAddListPrompt by mutableStateOf(false)
-    var textFieldValue by mutableStateOf("")
+    var textFieldValue by mutableStateOf(TextFieldValue())
     var visibility by mutableStateOf(Visibility.PRIVATE)
 
     init {
@@ -159,7 +160,7 @@ class DetailScreenModel(
             ) {
                 mangaDex.createCustomList(
                     CreateCustomList(
-                        name = textFieldValue,
+                        name = textFieldValue.text,
                         visibility = visibility
                     )
                 )
@@ -172,7 +173,7 @@ class DetailScreenModel(
 
     fun onAddListPromptDismiss() {
         showAddListPrompt = false
-        textFieldValue = ""
+        textFieldValue = TextFieldValue()
         visibility = Visibility.PRIVATE
     }
 }

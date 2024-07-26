@@ -371,8 +371,9 @@ class ChapterScreen : Screen {
         modifier: Modifier = Modifier,
         onClick: (Chapter) -> Unit
     ) {
+        val isRead by chapter.isRead
         Card(
-            backgroundColor = if (chapter.isRead.value)
+            backgroundColor = if (isRead)
                 if (!isDarkMode()) Color(0xFFA39C8E) else Color(0xFF0A0A0A)
                     else MaterialTheme.colors.background ,
             elevation = 6.dp,
@@ -382,22 +383,23 @@ class ChapterScreen : Screen {
         ) {
             val c = chapter()
             Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)) {
+                val color = if (isRead) Color.DarkGray else MaterialTheme.typography.body1.color
                 Row {
                     Text(
                         "Chapter ${c.attributes.chapter ?: ""}",
                         fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colors.primary
+                        color = color
                     )
                     if (!c.attributes.title.isNullOrEmpty()) Row {
                         Text(
                             ": ",
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colors.primary
+                            color = color
                         )
                         Text(
                             "${c.attributes.title}",
                             fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colors.primary
+                            color = color
                         )
                     }
 
@@ -407,7 +409,7 @@ class ChapterScreen : Screen {
                         .fillMaxWidth()
                         .padding(end = 16.dp, top = 4.dp)
                         .height(1.dp)
-                        .background(MaterialTheme.colors.primary)
+                        .background(color)
                 )
             }
         }
