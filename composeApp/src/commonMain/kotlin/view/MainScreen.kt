@@ -5,6 +5,7 @@ import LocalMainViewModel
 import LocalSharedViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -142,7 +143,10 @@ class MainScreen : Screen {
                     else selectedButton,
             modifier = modifier
                 .size(32.dp)
-                .clickable{ onClick(page) }
+                .clickable(
+                    indication = null,
+                    interactionSource = MutableInteractionSource()
+                ) { onClick(page) }
         )
     }
 }

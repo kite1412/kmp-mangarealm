@@ -29,6 +29,7 @@ import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.http.ContentType
@@ -129,6 +130,23 @@ class MangaDexImpl(
             url(url)
             if (auth) authHeader()
         }.body<R>()
+    } catch (e: Exception) {
+        e.message?.let {
+            Log.e("($methodName) $it")
+        }
+        null
+    }
+
+    private suspend inline fun <reified R> put(
+        url: String,
+        methodName: String,
+        body: Any? = null,
+        auth: Boolean = true
+    ): R? = try {
+        client.put(url) {
+            if (body != null) setBody(body)
+            if (auth) authHeader()
+        }.body<R?>()
     } catch (e: Exception) {
         e.message?.let {
             Log.e("($methodName) $it")
@@ -305,6 +323,13 @@ class MangaDexImpl(
         }
         return res != null && res.errors == null
     }
+
+    override suspend fun editCustomList(data: CustomListAttributes): EntityResponse<CustomListAttributes>? =
+        put(
+            url = ApiConstant.CUSTOM_LIST_ACTION,
+            body = data,
+            methodName = "editCustomList"
+        )
 
     private inner class Paging : MangaDex.Paging {
         private inline fun <R> nextPage(
