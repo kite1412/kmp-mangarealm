@@ -50,7 +50,6 @@ import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.CustomListAttributes
 import assets.Books
 import assets.Cross
-import assets.`Trash-solid`
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
 import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
 import cafe.adriel.voyager.core.lifecycle.LifecycleEffectOnce
@@ -61,6 +60,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import model.DeleteSwipeAction
 import model.SwipeAction
 import model.session.SessionState
 import util.APP_BAR_HEIGHT
@@ -195,12 +195,9 @@ class CustomListScreen : Screen {
                                     backgroundColor = MaterialTheme.colors.secondary,
                                     action = { sm.onAddCustomList(customList) }
                                 ),
-                                SwipeAction(
-                                    actionName = "delete",
-                                    icon = Assets.`Trash-solid`,
-                                    backgroundColor = Color(220, 20, 60),
-                                    action = { sm.deleteCustomList(customList, index) }
-                                )
+                                DeleteSwipeAction {
+                                    sm.deleteCustomList(customList, index)
+                                }
                             )
                             Swipeable(
                                 actions = actions,
@@ -337,11 +334,22 @@ class CustomListScreen : Screen {
                 ) {
                     items(data.size) {
                         val manga = data[it]
-                        MangaDisplay(
-                            manga = manga,
-                            parentHeight = maxHeight,
-                            onPainterLoaded = { p -> sm.sharedViewModel.updateCustomListMangaPainter(customList, it, p) }
-                        ) { sm.navigateToDetail(nav, manga) }
+                        Swipeable(
+                            actions = listOf(
+                                DeleteSwipeAction {
+                                    sm.deleteMangaFromList(customList, manga)
+                                }
+                            )
+                        ) { m ->
+                            MangaDisplay(
+                                manga = manga,
+                                parentHeight = this@BoxWithConstraints.maxHeight,
+                                onPainterLoaded = {
+                                    p -> sm.sharedViewModel.updateCustomListMangaPainter(customList, it, p)
+                                },
+                                modifier = m.background(MaterialTheme.colors.background)
+                            ) { sm.navigateToDetail(nav, manga) }
+                        }
                     }
                 } else LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
                     Text("Loading list...", color = Color.White)
@@ -363,6 +371,12 @@ class CustomListScreen : Screen {
                     )
                 }
             }
+            Warning(
+                message = sm.warningMessage,
+                height = APP_BAR_HEIGHT,
+                show = sm.showWarning,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
         }
     }
 }

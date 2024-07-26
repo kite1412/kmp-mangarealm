@@ -19,6 +19,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.CustomList
+import model.Manga
 import model.toCustomList
 import model.toMangaList
 import util.WARNING_TIME
@@ -178,5 +179,10 @@ class CustomListScreenModel(
                 }
             }
         }
+    }
+
+    fun deleteMangaFromList(customList: CustomList, manga: Manga) {
+        sharedViewModel.removeCustomListManga(customList, manga)
+        screenModelScope.launch { showWarning("Deleted") }
     }
 }
