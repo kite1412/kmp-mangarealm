@@ -4,6 +4,8 @@ import Libs
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.viewModelScope
 import api.mangadex.model.request.CreateCustomList
 import api.mangadex.model.request.Visibility
@@ -32,7 +34,7 @@ class CustomListScreenModel(
     var loadingMessage = ""
     var warningMessage = ""
     private var deleteCount = 0
-    var textFieldValue by mutableStateOf("")
+    var textFieldValue by mutableStateOf(TextFieldValue())
     var visibility by mutableStateOf(Visibility.PRIVATE)
     var showAddPrompt by mutableStateOf(false)
     var selectedCustomListIndex = 0
@@ -63,7 +65,7 @@ class CustomListScreenModel(
 
     private fun dismissLoading(action: () -> Unit) {
         showUpdateLoading = false
-        textFieldValue = ""
+        textFieldValue = TextFieldValue()
         visibility = Visibility.PRIVATE
         action()
     }
@@ -96,7 +98,7 @@ class CustomListScreenModel(
     private suspend fun dismissAddPrompt(message: String) {
         dismissLoading {
             showAddPrompt = false
-            textFieldValue = ""
+            textFieldValue = TextFieldValue()
             visibility = Visibility.PRIVATE
         }
         showWarning(message)
@@ -107,7 +109,11 @@ class CustomListScreenModel(
         if (customList != null) {
             editCustomList = customList
             isOnEditMode = true
-            textFieldValue = customList.data.value.attributes.name
+            val value = customList.data.value.attributes.name
+            textFieldValue = TextFieldValue(
+                text = value,
+                selection = TextRange(value.length)
+            )
             visibility = Visibility.fromString(customList.data.value.attributes.visibility)
         }
         showAddPrompt = true
@@ -122,13 +128,13 @@ class CustomListScreenModel(
             ) {
                 mangaDex.createCustomList(
                     CreateCustomList(
-                        name = textFieldValue,
+                        name = textFieldValue.text,
                         visibility = visibility
                     )
                 )
             }
             dismissLoading {
-                textFieldValue = ""
+                textFieldValue = TextFieldValue()
                 visibility = Visibility.PRIVATE
             }
             if (res != null) {
@@ -144,7 +150,7 @@ class CustomListScreenModel(
             sharedViewModel.editCustomList(
                 editCustomList!!,
                 editCustomList!!.data.value.attributes.copy(
-                    name = textFieldValue,
+                    name = textFieldValue.text,
                     visibility = visibility.toString()
                 )
             )

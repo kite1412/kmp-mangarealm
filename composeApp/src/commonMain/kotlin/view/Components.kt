@@ -84,6 +84,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -904,9 +905,9 @@ fun EmptyList(
 
 @Composable
 fun AddCustomListPrompt(
-    value: String,
+    value: TextFieldValue,
     visibility: Visibility,
-    onValueChange: (String) -> Unit,
+    onValueChange: (TextFieldValue) -> Unit,
     onVisibilityChange: (Visibility) -> Unit,
     onAdd: () -> Unit,
     onDismiss: () -> Unit,
@@ -956,7 +957,7 @@ fun AddCustomListPrompt(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(
-                    onSend = { if (value.isNotEmpty()) onAddWrapper() }
+                    onSend = { if (value.text.isNotEmpty()) onAddWrapper() }
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -979,7 +980,7 @@ fun AddCustomListPrompt(
                 AddCustomListAction(
                     action = confirmAction,
                     color = MaterialTheme.colors.secondary,
-                    enabled = value.isNotEmpty(),
+                    enabled = value.text.isNotEmpty(),
                     onClick = onAddWrapper
                 )
             }
