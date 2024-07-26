@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -107,6 +108,7 @@ import model.MangaStatus
 import model.session.MangaSession
 import model.session.Session
 import model.session.SessionState
+import theme.lightBeige
 import util.LATEST_UPDATE_SLIDE_TIME
 import util.edgeToEdge
 import util.session_handler.MangaSessionHandler
@@ -627,7 +629,14 @@ private fun SmallDisplay(
     onClick: () -> Unit
 ) {
     val data = manga.data
-    Row(modifier = modifier.clickable(onClick = onClick)) {
+    Row(
+        modifier = modifier
+            .clickable(
+                indication = null,
+                interactionSource = MutableInteractionSource(),
+                onClick = onClick
+            )
+    ) {
         ImageLoader(
             url = getCoverUrl(manga.data),
             painter = manga.painter,
@@ -1071,6 +1080,7 @@ private fun MangaPage(
         modifier = modifier
             .fillMaxSize()
             .padding(bottom = navBarHeight)
+            .background(lightBeige)
             .swipeToPop(action = pop, enabled = sessionState != SessionState.FETCHING)
     ) {
         when(sessionState) {

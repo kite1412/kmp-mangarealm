@@ -126,6 +126,7 @@ class SharedViewModel(
                 mangaDex.addMangaToCustomList(manga.data.id, customList.data.id)
             }.also {
                 if (!it) customList.manga.removeManga(manga)
+                    else customList.data.attributes.version++
             }
         }
     }
@@ -139,7 +140,10 @@ class SharedViewModel(
                 predicate = { false }
             ) {
                 mangaDex.removeMangaFromCustomList(manga.data.id, customList.data.id)
-            }.also { if (!it) customList.manga.add(manga) }
+            }.also {
+                if (!it) customList.manga.add(manga)
+                    else customList.data.attributes.version++
+            }
         }
     }
 
