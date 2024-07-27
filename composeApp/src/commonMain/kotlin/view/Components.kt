@@ -198,7 +198,8 @@ fun Action(
     enabled: Boolean = true,
     borderWidth: Dp = 2.dp,
     corner: Shape = RoundedCornerShape(8.dp),
-    onDoubleClick: () -> Unit = {},
+    onDoubleClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -216,7 +217,8 @@ fun Action(
             .combinedClickable(
                 enabled = enabled,
                 onClick = onClick,
-                onDoubleClick = onDoubleClick
+                onDoubleClick = onDoubleClick,
+                onLongClick = onLongClick
             )
             .then(outer)
             .padding(vertical = verticalPadding, horizontal = horizontalPadding),
