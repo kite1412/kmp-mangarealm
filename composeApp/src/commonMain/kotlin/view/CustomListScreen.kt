@@ -87,13 +87,16 @@ class CustomListScreen : Screen {
             }
         }
         undoEdgeToEdge()
+        val nav = LocalNavigator.currentOrThrow
         Scaffold(
             modifier = Modifier.fillMaxSize()
         ) {
-            Box(modifier = Modifier.fillMaxSize()) {
-                Box(
-                    modifier = Modifier.fillMaxSize()
-                ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .swipeToPop(nav)
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
                     when(session.state.value) {
                         SessionState.FETCHING -> LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
                             Text("Loading...", color = Color.White)
@@ -178,7 +181,7 @@ class CustomListScreen : Screen {
             modifier = modifier
         ) {
             when (it) {
-                0 -> Box(modifier = Modifier.fillMaxSize().swipeToPop(nav)) {
+                0 -> Box(modifier = Modifier.fillMaxSize()) {
                     if (sm.sharedViewModel.customListSession.data.isNotEmpty()) SessionPagerColumn(
                         session = sm.sharedViewModel.customListSession,
                         handler = CustomListSessionHandler(sm.sharedViewModel.customListSession),
@@ -339,7 +342,10 @@ class CustomListScreen : Screen {
                                 DeleteSwipeAction {
                                     sm.deleteMangaFromList(customList, manga)
                                 }
-                            )
+                            ),
+                            oppositeSwipe = { a ->
+                                if (a > 30) scope.launch { pagerState.animateScrollToPage(0) }
+                            }
                         ) { m ->
                             MangaDisplay(
                                 manga = manga,

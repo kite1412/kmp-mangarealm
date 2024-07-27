@@ -812,19 +812,26 @@ private fun Characters(
     modifier: Modifier = Modifier
 ) {
     val screenSize = LocalScreenSize.current
+    val size = Modifier
+        .fillMaxWidth()
+        .height(screenSize.height / 3.5f)
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .height(screenSize.height / 3.5f)
     ) {
-        if (!sm.manga.characters.fetched.value) CircularProgressIndicator(
+        if (!sm.manga.characters.fetched.value) Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
+                .then(size)
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp)
-        )
+        ) {
+            CircularProgressIndicator()
+            Text("Loading characters...")
+        }
         else if (sm.manga.characters.data.isNotEmpty()) Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()
+            modifier = size
         ) {
             Text(
                 "Characters",
