@@ -20,6 +20,7 @@ object KottageConst {
     const val TAGS_LIST = "api:tags"
     const val HISTORY_LIST = "local:history"
     const val THEME_MODE = "setting:theme:mode"
+    const val SWIPE_TO_POP = "setting:navigation:swipe_to_pop"
 }
 
 const val SPLASH_TIME = 2000

@@ -58,6 +58,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.navigator.internal.BackHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.DeleteSwipeAction
@@ -79,11 +80,13 @@ class CustomListScreen : Screen {
         val sm = rememberScreenModel { CustomListScreenModel(sharedViewModel) }
         val session = sm.sharedViewModel.customListSession
         LifecycleEffectOnce {
-            val count = SharedObject.popNotifierCount--
-            if (count > 0) sm.screenModelScope.launch {
-                sm.showPopNotice = true
-                delay(popNoticeDuration)
-                sm.showPopNotice = false
+            if (sm.swipeToPopEnabled) {
+                val count = SharedObject.popNotifierCount--
+                if (count > 0) sm.screenModelScope.launch {
+                    sm.showPopNotice = true
+                    delay(popNoticeDuration)
+                    sm.showPopNotice = false
+                }
             }
         }
         undoEdgeToEdge()
@@ -205,7 +208,7 @@ class CustomListScreen : Screen {
                             Swipeable(
                                 actions = actions,
                                 oppositeSwipe = { dragAmount ->
-                                    if (dragAmount > 30) nav.pop()
+                                    if (dragAmount > 30 && sm.swipeToPopEnabled) nav.pop()
                                 },
                                 modifier = Modifier.padding(bottom = 8.dp)
                             ) { m ->
@@ -310,7 +313,7 @@ class CustomListScreen : Screen {
         }
     }
 
-    @OptIn(ExperimentalFoundationApi::class)
+    @OptIn(ExperimentalFoundationApi::class, InternalVoyagerApi::class)
     @Composable
     private fun MangaList(
         sm: CustomListScreenModel,
@@ -322,6 +325,9 @@ class CustomListScreen : Screen {
         val nav = LocalNavigator.currentOrThrow
         val data = customList.manga
         val scope = rememberCoroutineScope()
+        BackHandler(true) {
+            scope.launch { pagerState.animateScrollToPage(0) }
+        }
         BoxWithConstraints(
             modifier = modifier
                 .fillMaxSize()
@@ -344,7 +350,7 @@ class CustomListScreen : Screen {
                                 }
                             ),
                             oppositeSwipe = { a ->
-                                if (a > 30) scope.launch { pagerState.animateScrollToPage(0) }
+                                if (a > 30 && sm.swipeToPopEnabled) scope.launch { pagerState.animateScrollToPage(0) }
                             }
                         ) { m ->
                             MangaDisplay(

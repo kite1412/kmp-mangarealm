@@ -4,7 +4,9 @@ import LocalSharedViewModel
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import api.jikan.model.Character
@@ -34,10 +36,14 @@ fun <K, V> List<Map<K, V>>.toMap(): Map<K, V> {
     return m
 }
 
-fun Modifier.swipeToPop(nav: Navigator? = null, enabled: Boolean = true, action: () -> Unit = {}): Modifier = pointerInput(enabled) {
-    detectHorizontalDragGestures { _, dragAmount ->
-        if (dragAmount > 30 && enabled)
-            if (nav == null) action() else nav.pop()
+fun Modifier.swipeToPop(nav: Navigator? = null, enabled: Boolean = true, action: () -> Unit = {}): Modifier = composed {
+    val enableSwipeToPop by LocalSharedViewModel.current.appSettings.enableSwipeToPop
+    val swipeToPop = enableSwipeToPop && enabled
+    pointerInput(swipeToPop) {
+        detectHorizontalDragGestures { _, dragAmount ->
+            if (dragAmount > 30 && swipeToPop)
+                if (nav == null) action() else nav.pop()
+        }
     }
 }
 

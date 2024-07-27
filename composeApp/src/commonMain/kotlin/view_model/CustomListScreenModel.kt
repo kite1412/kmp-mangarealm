@@ -41,6 +41,7 @@ class CustomListScreenModel(
     var selectedCustomListIndex = 0
     var isOnEditMode = false
     private var editCustomList: CustomList? = null
+    val swipeToPopEnabled by sharedViewModel.appSettings.enableSwipeToPop
 
     init {
         sharedViewModel.beginCustomListSession()

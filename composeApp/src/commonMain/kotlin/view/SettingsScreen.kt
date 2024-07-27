@@ -49,11 +49,13 @@ class SettingsScreen : Screen {
         val sm = rememberScreenModel { SettingsScreenModel(sharedViewModel) }
         val nav = LocalNavigator.currentOrThrow
         LifecycleEffectOnce {
-            val count = SharedObject.popNotifierCount--
-            if (count > 0) sm.screenModelScope.launch {
-                sm.showPopNotice = true
-                delay(popNoticeDuration)
-                sm.showPopNotice = false
+            if (sm.enableSwipeToPop) {
+                val count = SharedObject.popNotifierCount--
+                if (count > 0) sm.screenModelScope.launch {
+                    sm.showPopNotice = true
+                    delay(popNoticeDuration)
+                    sm.showPopNotice = false
+                }
             }
         }
         Scaffold(
@@ -105,6 +107,13 @@ class SettingsScreen : Screen {
                     checked = sm.isDarkMode,
                     settings = "Dark Mode",
                     onCheckedChange = { sm.toggleDarkMode(it) }
+                )
+            }
+            SettingsCategory("Navigation") {
+                ToggleSetting(
+                    checked = sm.enableSwipeToPop,
+                    settings = "Swipe to pop",
+                    onCheckedChange = { sm.toggleSwipeToPop(it) }
                 )
             }
         }

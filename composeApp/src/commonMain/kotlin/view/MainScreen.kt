@@ -28,7 +28,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import assets.`Book-close`
-import assets.Clipboard
 import assets.Home
 import assets.Search
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
@@ -97,13 +96,6 @@ class MainScreen : Screen {
                 imageVector = Assets.Home,
                 contentDescription = "main page",
                 selected = page == Menu.HOME,
-                onClick = onPageChange
-            )
-            BottomAppBarIcon(
-                page = Menu.FEED,
-                imageVector = Assets.Clipboard,
-                contentDescription = "feed page",
-                selected = page == Menu.FEED,
                 onClick = onPageChange
             )
             BottomAppBarIcon(

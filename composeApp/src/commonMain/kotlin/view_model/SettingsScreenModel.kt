@@ -17,9 +17,11 @@ class SettingsScreenModel(
 ) : ScreenModel {
     var showPopNotice by mutableStateOf(false)
     var isDarkMode by mutableStateOf(false)
+    var enableSwipeToPop by mutableStateOf(true)
 
     init {
         isDarkMode = sharedViewModel.appSettings.isDarkMode.value
+        enableSwipeToPop = sharedViewModel.appSettings.enableSwipeToPop.value
     }
 
     fun toggleDarkMode(b: Boolean) {
@@ -27,6 +29,14 @@ class SettingsScreenModel(
             isDarkMode = b
             sharedViewModel.appSettings.isDarkMode.value = b
             kottageStorage.put(KottageConst.THEME_MODE, b)
+        }
+    }
+
+    fun toggleSwipeToPop(b: Boolean) {
+        screenModelScope.launch {
+            enableSwipeToPop = b
+            sharedViewModel.appSettings.enableSwipeToPop.value = b
+            kottageStorage.put(KottageConst.SWIPE_TO_POP, b)
         }
     }
 }
