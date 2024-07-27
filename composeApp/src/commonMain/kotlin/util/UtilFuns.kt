@@ -7,17 +7,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import api.jikan.model.Character
 import cafe.adriel.voyager.navigator.Navigator
 import shared.adjustNavBarColor
 import shared.adjustStatusBarColor
 import shared.applyEdgeToEdge
 import shared.disableEdgeToEdge
-import kotlin.math.PI
-import kotlin.math.pow
-
-fun circleArea(d: Float): Float {
-    return (PI * ((d / 2).pow(2))).toFloat() / 10f
-}
 
 @Composable
 fun edgeToEdge() {
@@ -103,3 +98,9 @@ fun appGray(): Color = if (isDarkMode())
 @Composable
 fun reverseAppGray(): Color = if (isDarkMode())
     Color.DarkGray else Color.Gray
+
+fun resolveCharacterPicture(character: Character): String =
+    character.character.images.jpg.largeImageUrl
+        ?: character.character.images.jpg.imageUrl
+        ?: character.character.images.jpg.smallImageUrl
+        ?: ""

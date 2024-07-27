@@ -1,9 +1,6 @@
 package model
 
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.painter.Painter
-import api.jikan.model.Character
 import api.mangadex.model.response.Data
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.EmptyMangaAttributes
@@ -13,7 +10,7 @@ data class Manga(
     val data: Data<MangaAttributes>,
     var status: Status = MangaStatus.None,
     var painter: Painter? = null,
-    val characters: SnapshotStateList<Character> = mutableStateListOf()
+    val characters: Characters = Characters()
 )
 
 fun emptyManga(): Manga {

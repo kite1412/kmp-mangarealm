@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Checkbox
@@ -53,16 +54,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
+import api.jikan.model.Character
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.util.getCoverUrl
 import api.mangadex.util.getDesc
@@ -96,6 +101,7 @@ import util.edgeToEdge
 import util.popNoticeDuration
 import util.publicationStatus
 import util.publicationStatusColor
+import util.resolveCharacterPicture
 import util.swipeToPop
 import util.toMap
 import view_model.DetailScreenModel
@@ -147,6 +153,7 @@ class DetailScreen : Screen {
                                 getDesc(sm.manga.data.attributes.description),
                                 modifier = Modifier.padding(start = 8.dp)
                             )
+                            Characters(sm)
                         }
                     }
                 }
@@ -796,5 +803,79 @@ class DetailScreen : Screen {
                 modifier = Modifier.weight(0.1f)
             )
         }
+    }
+}
+
+@Composable
+private fun Characters(
+    sm: DetailScreenModel,
+    modifier: Modifier = Modifier
+) {
+    val screenSize = LocalScreenSize.current
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(screenSize.height / 3.5f)
+    ) {
+        if (!sm.manga.characters.fetched.value) CircularProgressIndicator(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp)
+        )
+        else if (sm.manga.characters.data.isNotEmpty()) Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Text(
+                "Characters",
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp,
+                fontStyle = FontStyle.Italic
+            )
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(sm.manga.characters.data.size) {
+                    Character(sm.manga.characters.data[it])
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Character(
+    character: Character,
+    modifier: Modifier = Modifier
+) {
+    val screenSize = LocalScreenSize.current
+    val maxWidth = screenSize.width / 4f
+    val imageUrl = resolveCharacterPicture(character)
+    val maxHeight = (3f / 2f) * maxWidth
+    var painter: Painter? by remember { mutableStateOf(null) }
+    if (imageUrl.isNotEmpty()) Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+    ) {
+        ImageLoader(
+            url = imageUrl,
+            painter = painter,
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier
+                .fillMaxWidth()
+                .width(maxWidth)
+                .height(maxHeight)
+        ) { p -> painter = p }
+        Text(
+            character.character.name,
+            textAlign = TextAlign.Center,
+            fontWeight = FontWeight.Medium,
+            fontSize = 12.sp,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.width(maxWidth)
+        )
     }
 }
