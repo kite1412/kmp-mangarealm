@@ -35,7 +35,6 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -83,7 +82,6 @@ fun Discovery(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     adjustStatusBarColor(MaterialTheme.colors.background)
-    LaunchedEffect(true) { state.init() }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -330,6 +328,13 @@ private fun Histories(
                             else MaterialTheme.colors.onBackground
                         ).value,
                         corner = CircleShape,
+                        onLongClick = {
+                            if (!state.historyEditing) state.onEditByLongPress(
+                                keyboardController = keyboardController,
+                                focusManager = focusManager,
+                                history = history
+                            )
+                        }
                     ) {
                         Text(
                             history,

@@ -21,8 +21,6 @@ import io.github.irgaly.kottage.add
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import model.Manga
-import model.MangaStatus
-import model.Status
 import model.session.MangaSession
 import model.session.Session
 import model.toMangaList
@@ -55,19 +53,18 @@ class DiscoveryState(
     var deletionAction = {}
     var deletionLabel = ""
     private var q: String = ""
-    private var initialized = false
     private val historyList = kottageStorage.list(KottageConst.HISTORY_LIST)
 
-    fun init() {
-        if (!initialized) {
-            initHistory()
-            initialized = true
-        }
+    init {
+        initHistory()
     }
 
     private fun updateSession(queries: Map<String, Any> = mapOf()) {
         scope.launch {
             q = generateQuery(queries)
+            queries["title"]?.let {
+                saveHistory(it as String)
+            }
             session.clear()
             val fromCache = cache.latestMangaSearch[q]
             if (fromCache == null) {
@@ -91,9 +88,6 @@ class DiscoveryState(
                 }
             }
             listState.scrollToItem(0)
-            queries["title"]?.let {
-                saveHistory(it as String)
-            }
         }
     }
 
@@ -131,8 +125,8 @@ class DiscoveryState(
         )
     }
 
-    private suspend fun saveHistory(history: String) {
-        val temp = mutableListOf<String>().apply {
+    private fun saveHistory(history: String) {
+        scope.launch { val temp = mutableListOf<String>().apply {
             add(history)
             val temp = mutableListOf<String>().apply {
                 addAll(histories)
@@ -141,18 +135,13 @@ class DiscoveryState(
             addAll(temp)
             if (size > maxHistory) removeLast()
         }
-        historyList.removeAll(true)
-        histories.clear()
-        for (i in 0 until temp.size) {
-            historyList.add(temp[i], temp[i])
-            histories.add(temp[i])
-        }
-    }
+            historyList.removeAll(true)
+            histories.clear()
+            for (i in 0 until temp.size) {
+                historyList.add(temp[i], temp[i])
+                histories.add(temp[i])
+            }
 
-    fun deleteHistory(history: String) {
-        scope.launch {
-            kottageStorage.remove(history)
-            histories.remove(history)
         }
     }
 
@@ -195,6 +184,19 @@ class DiscoveryState(
         }
     }
 
+    fun onEditByLongPress(
+        keyboardController: SoftwareKeyboardController?,
+        focusManager: FocusManager,
+        history: String = ""
+    ) {
+        onEditClick()
+        handleHistoryClick(
+            keyboardController = keyboardController,
+            focusManager = focusManager,
+            history = history
+        )
+    }
+
     fun clearSelectedHistory() {
         selectedHistory.clear()
         historyEditing = false
@@ -231,7 +233,4 @@ class DiscoveryState(
             showHistoryOptions = false
         }
     }
-
-    fun checkStatus(manga: Manga): Status? = if (manga.status != MangaStatus.None) manga.status
-        else null
 }
