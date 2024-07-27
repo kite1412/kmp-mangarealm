@@ -838,7 +838,10 @@ fun Swipeable(
             Modifier
                 .offset(x = offsetAnimated)
                 .fillMaxWidth()
-                .clickable {  }
+                .clickable(
+                    indication = null,
+                    interactionSource = MutableInteractionSource()
+                ) {  }
                 .pointerInput(true) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
