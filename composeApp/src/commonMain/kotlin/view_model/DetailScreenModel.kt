@@ -53,6 +53,7 @@ class DetailScreenModel(
     var showAddListPrompt by mutableStateOf(false)
     var textFieldValue by mutableStateOf(TextFieldValue())
     var visibility by mutableStateOf(Visibility.PRIVATE)
+    val swipeToPopEnabled by sharedViewModel.appSettings.enableSwipeToPop
 
     init {
         status = manga.status

@@ -112,5 +112,5 @@ class MainViewModel(
 }
 
 enum class Menu {
-    HOME, FEED, DISCOVERY, USER_LIST
+    HOME, DISCOVERY, USER_LIST
 }

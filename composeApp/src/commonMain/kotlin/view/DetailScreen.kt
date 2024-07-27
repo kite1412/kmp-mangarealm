@@ -113,11 +113,13 @@ class DetailScreen : Screen {
         val sharedViewModel = LocalSharedViewModel.current
         val sm = rememberScreenModel { DetailScreenModel(sharedViewModel) }
         LifecycleEffectOnce {
-            val count = SharedObject.popNotifierCount--
-            if (count > 0) sm.screenModelScope.launch {
-                sm.showPopNotice = true
-                delay(popNoticeDuration)
-                sm.showPopNotice = false
+            if (sm.swipeToPopEnabled) {
+                val count = SharedObject.popNotifierCount--
+                if (count > 0) sm.screenModelScope.launch {
+                    sm.showPopNotice = true
+                    delay(popNoticeDuration)
+                    sm.showPopNotice = false
+                }
             }
         }
         edgeToEdge()
