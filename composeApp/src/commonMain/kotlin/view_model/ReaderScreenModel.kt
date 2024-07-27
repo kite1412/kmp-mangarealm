@@ -42,6 +42,7 @@ class ReaderScreenModel(
     var index by mutableStateOf("")
     var showChapterList by mutableStateOf(false)
     var showWarning by mutableStateOf(false)
+    private var enableChapterNavigation = false
 
     init {
         screenModelScope.launch {
@@ -108,6 +109,7 @@ class ReaderScreenModel(
                 }
                 totalPages = images().size
             }
+            enableChapterNavigation = true
         }
     }
 
@@ -159,13 +161,16 @@ class ReaderScreenModel(
     }
 
     fun onChapterClick(index: Int) {
-        showChapterList = false
-        currentChapterIndex = index
-        currentPage = 1
-        pageNavigatorIndex = 0
-        this.index = chapters[currentChapterIndex]().id + imageQuality
-        images.clear()
-        getChapterImages()
+        if (enableChapterNavigation) {
+            enableChapterNavigation = false
+            showChapterList = false
+            currentChapterIndex = index
+            currentPage = 1
+            pageNavigatorIndex = 0
+            this.index = chapters[currentChapterIndex]().id + imageQuality
+            images.clear()
+            getChapterImages()
+        }
     }
 
     suspend fun togglePageIndicator() {
