@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.TextFieldValue
+import api.jikan.service.Jikan
 import api.mangadex.model.request.CreateCustomList
 import api.mangadex.model.request.Visibility
 import api.mangadex.model.response.EntityResponse
@@ -34,7 +35,8 @@ import util.retry
 class DetailScreenModel(
     override val sharedViewModel: SharedViewModel,
     override val mangaDex: MangaDex = Libs.mangaDex,
-    override val cache: Cache = Libs.cache
+    override val cache: Cache = Libs.cache,
+    val jikan: Jikan = Libs.jikan
 ) : ScreenModel, ReaderNavigator, ChapterNavigator, StatusUpdater {
     var titleTagsPadding by mutableStateOf(24)
     var isShowingDetail by mutableStateOf(false)
@@ -54,6 +56,33 @@ class DetailScreenModel(
 
     init {
         status = manga.status
+        fetchCharacters()
+    }
+
+    private fun fetchCharacters() {
+        screenModelScope.launch {
+            val id = manga.data.attributes.links?.get("mal")
+            id?.let {
+                if (!manga.characters.fetched.value) {
+                    val malId = try {
+                        it.toInt()
+                    } catch (e: NumberFormatException) {
+                        return@let
+                    }
+                    retry(
+                        count = 3,
+                        predicate = { r -> r == null }
+                    ) {
+                        jikan.getMangaCharacters(
+                            mangaMalId = malId
+                        )
+                    }?.let { r ->
+                        manga.characters.data.addAll(r.data)
+                    }
+                }
+            }
+            manga.characters.fetched.value = true
+        }
     }
 
     fun detailVisibility() {

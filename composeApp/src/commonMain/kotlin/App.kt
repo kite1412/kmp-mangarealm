@@ -13,6 +13,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import api.jikan.service.Jikan
+import api.jikan.service.JikanImpl
 import api.mangadex.service.MangaDex
 import api.mangadex.service.MangaDexImpl
 import cafe.adriel.voyager.navigator.Navigator
@@ -58,6 +60,7 @@ object Libs {
     ).storage("default")
     val cache = Cache()
     val mangaDex: MangaDex = MangaDexImpl()
+    val jikan: Jikan = JikanImpl()
 }
 
 object SharedObject {
