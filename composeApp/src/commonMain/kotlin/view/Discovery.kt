@@ -84,7 +84,6 @@ import util.APP_BAR_HEIGHT
 import util.isDarkMode
 import util.session_handler.MangaSessionHandler
 import view_model.main.MainViewModel
-import view_model.main.bottomBarTotalHeight
 import view_model.main.state.DiscoveryState
 
 @OptIn(InternalVoyagerApi::class)
@@ -100,7 +99,6 @@ fun Discovery(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(bottom = bottomBarTotalHeight)
             .pointerInput(true) {
                 detectTapGestures {
                     if (state.showHistoryOptions) state.showHistoryOptions = false
@@ -272,7 +270,7 @@ private fun Content(
                         vm.discoveryState.updateMangaPainter(it, manga, p)
                     },
                     parentHeight = maxHeight
-                ) { vm.navigateToDetail(nav, manga) }
+                ) { state.navigateToDetailScreen(nav, manga) }
             } else Text(
                 "No results found",
                 fontSize = 20.sp,
@@ -574,7 +572,7 @@ private fun SearchSuggestions(
                         SearchSuggestion(
                             manga = manga,
                             onPainterLoaded = { p -> state.updateSuggestionPainter(it, p) }
-                        ) { state.vm.navigateToDetail(nav, manga) }
+                        ) { state.navigateToDetailScreen(nav, manga) }
                     }
                 } else Text(
                     "No results found",
