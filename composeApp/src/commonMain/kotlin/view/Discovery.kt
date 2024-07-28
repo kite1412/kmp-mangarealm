@@ -1,6 +1,7 @@
 package view
 
 import Assets
+import LocalScreenSize
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -8,6 +9,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -17,12 +19,14 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -35,6 +39,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -44,15 +49,22 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
 import api.mangadex.model.response.attribute.MangaAttributes
+import api.mangadex.util.getCoverUrl
+import api.mangadex.util.getTags
+import api.mangadex.util.getTitle
 import assets.`Arrow-left-solid`
 import assets.`Chevron-right-bold`
 import assets.Cross
@@ -63,13 +75,16 @@ import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.internal.BackHandler
+import kotlinx.coroutines.delay
 import model.Manga
 import model.session.SessionState
 import model.session.isNotEmpty
 import shared.adjustStatusBarColor
 import util.APP_BAR_HEIGHT
+import util.isDarkMode
 import util.session_handler.MangaSessionHandler
 import view_model.main.MainViewModel
+import view_model.main.bottomBarTotalHeight
 import view_model.main.state.DiscoveryState
 
 @OptIn(InternalVoyagerApi::class)
@@ -85,6 +100,7 @@ fun Discovery(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .padding(bottom = bottomBarTotalHeight)
             .pointerInput(true) {
                 detectTapGestures {
                     if (state.showHistoryOptions) state.showHistoryOptions = false
@@ -94,8 +110,8 @@ fun Discovery(
         BackHandler(state.session.isNotEmpty()) {
             if (state.session.isNotEmpty()) state.clearSession()
         }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Content(vm, state)
+        Column(
             modifier = Modifier.fillMaxWidth()
         ) {
             TopBar(
@@ -110,12 +126,13 @@ fun Discovery(
                     keyboardController?.show()
                     state.searchBarValue = ""
                 },
-                onValueChange = vm.discoveryState::searchBarValueChange,
-                modifier = Modifier
-                    .weight(if (state.session.data.isNotEmpty()) 0.9f else 1f)
+                onValueChange = vm.discoveryState::searchBarValueChange
+            )
+            SearchSuggestions(
+                state = state,
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
         }
-        Content(vm, state)
     }
 }
 
@@ -513,3 +530,112 @@ fun DeletionWarning(
     }
 }
 
+@Composable
+private fun SearchSuggestions(
+    state: DiscoveryState,
+    modifier: Modifier = Modifier
+) {
+    val screenSize = LocalScreenSize.current
+    val session = state.suggestionSession
+    val sessionState by session.state
+    val searchBarValue = state.searchBarValue
+    LaunchedEffect(searchBarValue) {
+        if (searchBarValue.isEmpty()) state.suggestionSession.clear()
+        else if (searchBarValue.length >= 2) {
+            delay(1000)
+            state.updateSuggestionSession()
+        }
+    }
+    if (sessionState != SessionState.IDLE) Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isDarkMode()) Color(0xFF1C1C1C) else Color.White)
+    ) {
+        when(sessionState) {
+            SessionState.FETCHING -> CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(vertical = 16.dp)
+            )
+            else -> {
+                val nav = LocalNavigator.currentOrThrow
+                val data = session.data
+                if (data.isNotEmpty()) LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(screenSize.height / 1.5f)
+                        .padding(horizontal = 8.dp)
+                ) {
+                    items(data.size) {
+                        val manga = session.data[it]
+                        SearchSuggestion(
+                            manga = manga,
+                            onPainterLoaded = { p -> state.updateSuggestionPainter(it, p) }
+                        ) { state.vm.navigateToDetail(nav, manga) }
+                    }
+                } else Text(
+                    "No results found",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(vertical = 16.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchSuggestion(
+    manga: Manga,
+    onPainterLoaded: (Painter) -> Unit,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val screenSize = LocalScreenSize.current
+    val height = screenSize.height / 7
+    val imageWidth = (2f / 3f) * height
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height)
+            .clickable(
+                indication = null,
+                interactionSource = MutableInteractionSource(),
+                onClick = onClick
+            )
+    ) {
+        ImageLoader(
+            url = getCoverUrl(manga.data),
+            painter = manga.painter,
+            contentScale = ContentScale.FillBounds,
+            onPainterLoaded = onPainterLoaded,
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(imageWidth)
+                .clip(RoundedCornerShape(8.dp))
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                getTitle(manga.data.attributes.title),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                getTags(manga.data),
+                maxLines = 2,
+                fontSize = 12.sp,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}

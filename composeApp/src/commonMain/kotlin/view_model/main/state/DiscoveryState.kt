@@ -31,11 +31,11 @@ import view_model.SharedViewModel
 import view_model.main.MainViewModel
 
 class DiscoveryState(
-    private val vm: MainViewModel,
+    val vm: MainViewModel,
     private val sharedViewModel: SharedViewModel = vm.sharedViewModel,
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val cache: Cache = Libs.cache,
-    private val scope: CoroutineScope = vm.viewModelScope,
+    val scope: CoroutineScope = vm.viewModelScope,
     private val kottageStorage: KottageStorage = Libs.kottageStorage
 ) {
     private val maxHistory = 50
@@ -52,12 +52,19 @@ class DiscoveryState(
     var deletionMessage = ""
     var deletionAction = {}
     var deletionLabel = ""
+    val suggestionSession = MangaSession()
     private var q: String = ""
     private val historyList = kottageStorage.list(KottageConst.HISTORY_LIST)
 
     init {
         initHistory()
     }
+
+    private fun defaultQuery(): MutableMap<String, Any> = mutableMapOf(
+        "title" to searchBarValue,
+        "includes[]" to "cover_art",
+        "limit" to DEFAULT_COLLECTION_SIZE
+    )
 
     private fun updateSession(queries: Map<String, Any> = mapOf()) {
         scope.launch {
@@ -105,6 +112,7 @@ class DiscoveryState(
 
     fun clearSession() {
         session.clear()
+        suggestionSession.clear()
         searchBarValue = ""
     }
 
@@ -151,15 +159,12 @@ class DiscoveryState(
         search: String = ""
     ) {
         if (search.isNotEmpty()) searchBarValue = search
+        suggestionSession.clear()
         if (searchBarValue.isNotEmpty()) {
             keyboardController?.hide()
             focusManager.clearFocus()
             updateSession(
-                queries = mapOf(
-                    "title" to searchBarValue,
-                    "includes[]" to "cover_art",
-                    "limit" to DEFAULT_COLLECTION_SIZE
-                )
+                queries = defaultQuery()
             )
         }
     }
@@ -231,6 +236,23 @@ class DiscoveryState(
             histories.clear()
             cancelDeletion()
             showHistoryOptions = false
+        }
+    }
+
+    fun updateSuggestionPainter(index: Int, p: Painter) {
+        suggestionSession.data[index] = suggestionSession.data[index].copy(painter = p)
+    }
+
+    fun updateSuggestionSession() {
+        scope.launch {
+            val q = defaultQuery().apply {
+                set("limit", 20)
+            }
+            suggestionSession.data.clear()
+            suggestionSession.init(q)
+            mangaDex.getManga(generateQuery(q))?.let {
+                suggestionSession.setActive(it, it.toMangaList())
+            }
         }
     }
 }
