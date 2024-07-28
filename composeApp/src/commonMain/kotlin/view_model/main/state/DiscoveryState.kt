@@ -53,8 +53,10 @@ class DiscoveryState(
     var deletionAction = {}
     var deletionLabel = ""
     val suggestionSession = MangaSession()
+    var suggestionCancellation = false
     private var q: String = ""
     private val historyList = kottageStorage.list(KottageConst.HISTORY_LIST)
+
 
     init {
         initHistory()
@@ -159,6 +161,7 @@ class DiscoveryState(
         search: String = ""
     ) {
         if (search.isNotEmpty()) searchBarValue = search
+        suggestionCancellation = true
         suggestionSession.clear()
         if (searchBarValue.isNotEmpty()) {
             keyboardController?.hide()
@@ -216,6 +219,7 @@ class DiscoveryState(
 
     fun deleteSelectedHistories() {
         scope.launch {
+            showAllHistories = false
             selectedHistory.apply {
                 histories.removeAll(this)
                 forEach {
@@ -232,6 +236,7 @@ class DiscoveryState(
 
     fun clearHistories() {
         scope.launch {
+            showAllHistories = false
             historyList.removeAll(true)
             histories.clear()
             cancelDeletion()
@@ -243,16 +248,23 @@ class DiscoveryState(
         suggestionSession.data[index] = suggestionSession.data[index].copy(painter = p)
     }
 
-    fun updateSuggestionSession() {
-        scope.launch {
+    suspend fun updateSuggestionSession() {
+        if (!suggestionCancellation) {
             val q = defaultQuery().apply {
                 set("limit", 20)
             }
             suggestionSession.data.clear()
             suggestionSession.init(q)
             mangaDex.getManga(generateQuery(q))?.let {
-                suggestionSession.setActive(it, it.toMangaList())
+                if (!suggestionCancellation) suggestionSession.setActive(it, it.toMangaList())
+                    else {
+                        suggestionCancellation = false
+                        suggestionSession.clear()
+                    }
             }
+        } else {
+            suggestionCancellation = false
+            suggestionSession.clear()
         }
     }
 }
