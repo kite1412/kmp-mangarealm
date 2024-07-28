@@ -1,5 +1,6 @@
 package view
 
+import Assets
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -9,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,15 +20,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import assets.`Mr-logo`
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.Roboto_Thin
-import mangarealm.composeapp.generated.resources.full_logo
 import mangarealm.composeapp.generated.resources.mangadex
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.Font
 import org.jetbrains.compose.resources.painterResource
+import theme.darkBeige
+import theme.lightBeige
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
 fun SplashScreen() {
     Box(
@@ -37,14 +38,14 @@ fun SplashScreen() {
             .background(
                 brush = Brush.linearGradient(
                     colorStops = arrayOf(
-                        0.5f to MaterialTheme.colors.onBackground,
-                        1f to MaterialTheme.colors.background,
+                        0.5f to darkBeige,
+                        1f to lightBeige,
                     )
                 )
             ),
     ) {
         Image(
-            painter = painterResource(Res.drawable.full_logo),
+            imageVector = Assets.`Mr-logo`,
             contentDescription = "Manga Realm",
             modifier = Modifier
                 .height(100.dp)

@@ -33,6 +33,7 @@ import shared.adjustStatusBarColor
 import shared.databaseDir
 import shared.kottageContext
 import theme.AppTheme
+import theme.darkBeige
 import view.LoginScreen
 import view.MainScreen
 import view.SplashScreen
@@ -106,7 +107,7 @@ fun App() {
     }
     CompositionLocalProvider(LocalSharedViewModel provides sharedViewModel) {
         AppTheme {
-            adjustStatusBarColor(MaterialTheme.colors.onBackground)
+            adjustStatusBarColor(darkBeige)
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 CompositionLocalProvider(LocalScreenSize provides ScreenSize(height = this.maxHeight, width = this.maxWidth)) {
                     if (!isLoggedIn) {
