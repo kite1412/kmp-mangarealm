@@ -14,6 +14,7 @@ import androidx.lifecycle.viewModelScope
 import api.mangadex.model.response.attribute.MangaAttributes
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateQuery
+import cafe.adriel.voyager.navigator.Navigator
 import io.github.irgaly.kottage.KottageList
 import io.github.irgaly.kottage.KottageListPage
 import io.github.irgaly.kottage.KottageStorage
@@ -53,7 +54,7 @@ class DiscoveryState(
     var deletionAction = {}
     var deletionLabel = ""
     val suggestionSession = MangaSession()
-    var suggestionCancellation = false
+    private var suggestionCancellation = false
     private var q: String = ""
     private val historyList = kottageStorage.list(KottageConst.HISTORY_LIST)
 
@@ -256,6 +257,8 @@ class DiscoveryState(
             suggestionSession.data.clear()
             suggestionSession.init(q)
             mangaDex.getManga(generateQuery(q))?.let {
+                // prevention to show the suggestions if by any chance the search session
+                // started before suggestion session not finished.
                 if (!suggestionCancellation) suggestionSession.setActive(it, it.toMangaList())
                     else {
                         suggestionCancellation = false
@@ -264,7 +267,11 @@ class DiscoveryState(
             }
         } else {
             suggestionCancellation = false
-            suggestionSession.clear()
         }
+    }
+
+    fun navigateToDetailScreen(nav: Navigator, manga: Manga) {
+        suggestionCancellation = true
+        vm.navigateToDetail(nav, manga)
     }
 }
