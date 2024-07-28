@@ -15,6 +15,7 @@ import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import model.Chapter
 import model.ChapterImage
 import model.ChapterImages
 import util.ImageQuality
@@ -25,7 +26,7 @@ class ReaderScreenModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val cache: Cache = Libs.cache
 ) : ScreenModel {
-    val chapters = SharedObject.chapterList()
+    var chapters = SharedObject.chapterList()
     var currentChapterIndex by mutableIntStateOf(SharedObject.chapterList.index)
     var imageQuality by mutableStateOf("")
     var showPrompt by mutableStateOf(true)
@@ -48,7 +49,15 @@ class ReaderScreenModel(
         screenModelScope.launch {
             delay(100)
             showPrompt = true
+            if (!SharedObject.chapterList.ascending) chapters = adjustDescendingChapter()
         }
+    }
+
+    private fun adjustDescendingChapter(): List<Chapter> = mutableListOf<Chapter>().apply {
+        val start = chapters.subList(currentChapterIndex, chapters.size).reversed()
+        val end = chapters.subList(0, currentChapterIndex).reversed()
+        addAll(start + end)
+        currentChapterIndex = start.size - 1
     }
 
     private fun getChapterImages() {

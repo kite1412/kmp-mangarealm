@@ -129,7 +129,14 @@ class DetailScreenModel(
                         response = it.response,
                         data = it.response.data.toMutableList()
                     )
-                    if (it.data.isNotEmpty()) navigateToReader(nav, ChapterList(0, it.data))
+                    if (it.data.isNotEmpty()) navigateToReader(
+                        nav = nav,
+                        chapterList = ChapterList(
+                            index = 0,
+                            ascending = it.queries["order[chapter]"] == ASCENDING,
+                            chapters = it.data
+                        )
+                    )
                         else showWarning()
                     readClicked = false
                 }

@@ -138,7 +138,14 @@ class ChapterScreen : Screen {
                     ) {
                         val chapter = session!!.data[it]
                         ChapterBar(chapter) { _ ->
-                            sm.navigateToReader(nav, model.ChapterList(it, session!!.data))
+                            sm.navigateToReader(
+                                nav = nav,
+                                chapterList = model.ChapterList(
+                                    index = it,
+                                    ascending = session!!.queries["order[chapter]"] == ASCENDING,
+                                    chapters = session!!.data
+                                )
+                            )
                         }
                     } else EmptyList("No chapters found", Modifier.align(Alignment.Center))
                 }
