@@ -1,5 +1,6 @@
 package view_model.main
 
+import Assets
 import Cache
 import Libs
 import Libs.mangaDex
@@ -7,16 +8,23 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import api.mangadex.service.MangaDex
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
+import assets.`Book-close`
+import assets.Home
+import assets.Search
 import cafe.adriel.voyager.core.stack.mutableStateStackOf
 import io.github.irgaly.kottage.KottageStorage
 import kotlinx.coroutines.launch
+import model.ItemColor
 import model.MangaStatus
+import model.Route
 import model.toMangaList
 import util.APP_BAR_HEIGHT
 import util.retry
@@ -37,8 +45,22 @@ class MainViewModel(
     kottageStorage: KottageStorage = Libs.kottageStorage,
     cache: Cache = Libs.cache
 ) : ViewModel(), DetailNavigator, ChapterNavigator, CustomListNavigator, SettingsNavigator {
-    val menuStack = mutableStateStackOf(Menu.HOME)
-    val currentPage by derivedStateOf { menuStack.lastItemOrNull }
+    val routes = mapOf(
+        Menu.HOME to commonRoute(
+            name = "Home",
+            icon = Assets.Home
+        ),
+        Menu.DISCOVERY to commonRoute(
+            name = "Discovery",
+            icon = Assets.Search
+        ),
+        Menu.USER_LIST to commonRoute(
+            name = "My List",
+            icon = Assets.`Book-close`
+        ),
+    )
+    val menuStack = mutableStateStackOf(routes[Menu.HOME])
+    val currentPage by derivedStateOf { menuStack.lastItemOrNull ?: routes[Menu.HOME]!! }
     var undoEdgeToEdge by mutableStateOf(false)
     var hideBottomBar by mutableStateOf(false)
 
@@ -57,13 +79,24 @@ class MainViewModel(
         scope = viewModelScope,
         kottageStorage = kottageStorage
     )
-
     val userListState = UserListState(this)
+
+    private fun commonRoute(
+        name: String,
+        icon: ImageVector,
+    ): Route = Route(
+        name = name,
+        icon = icon,
+        color = ItemColor(
+            selected = Color(0xFF322C00),
+            unselected = Color(0xFFD1C5B4)
+        )
+    )
 
     fun popMenu() { menuStack.pop() }
 
-    fun pushMenu(menu: Menu) = if (menu != Menu.HOME) menuStack.push(menu)
-        else menuStack.replaceAll(Menu.HOME)
+    fun pushMenu(route: Route) = if (route != routes[Menu.HOME]!!) menuStack.push(route)
+        else menuStack.replaceAll(routes[Menu.HOME]!!)
 
     fun init() {
         homeState.initLatestUpdatesData()
