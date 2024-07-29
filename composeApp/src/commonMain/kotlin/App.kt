@@ -5,14 +5,15 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import api.jikan.service.Jikan
 import api.jikan.service.JikanImpl
 import api.mangadex.service.MangaDex
@@ -24,9 +25,11 @@ import io.github.irgaly.kottage.getOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import model.AppSettings
+import kotlinx.coroutines.launch
 import model.ChapterList
 import model.Manga
+import model.ScreenSize
+import model.WidthClass
 import model.emptyManga
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import shared.adjustStatusBarColor
@@ -40,15 +43,10 @@ import view.SplashScreen
 import view_model.SharedViewModel
 import view_model.main.MainViewModel
 
-data class ScreenSize(
-    val height: Dp,
-    val width: Dp
-)
-
 val LocalScreenSize = compositionLocalOf { ScreenSize(0.dp, 0.dp) }
 val LocalMainViewModel = compositionLocalOf { MainViewModel(SharedViewModel()) }
 val LocalSharedViewModel = compositionLocalOf { SharedViewModel() }
-val LocalAppSettings = compositionLocalOf { AppSettings() }
+val LocalWidthClass: ProvidableCompositionLocal<WidthClass> = compositionLocalOf { WidthClass.Compact }
 
 object Libs {
     val kottageStorage = Kottage(
@@ -80,49 +78,55 @@ private suspend fun isLoggedIn(): Boolean {
 @Composable
 @Preview
 fun App() {
-    var isLoggedIn by remember {
+    var isLoggedIn by rememberSaveable {
         mutableStateOf(false)
     }
-    var isShowingSplash by remember {
+    var isShowingSplash by rememberSaveable {
         mutableStateOf(true)
     }
-    val sharedViewModel = remember { SharedViewModel() }
-    val mainViewModel = remember { MainViewModel(sharedViewModel) }
-    // init for utilities that are not bound by whether is logged in or not
-    LaunchedEffect(true) {
-        Initializer()(postTagSetup = mainViewModel.homeState::setTags)
-    }
+    var executeOnce by rememberSaveable { mutableStateOf(false) }
+    val sharedViewModel = viewModel { SharedViewModel() }
+    val mainViewModel = viewModel { MainViewModel(sharedViewModel) }
     // check for login info
     LaunchedEffect(true) {
-        isLoggedIn = isLoggedIn()
-        delay(util.SPLASH_TIME.toLong())
-        isShowingSplash = false
-        mainViewModel.undoEdgeToEdge = true
+        if (!executeOnce) {
+            isLoggedIn = isLoggedIn()
+            launch {
+                Initializer()(postTagSetup = mainViewModel.homeState::setTags)
+            }
+            delay(util.SPLASH_TIME.toLong())
+            isShowingSplash = false
+            mainViewModel.undoEdgeToEdge = true
+        }
     }
     // perform actions after logged in
     LaunchedEffect(isLoggedIn) {
-        if (isLoggedIn) {
+        if (isLoggedIn && !executeOnce) {
             mainViewModel.homeState.updateUsername()
+            executeOnce = true
         }
     }
     CompositionLocalProvider(LocalSharedViewModel provides sharedViewModel) {
         AppTheme {
             adjustStatusBarColor(darkBeige)
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                CompositionLocalProvider(LocalScreenSize provides ScreenSize(height = this.maxHeight, width = this.maxWidth)) {
-                    if (!isLoggedIn) {
-                        LoginScreen(onSuccess = {
-                            isLoggedIn = true
-                        })
-                    } else {
-                        CompositionLocalProvider(LocalMainViewModel provides mainViewModel) {
-                            Navigator(MainScreen())
+                val screenSize = ScreenSize(height = this.maxHeight, width = this.maxWidth)
+                CompositionLocalProvider(LocalScreenSize provides screenSize) {
+                    CompositionLocalProvider(LocalWidthClass provides WidthClass(screenSize)) {
+                        if (!isLoggedIn) {
+                            LoginScreen(onSuccess = {
+                                isLoggedIn = true
+                            })
+                        } else {
+                            CompositionLocalProvider(LocalMainViewModel provides mainViewModel) {
+                                Navigator(MainScreen())
+                            }
                         }
-                    }
-                    if (isShowingSplash) {
-                        SplashScreen()
-                    } else {
-                        adjustStatusBarColor(MaterialTheme.colors.background)
+                        if (isShowingSplash) {
+                            SplashScreen()
+                        } else {
+                            adjustStatusBarColor(MaterialTheme.colors.background)
+                        }
                     }
                 }
             }

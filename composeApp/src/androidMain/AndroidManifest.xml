@@ -10,9 +10,11 @@
         android:supportsRtl="true"
         android:theme="@style/LaunchTheme">
 <!--        android:theme="@android:style/Theme.Material.Light.NoActionBar">-->
+
+        <!--Place under <activity>        -->
+        <!--            android:screenOrientation="portrait"-->
         <activity
             android:exported="true"
-            android:screenOrientation="portrait"
             android:configChanges="screenSize|screenLayout|keyboardHidden|mnc|colorMode|density|fontScale|fontWeightAdjustment|keyboard|layoutDirection|locale|mcc|navigation|smallestScreenSize|touchscreen|uiMode"
             android:name=".MainActivity">
             <intent-filter>
