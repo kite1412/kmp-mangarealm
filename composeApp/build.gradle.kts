@@ -43,8 +43,7 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
 
             // added
-            implementation(libs.androidx.lifecycle.viewmodel.ktx)
-            implementation(libs.androidx.lifecycle.viewmodel.compose)
+            implementation(libs.common.viewmodel)
             implementation(libs.napier)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
