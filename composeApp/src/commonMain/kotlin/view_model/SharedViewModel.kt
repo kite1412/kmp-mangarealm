@@ -17,7 +17,6 @@ import io.github.irgaly.kottage.KottageStorage
 import io.github.irgaly.kottage.getOrNull
 import kotlinx.coroutines.launch
 import model.AppSettings
-import model.Chapter
 import model.ChapterKey
 import model.CustomList
 import model.Manga
@@ -172,9 +171,9 @@ class SharedViewModel(
             "offset" to 0
         )
 
-    private fun updateChapterReadMarker(
+    private fun initChapterReadMarker(
         mangaId: String,
-        chapters: List<Chapter>,
+        session: ChapterSession,
         state: (Boolean) -> Unit = {}
     ) {
         viewModelScope.launch {
@@ -185,9 +184,7 @@ class SharedViewModel(
             ) {
                 mangaDex.getMangaReadMarkers(mangaId)
             }?.let { r ->
-                if (r.data!!.isNotEmpty()) chapters.forEach {
-                    if (it.data.id in r.data) it.isRead.value = true
-                }
+                r.data?.let { session.readMarkers.addAll(it) }
             }
             state(true)
         }
@@ -215,7 +212,7 @@ class SharedViewModel(
                 }
                 if (res != null) {
                     s.setActive(res, res.toChapters())
-                    updateChapterReadMarker(manga.data.id, s.data, readMarkerFetchState)
+                    initChapterReadMarker(manga.data.id, s, readMarkerFetchState)
                 } else return@launch onFailure()
             }
             return@launch onSuccess(chapterSessions[currentChapterSessionKey]!!)

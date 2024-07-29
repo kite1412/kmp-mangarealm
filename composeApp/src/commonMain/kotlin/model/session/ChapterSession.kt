@@ -11,6 +11,7 @@ import model.Chapter
 
 data class ChapterSession(
     private val mangaId: String,
+    val readMarkers: SnapshotStateList<String> = mutableStateListOf(),
     override val url: String = ApiConstant.mangaChapters(mangaId),
     override val queries: MutableMap<String, Any> = mutableMapOf(),
     override var response: ListResponse<ChapterAttributes> = ListResponse(),

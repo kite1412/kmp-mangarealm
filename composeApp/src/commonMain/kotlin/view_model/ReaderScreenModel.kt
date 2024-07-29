@@ -102,10 +102,10 @@ class ReaderScreenModel(
                                 readIds = listOf(chapterId)
                             )
                         }.also {
-                            val index = if (chapterList.ascending) currentChapterIndex
-                                else (chapters.size - 1) - currentChapterIndex
+//                            val index = if (chapterList.ascending) currentChapterIndex
+//                                else (chapters.size - 1) - currentChapterIndex
                             if (it) sharedViewModel.chapterSessions[sharedViewModel.currentChapterSessionKey]!!
-                                .data[index].isRead.value = true
+                                .readMarkers.add(chapters[currentChapterIndex].data.id)
                         }
                     }
                 }
