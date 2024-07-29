@@ -134,7 +134,8 @@ class DetailScreenModel(
                         chapterList = ChapterList(
                             index = 0,
                             ascending = it.queries["order[chapter]"] == ASCENDING,
-                            chapters = it.data
+                            chapters = it.data,
+                            lang = l
                         )
                     )
                         else showWarning()
