@@ -20,7 +20,7 @@ import model.ChapterKey
 import util.ASCENDING
 
 class ChapterScreenModel(
-    private val sharedViewModel: SharedViewModel,
+    val sharedViewModel: SharedViewModel,
     private val cache: Cache = Libs.cache,
 ) : ScreenModel, ReaderNavigator {
     val chapters = mutableStateListOf<Data<ChapterAttributes>>()
@@ -41,6 +41,11 @@ class ChapterScreenModel(
                 queries = generateQuery(sharedViewModel.chapterDefaultQueries(language, order))
             )
         ]
+    }
+    val readMarkersKey = derivedStateOf {
+        chapterSession.value?.let {
+            mangaId + it.queries["translatedLanguage[]"]
+        }
     }
     private val mangaId = manga.data.id
     val chapterListState = LazyListState()

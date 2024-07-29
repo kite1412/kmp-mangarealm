@@ -41,6 +41,7 @@ class SharedViewModel(
     val chapterSessions = mutableStateMapOf<ChapterKey, ChapterSession>()
     var currentChapterSessionKey = ChapterKey()
     val appSettings = AppSettings()
+    val chapterReadMarkers = mutableStateMapOf<String, SnapshotStateList<String>>()
 
     init {
         viewModelScope.launch {
@@ -184,7 +185,14 @@ class SharedViewModel(
             ) {
                 mangaDex.getMangaReadMarkers(mangaId)
             }?.let { r ->
-                r.data?.let { session.readMarkers.addAll(it) }
+                r.data?.let {
+                    val key = mangaId + session.queries["translatedLanguage[]"]
+                    if (chapterReadMarkers[key] == null) {
+                        chapterReadMarkers[key] = mutableStateListOf<String>().apply {
+                            addAll(it)
+                        }
+                    }
+                }
             }
             state(true)
         }

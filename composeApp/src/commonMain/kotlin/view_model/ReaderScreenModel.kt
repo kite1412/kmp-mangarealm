@@ -45,6 +45,7 @@ class ReaderScreenModel(
     var showChapterList by mutableStateOf(false)
     var showWarning by mutableStateOf(false)
     private var enableChapterNavigation = false
+    private val manga = SharedObject.detailManga
 
     init {
         screenModelScope.launch {
@@ -98,14 +99,15 @@ class ReaderScreenModel(
                             predicate = { false }
                         ) {
                             mangaDex.updateMangaReadMarkers(
-                                mangaId = SharedObject.detailManga.data.id,
+                                mangaId = manga.data.id,
                                 readIds = listOf(chapterId)
                             )
                         }.also {
 //                            val index = if (chapterList.ascending) currentChapterIndex
 //                                else (chapters.size - 1) - currentChapterIndex
-                            if (it) sharedViewModel.chapterSessions[sharedViewModel.currentChapterSessionKey]!!
-                                .readMarkers.add(chapters[currentChapterIndex].data.id)
+                            if (it) sharedViewModel.chapterReadMarkers[
+                                manga.data.id + chapterList.lang
+                            ]?.add(chapterId)
                         }
                     }
                 }

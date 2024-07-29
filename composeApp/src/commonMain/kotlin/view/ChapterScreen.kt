@@ -36,9 +36,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,7 +54,6 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import model.Chapter
 import model.session.SessionState
-import org.jetbrains.compose.resources.ExperimentalResourceApi
 import util.APP_BAR_HEIGHT
 import util.ASCENDING
 import util.DESCENDING
@@ -115,6 +112,7 @@ class ChapterScreen : Screen {
         modifier: Modifier = Modifier
     ) {
         val session by sm.chapterSession
+        val readMarkersKey by sm.readMarkersKey
         val nav = LocalNavigator.currentOrThrow
         Box(modifier = modifier.fillMaxSize()) {
             if (session == null) if (!sm.showWarning) LoadingIndicator(Modifier.align(Alignment.Center)) {
@@ -140,16 +138,19 @@ class ChapterScreen : Screen {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         val chapter = sessionData[it]
-                        val isRead by remember { derivedStateOf { session!!.readMarkers.contains(chapter.data.id) } }
+                        val isRead = sm.sharedViewModel.chapterReadMarkers[readMarkersKey]
+                            ?.contains(chapter.data.id) ?: false
                         ChapterBar(
                             chapter = chapter,
                             isRead = isRead
                         ) { _ ->
+                            val sessionQueries = session!!.queries
                             sm.navigateToReader(
                                 nav = nav,
                                 chapterList = model.ChapterList(
                                     index = it,
-                                    ascending = session!!.queries["order[chapter]"] == ASCENDING,
+                                    ascending = sessionQueries["order[chapter]"] == ASCENDING,
+                                    lang = sessionQueries["translatedLanguage[]"].toString(),
                                     chapters = sessionData
                                 )
                             )
@@ -160,7 +161,6 @@ class ChapterScreen : Screen {
         }
     }
 
-    @OptIn(ExperimentalResourceApi::class)
     @Composable
     private fun TopBar(
         height: Dp,
