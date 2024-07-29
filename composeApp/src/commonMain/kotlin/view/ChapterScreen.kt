@@ -36,7 +36,9 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -121,11 +123,12 @@ class ChapterScreen : Screen {
                 message = "No available chapters for this manga",
                 modifier = Modifier.align(Alignment.Center)
             ) else {
+                val sessionData = session!!.data
                 when(session!!.state.value) {
                     SessionState.IDLE, SessionState.FETCHING -> LoadingIndicator(Modifier.align(Alignment.Center)) {
                         Text("Loading chapters...", color = Color.White)
                     }
-                    SessionState.ACTIVE -> if (session!!.data.isNotEmpty()) SessionPagerColumn(
+                    SessionState.ACTIVE -> if (sessionData.isNotEmpty()) SessionPagerColumn(
                         session = session!!,
                         handler = ChapterSessionHandler(session!!),
                         state = sm.chapterListState,
@@ -136,14 +139,18 @@ class ChapterScreen : Screen {
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        val chapter = session!!.data[it]
-                        ChapterBar(chapter) { _ ->
+                        val chapter = sessionData[it]
+                        val isRead by remember { derivedStateOf { session!!.readMarkers.contains(chapter.data.id) } }
+                        ChapterBar(
+                            chapter = chapter,
+                            isRead = isRead
+                        ) { _ ->
                             sm.navigateToReader(
                                 nav = nav,
                                 chapterList = model.ChapterList(
                                     index = it,
                                     ascending = session!!.queries["order[chapter]"] == ASCENDING,
-                                    chapters = session!!.data
+                                    chapters = sessionData
                                 )
                             )
                         }
@@ -375,10 +382,10 @@ class ChapterScreen : Screen {
     @Composable
     private fun ChapterBar(
         chapter: Chapter,
+        isRead: Boolean,
         modifier: Modifier = Modifier,
         onClick: (Chapter) -> Unit
     ) {
-        val isRead by chapter.isRead
         Card(
             backgroundColor = if (isRead)
                 if (!isDarkMode()) Color(0xFFA39C8E) else Color(0xFF0A0A0A)
