@@ -26,7 +26,8 @@ class ReaderScreenModel(
     private val mangaDex: MangaDex = Libs.mangaDex,
     private val cache: Cache = Libs.cache
 ) : ScreenModel {
-    var chapters = SharedObject.chapterList()
+    val chapterList = SharedObject.chapterList
+    var chapters = chapterList()
     var currentChapterIndex by mutableIntStateOf(SharedObject.chapterList.index)
     var imageQuality by mutableStateOf("")
     var showPrompt by mutableStateOf(true)
@@ -49,7 +50,7 @@ class ReaderScreenModel(
         screenModelScope.launch {
             delay(100)
             showPrompt = true
-            if (!SharedObject.chapterList.ascending) chapters = adjustDescendingChapter()
+            if (!chapterList.ascending) chapters = adjustDescendingChapter()
         }
     }
 
@@ -101,8 +102,10 @@ class ReaderScreenModel(
                                 readIds = listOf(chapterId)
                             )
                         }.also {
+                            val index = if (chapterList.ascending) currentChapterIndex
+                                else (chapters.size - 1) - currentChapterIndex
                             if (it) sharedViewModel.chapterSessions[sharedViewModel.currentChapterSessionKey]!!
-                                .data[currentChapterIndex].isRead.value = true
+                                .data[index].isRead.value = true
                         }
                     }
                 }
