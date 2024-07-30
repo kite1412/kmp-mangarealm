@@ -30,6 +30,12 @@ fun undoEdgeToEdge() {
     adjustStatusBarColor(MaterialTheme.colors.background)
 }
 
+@Composable
+fun undoEdgeToEdge(statusBarColor: Color) {
+    disableEdgeToEdge()
+    adjustStatusBarColor(statusBarColor)
+}
+
 fun <K, V> List<Map<K, V>>.toMap(): Map<K, V> {
     val m = mutableMapOf<K, V>()
     forEach {
