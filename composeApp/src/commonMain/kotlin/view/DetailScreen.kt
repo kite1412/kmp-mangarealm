@@ -3,6 +3,7 @@ package view
 import Assets
 import LocalScreenSize
 import LocalSharedViewModel
+import LocalWidthClass
 import SharedObject
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -13,6 +14,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -59,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -99,10 +102,12 @@ import model.CustomList
 import model.MangaStatus
 import model.ScreenSize
 import model.Status
+import model.WidthClass
 import model.session.SessionState
 import util.APP_BAR_HEIGHT
 import util.appGray
 import util.edgeToEdge
+import util.getMaxDimension
 import util.popNoticeDuration
 import util.publicationStatus
 import util.publicationStatusColor
@@ -142,15 +147,11 @@ class DetailScreen : Screen {
                     val aboveBottomBar = APP_BAR_HEIGHT + 16.dp
                     val screenSize = LocalScreenSize.current
                     val screenHeight = screenSize.height
-                    val screenWidth = screenSize.width
                     val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-                    val coverDisplayHeight = ((
-                        if (screenHeight >= screenWidth) screenHeight else screenWidth
-                    ) / 2.5f) - statusBarsHeight
+                    val coverDisplayHeight = (getMaxDimension() / 2.5f) - statusBarsHeight
                     val fixedDisplayHeight = if (
                         coverDisplayHeight <= screenHeight / 2
-                    ) coverDisplayHeight
-                        else coverDisplayHeight / 1.5f
+                    ) coverDisplayHeight else coverDisplayHeight / 1.5f
                     CoverArtDisplay(sm, nav, fixedDisplayHeight)
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -223,8 +224,9 @@ class DetailScreen : Screen {
         modifier: Modifier = Modifier
     ) {
         val screenSize = LocalScreenSize.current
+        val actionHeight = 60.dp
         val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val backgroundHeight = totalHeight / 1.25f
+        val backgroundHeight = totalHeight - actionHeight
         val coverArtHeight = totalHeight / 1.5f
         val coverArtWidth = (coverArtHeight * 2) / 3
         val remainingWidth = screenSize.width - (coverArtWidth + 16.dp)
@@ -269,6 +271,7 @@ class DetailScreen : Screen {
             }
             Column(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.End,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = 16.dp)
@@ -298,71 +301,99 @@ class DetailScreen : Screen {
                     }
                 }
             }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
+            val widthClass = LocalWidthClass.current
+            BoxWithConstraints(
+                Modifier
                     .height(totalHeight - backgroundHeight)
                     .width(remainingWidth)
                     .align(Alignment.BottomStart)
-                    .padding(8.dp)
+                    .padding(
+                        end = 8.dp,
+                        top = 8.dp,
+                        start = if (widthClass == WidthClass.Compact) 8.dp else 0.dp,
+                        bottom = if (widthClass == WidthClass.Compact) 8.dp else 0.dp
+                    )
             ) {
-                Action(
-                    onClick = { sm.onRead(nav) },
-                    enabled = !sm.readClicked,
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .fillMaxHeight()
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.align(Alignment.Center)
+                    Action(
+                        onClick = { sm.onRead(nav) },
+                        enabled = !sm.readClicked,
+                        verticalPadding = 4.dp,
+                        horizontalPadding = 12.dp,
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .then(
+                                if (widthClass == WidthClass.Compact) Modifier.weight(0.5f)
+                                    else Modifier
+                            )
                     ) {
-                        Text(
-                            "Read",
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Icon(
-                            imageVector = Assets.`Book-open`,
-                            contentDescription = "read",
-                            tint = Color.White
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.align(Alignment.Center)
+                        ) {
+                            Text(
+                                "Read",
+                                color = Color.White,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Icon(
+                                imageVector = Assets.`Book-open`,
+                                contentDescription = "read",
+                                tint = Color.White
+                            )
+                        }
                     }
-                }
-                Action(
-                    onClick = { sm.onAddToList() },
-                    fill = false,
-                    verticalPadding = 2.dp,
-                    modifier = Modifier
-                        .weight(0.25f)
-                        .fillMaxHeight()
-                ) {
-                    Icon(
-                        imageVector = Assets.`List-add`,
+                    val applyWeight = Modifier.then(
+                        if (widthClass == WidthClass.Compact) Modifier
+                            .fillMaxHeight()
+                            .weight(0.25f)
+                            else Modifier
+                    )
+                    DetailAction(
+                        icon = Assets.`List-add`,
                         contentDescription = "add to list",
-                        tint = actionIconColor(false),
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                }
-                Action(
-                    onClick = { sm.onStatus() },
-                    fill = sm.manga.status == MangaStatus.None,
-                    modifier = Modifier
-                        .weight(0.25f)
-                        .fillMaxHeight()
-                ) {
-                    Icon(
-                        imageVector = if (sm.manga.status == MangaStatus.None) Assets.`Bookmark-alt`
-                        else Assets.`Bookmark-alt-fill`,
-                        contentDescription = "udpate status",
-                        tint = if (sm.manga.status == MangaStatus.None)
-                            actionIconColor(true) else MaterialTheme.colors.secondary,
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                        maxHeight = this@BoxWithConstraints.maxHeight,
+                        modifier = applyWeight
+                    ) { sm.onAddToList() }
+                    DetailAction(
+                        icon = if (sm.manga.status == MangaStatus.None) Assets.`Bookmark-alt`
+                            else Assets.`Bookmark-alt-fill`,
+                        contentDescription = "update status",
+                        maxHeight = this@BoxWithConstraints.maxHeight,
+                        modifier = applyWeight
+                    ) { sm.onStatus() }
                 }
             }
+        }
+    }
+
+    @Composable
+    private fun DetailAction(
+        icon: ImageVector,
+        contentDescription: String,
+        maxHeight: Dp,
+        modifier: Modifier = Modifier,
+        onClick: () -> Unit
+    ) {
+        Action(
+            onClick = onClick,
+            fill = false,
+            verticalPadding = 0.dp,
+            modifier = modifier.size(maxHeight)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                tint = actionIconColor(false),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(maxHeight / 2)
+            )
         }
     }
 
@@ -504,22 +535,6 @@ class DetailScreen : Screen {
     }
 
     @Composable
-    private fun Background(modifier: Modifier = Modifier) {
-        val screenSize = LocalScreenSize.current
-        Box(modifier = modifier.fillMaxSize()) {
-            Icon(
-                imageVector = Assets.`Book-open`,
-                contentDescription = "background",
-                modifier = Modifier
-                    .size(screenSize.width / 2)
-                    .align(Alignment.BottomEnd)
-                    .rotate(-30f)
-                    .offset(y = (-40).dp)
-            )
-        }
-    }
-
-    @Composable
     private fun ChapterList(
         sm: DetailScreenModel,
         modifier: Modifier = Modifier
@@ -571,7 +586,7 @@ class DetailScreen : Screen {
                     .fillMaxWidth()
                     .clickable(enabled = false) {}
                     .padding(horizontal = 24.dp)
-                    .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colors.background)
             ) {
                 Column(
@@ -707,7 +722,10 @@ class DetailScreen : Screen {
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.5f)
-                    .clickable { sm.onAddToListDismiss() }
+                    .clickable(
+                        indication = null,
+                        interactionSource = MutableInteractionSource()
+                    ) { sm.onAddToListDismiss() }
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

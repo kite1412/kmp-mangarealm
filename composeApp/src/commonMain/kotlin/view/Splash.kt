@@ -38,7 +38,7 @@ fun SplashScreen() {
             .background(
                 brush = Brush.linearGradient(
                     colorStops = arrayOf(
-                        0.5f to darkBeige,
+                        0.8f to darkBeige,
                         1f to lightBeige,
                     )
                 )
