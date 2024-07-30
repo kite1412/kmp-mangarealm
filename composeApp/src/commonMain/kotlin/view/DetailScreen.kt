@@ -122,9 +122,9 @@ class DetailScreen : Screen {
                 }
             }
         }
-        edgeToEdge()
         val nav = LocalNavigator.currentOrThrow
         Scaffold {
+            edgeToEdge()
             BackHandler(enabled = !sm.updating) { nav.pop() }
             val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
             Box(

@@ -2,6 +2,7 @@ package view
 
 import Assets
 import LocalScreenSize
+import LocalWidthClass
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -105,6 +106,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.Manga
 import model.MangaStatus
+import model.WidthClass
 import model.session.MangaSession
 import model.session.Session
 import model.session.SessionState
@@ -117,12 +119,18 @@ import util.undoEdgeToEdge
 import view_model.main.MainViewModel
 import view_model.main.bottomBarTotalHeight
 import view_model.main.state.HomeState
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 private const val imageRatio = 2f / 3f
 private val parentHorizontalPadding = 16.dp
 private val tagsHorizontalPadding = 8.dp
-private const val tagsRowCount = 2
+@Composable
+fun tagsRowCount(): Int = when(LocalWidthClass.current) {
+    WidthClass.Compact -> 2
+    WidthClass.Medium -> 3
+    else -> 4
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -327,7 +335,10 @@ private fun Header(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .size(32.dp)
-                .clickable { state.onOptionsClick() }
+                .clickable(
+                    indication = null,
+                    interactionSource = MutableInteractionSource()
+                ) { state.onOptionsClick() }
         )
     }
 }
@@ -827,7 +838,10 @@ private fun TagsDisplay(
 }
 
 @Composable
-fun tagBoxSize(): Dp = LocalScreenSize.current.width / 2 - parentHorizontalPadding - (tagsHorizontalPadding / tagsRowCount)
+fun tagBoxSize(): Dp {
+    val rowCount = tagsRowCount()
+    return LocalScreenSize.current.width / rowCount - parentHorizontalPadding - (tagsHorizontalPadding / rowCount)
+}
 
 
 @Composable
@@ -837,9 +851,15 @@ private fun Suggestions(
     items: List<@Composable () -> Unit>,
 ) {
     val tagBoxSize = tagBoxSize()
+    val widthClass = LocalWidthClass.current
     SubcomposeLayout(modifier = modifier) { constraints ->
         val verticalArrangement = 8.dp
-        val tagsColumnCount = (items.size / 2f).roundToInt()
+        val row = when(widthClass) {
+            WidthClass.Compact -> 2f
+            WidthClass.Medium -> 3f
+            else -> 4f
+        }
+        val tagsColumnCount = ceil((items.size / row)).roundToInt()
         val measurable = subcompose("grid") {
             LazyHorizontalGrid(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

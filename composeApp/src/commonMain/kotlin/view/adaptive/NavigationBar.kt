@@ -1,6 +1,5 @@
 package view.adaptive
 
-import LocalScreenSize
 import LocalWidthClass
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -24,7 +23,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -34,7 +32,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import model.Route
-import model.ScreenSize
 import model.WidthClass
 import theme.darkBeige
 import util.APP_BAR_HEIGHT
@@ -167,12 +164,9 @@ private fun AppNavigationRail(
             }
         }
         BoxWithConstraints(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            CompositionLocalProvider(LocalScreenSize provides ScreenSize(maxHeight, maxWidth)) {
-                content()
-            }
-        }
+            modifier = Modifier.fillMaxSize(),
+            content = content
+        )
     }
 }
 
