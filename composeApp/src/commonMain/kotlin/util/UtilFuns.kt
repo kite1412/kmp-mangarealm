@@ -1,5 +1,6 @@
 package util
 
+import LocalScreenSize
 import LocalSharedViewModel
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.material.MaterialTheme
@@ -9,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Dp
 import api.jikan.model.Character
 import cafe.adriel.voyager.navigator.Navigator
 import shared.adjustNavBarColor
@@ -110,3 +112,8 @@ fun resolveCharacterPicture(character: Character): String =
         ?: character.character.images.jpg.imageUrl
         ?: character.character.images.jpg.smallImageUrl
         ?: ""
+
+@Composable
+fun getMaxDimension(): Dp = with(LocalScreenSize.current) {
+    if (height >= width) height else width
+}
