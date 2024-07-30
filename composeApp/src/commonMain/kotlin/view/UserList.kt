@@ -2,6 +2,7 @@ package view
 
 import Assets
 import LocalScreenSize
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
@@ -100,15 +101,21 @@ fun List(
         MaterialTheme.colors.background.copy(alpha = 0.5f)
     )
     for (i in shadowBoxCount downTo 1) {
-        Box(
+        AnimatedVisibility(
+            visible = state.showOptions,
             modifier = modifier
                 .rotate(rotate - 2 * i)
                 .offset(x = offset - (shadowBoxRangeWidth * i))
                 .height(height - shadowBoxRangeHeight * i)
                 .width(width)
-                .clip(RoundedCornerShape(clip))
-                .background(shadowBoxColors[i - 1])
-        )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(clip))
+                    .background(shadowBoxColors[i - 1])
+            )
+        }
     }
     BoxWithConstraints(
         modifier = modifier

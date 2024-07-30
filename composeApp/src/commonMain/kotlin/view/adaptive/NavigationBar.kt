@@ -1,5 +1,6 @@
 package view.adaptive
 
+import LocalScreenSize
 import LocalWidthClass
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -8,7 +9,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,26 +22,39 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.NavigationRail
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import model.Route
+import model.ScreenSize
 import model.WidthClass
-import theme.lightBeige
+import theme.darkBeige
 import util.APP_BAR_HEIGHT
+import util.isDarkMode
 
 val NAVIGATION_RAIL_WIDTH = 72.dp
 val NAVIGATION_DRAWER_WIDTH = 256.dp
 
+private val selectedRouteBackgroundLight = Color(0xFFA08E72)
+private val selectedRouteBackgroundDark = darkBeige
+private val unselectedRouteColorLight = Color(0xFFD1C5B4)
+private val unselectedRouteColorDark = Color(0xFFE2D6C6)
+private val selectedRouteColor = Color(0xFF322C00)
+
 @Composable
 private fun navigationBarBackgroundColor(): Color = MaterialTheme.colors.onBackground
+
+@Composable
+private fun contentColor(selected: Boolean): Color = if (selected) selectedRouteColor
+    else if (isDarkMode()) unselectedRouteColorDark else unselectedRouteColorLight
 
 @Composable
 fun AdaptiveNavigationBar(
@@ -75,17 +91,12 @@ private fun RouteIcon(
     route: Route,
     selected: Boolean,
     modifier: Modifier = Modifier,
-    onClick: (Route) -> Unit
 ) {
     Icon(
         imageVector = route.icon,
         contentDescription = route.name,
-        tint = if (selected) route.color.selected else route.color.unselected,
-        modifier = modifier.clickable(
-            indication = null,
-            interactionSource = MutableInteractionSource(),
-            onClick = { onClick(route) }
-        )
+        tint = contentColor(selected),
+        modifier = modifier
     )
 }
 
@@ -105,14 +116,23 @@ private fun AppNavigationRail(
     ) {
         AnimatedVisibility(
             visible = showNavigationBar,
-            modifier = Modifier.width(
-                if (isDrawer) NAVIGATION_DRAWER_WIDTH else NAVIGATION_RAIL_WIDTH
-            )
+            modifier = Modifier
+                .width(
+                    if (isDrawer) NAVIGATION_DRAWER_WIDTH else NAVIGATION_RAIL_WIDTH
+                )
+                .fillMaxHeight()
         ) {
-            NavigationRail(
-                backgroundColor = navigationBarBackgroundColor(),
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(navigationBarBackgroundColor())
+                    .padding(8.dp)
             ) {
+                val contentWidth = Modifier.composed {
+                    if (isDrawer) fillMaxWidth() else Modifier
+                }
                 routes.forEach {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -120,21 +140,25 @@ private fun AppNavigationRail(
                             if (isDrawer) 16.dp else 0.dp
                         ),
                         modifier = Modifier
+                            .then(contentWidth)
                             .clip(RoundedCornerShape(8.dp))
                             .background(
-                                if (selected == it) lightBeige else navigationBarBackgroundColor()
+                                if (selected == it) if (isDarkMode()) selectedRouteBackgroundDark else selectedRouteBackgroundLight
+                                    else navigationBarBackgroundColor()
                             )
+                            .clickable(
+                                indication = null,
+                                interactionSource = MutableInteractionSource()
+                            ) { onRouteClick(it) }
                             .padding(8.dp)
                     ) {
                         RouteIcon(
                             route = it,
-                            selected = selected == it,
-                            onClick = onRouteClick
+                            selected = selected == it
                         )
                         if (isDrawer) Text(
                             it.name,
-                            color = if (selected == it) it.color.selected
-                            else it.color.unselected,
+                            color = contentColor(selected == it),
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp
                         )
@@ -143,9 +167,12 @@ private fun AppNavigationRail(
             }
         }
         BoxWithConstraints(
-            modifier = Modifier.fillMaxSize(),
-            content = content
-        )
+            modifier = Modifier.fillMaxSize()
+        ) {
+            CompositionLocalProvider(LocalScreenSize provides ScreenSize(maxHeight, maxWidth)) {
+                content()
+            }
+        }
     }
 }
 
@@ -181,8 +208,12 @@ private fun AppBottomNavigationBar(
                     RouteIcon(
                         route = it,
                         selected = selected == it,
-                        modifier = Modifier.size(32.dp),
-                        onClick = onRouteClick
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clickable(
+                                indication = null,
+                                interactionSource = MutableInteractionSource()
+                            ) { onRouteClick(it) }
                     )
                 }
             }
