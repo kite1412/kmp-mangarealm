@@ -37,6 +37,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerState
@@ -229,10 +230,10 @@ fun Home(
                                 modifier = Modifier.fillMaxWidth(),
                                 items = listOf(
                                     { RomComTag(state) },
-                                    { PsyMysTag(state) },
-                                    { SciFiTag(state) },
                                     { AdvComTag(state) },
+                                    { PsyMysTag(state) },
                                     { IsekaiTag(state) },
+                                    { SciFiTag(state) },
                                 )
                             )
                         }
@@ -865,10 +866,10 @@ private fun Suggestions(
         }
         val tagsColumnCount = ceil((items.size / row)).roundToInt()
         val measurable = subcompose("grid") {
-            LazyHorizontalGrid(
+            LazyVerticalGrid(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(verticalArrangement),
-                rows = GridCells.Fixed(tagsColumnCount),
+                columns = GridCells.Fixed(row.toInt()),
                 modifier = Modifier.fillMaxWidth()
             ) { items.forEach { item { it() } } }
         }

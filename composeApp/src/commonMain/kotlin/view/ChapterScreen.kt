@@ -16,15 +16,11 @@ import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,13 +44,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import assets.Cross
 import assets.`Settings-adjust-solid`
+import cafe.adriel.voyager.core.annotation.InternalVoyagerApi
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import cafe.adriel.voyager.navigator.internal.BackHandler
 import model.Chapter
 import model.session.SessionState
-import shared.adjustStatusBarColor
 import util.APP_BAR_HEIGHT
 import util.ASCENDING
 import util.DESCENDING
@@ -63,33 +60,34 @@ import util.isDarkMode
 import util.mapLanguage
 import util.session_handler.ChapterSessionHandler
 import util.swipeToPop
+import util.undoEdgeToEdge
 import view_model.ChapterScreenModel
 
 class ChapterScreen : Screen {
+    @OptIn(InternalVoyagerApi::class)
     @Composable
     override fun Content() {
         val sharedViewModel = LocalSharedViewModel.current
         val sm = rememberScreenModel { ChapterScreenModel(sharedViewModel) }
         val nav = LocalNavigator.currentOrThrow
-        val navBarsHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val appBarHeight = APP_BAR_HEIGHT + statusBarsHeight
-        // TODO test using BackHandler to handle back press when settings are open
+        BackHandler(true) {
+            if (sm.showSettings) sm.onSettingClick()
+                else nav.pop()
+        }
         Scaffold(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(bottom = navBarsHeight)
                 .swipeToPop(nav)
         ) {
-            adjustStatusBarColor(MaterialTheme.colors.onBackground)
+            undoEdgeToEdge(MaterialTheme.colors.onBackground)
             Box(modifier = Modifier.fillMaxSize()) {
                 ChapterList(
                     sm = sm,
                     modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp, top = statusBarsHeight)
+                        .padding(horizontal = 8.dp)
                         .align(Alignment.Center)
                 )
-                TopBar(appBarHeight)
+                TopBar(APP_BAR_HEIGHT)
                 if (!sm.showWarning) ChapterSettings(
                     sm = sm,
                     modifier = Modifier
