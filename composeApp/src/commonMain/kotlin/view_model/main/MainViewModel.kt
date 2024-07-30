@@ -8,8 +8,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -22,7 +20,6 @@ import assets.Search
 import cafe.adriel.voyager.core.stack.mutableStateStackOf
 import io.github.irgaly.kottage.KottageStorage
 import kotlinx.coroutines.launch
-import model.ItemColor
 import model.MangaStatus
 import model.Route
 import model.toMangaList
@@ -46,15 +43,15 @@ class MainViewModel(
     cache: Cache = Libs.cache
 ) : ViewModel(), DetailNavigator, ChapterNavigator, CustomListNavigator, SettingsNavigator {
     val routes = mapOf(
-        Menu.HOME to commonRoute(
+        Menu.HOME to Route(
             name = "Home",
             icon = Assets.Home
         ),
-        Menu.DISCOVERY to commonRoute(
+        Menu.DISCOVERY to Route(
             name = "Discovery",
             icon = Assets.Search
         ),
-        Menu.USER_LIST to commonRoute(
+        Menu.USER_LIST to Route(
             name = "My List",
             icon = Assets.`Book-close`
         ),
@@ -80,18 +77,6 @@ class MainViewModel(
         kottageStorage = kottageStorage
     )
     val userListState = UserListState(this)
-
-    private fun commonRoute(
-        name: String,
-        icon: ImageVector,
-    ): Route = Route(
-        name = name,
-        icon = icon,
-        color = ItemColor(
-            selected = Color(0xFF322C00),
-            unselected = Color(0xFFD1C5B4)
-        )
-    )
 
     fun popMenu() { menuStack.pop() }
 
