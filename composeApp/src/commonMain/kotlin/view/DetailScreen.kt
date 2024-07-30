@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,6 +34,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
@@ -45,6 +48,7 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -93,6 +97,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.CustomList
 import model.MangaStatus
+import model.ScreenSize
 import model.Status
 import model.session.SessionState
 import util.APP_BAR_HEIGHT
@@ -126,71 +131,81 @@ class DetailScreen : Screen {
         Scaffold {
             edgeToEdge()
             BackHandler(enabled = !sm.updating) { nav.pop() }
-            val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(bottom = bottomPadding)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .consumeWindowInsets(WindowInsets.navigationBars)
                     .swipeToPop(nav, enabled = !sm.updating)
             ) {
-                val aboveBottomBar = APP_BAR_HEIGHT + 16.dp
-                val screenSize = LocalScreenSize.current
-                val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-                val coverDisplayHeight = (screenSize.height / 2.5f) - statusBarsHeight
-                CoverArtDisplay(sm, nav, coverDisplayHeight)
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier.fillMaxSize().padding(
-                        top = coverDisplayHeight + 16.dp,
-                        bottom = sm.chapterListHeight.dp
-                    )
-                ) {
-                    item {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(16.dp),
-                            modifier = Modifier.padding(start = 8.dp, end = 16.dp)
-                        ) {
-                            Detail(sm)
-                            Text(
-                                getDesc(sm.manga.data.attributes.description),
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                            Characters(sm)
+                CompositionLocalProvider(LocalScreenSize provides ScreenSize(maxHeight, maxWidth)) {
+                    val aboveBottomBar = APP_BAR_HEIGHT + 16.dp
+                    val screenSize = LocalScreenSize.current
+                    val screenHeight = screenSize.height
+                    val screenWidth = screenSize.width
+                    val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+                    val coverDisplayHeight = ((
+                        if (screenHeight >= screenWidth) screenHeight else screenWidth
+                    ) / 2.5f) - statusBarsHeight
+                    val fixedDisplayHeight = if (
+                        coverDisplayHeight <= screenHeight / 2
+                    ) coverDisplayHeight
+                        else coverDisplayHeight / 1.5f
+                    CoverArtDisplay(sm, nav, fixedDisplayHeight)
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.fillMaxSize().padding(
+                            top = fixedDisplayHeight + 16.dp,
+                            bottom = sm.chapterListHeight.dp
+                        )
+                    ) {
+                        item {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                modifier = Modifier.padding(start = 8.dp, end = 16.dp)
+                            ) {
+                                Detail(sm)
+                                Text(
+                                    getDesc(sm.manga.data.attributes.description),
+                                    modifier = Modifier.padding(start = 8.dp)
+                                )
+                                Characters(sm)
+                            }
                         }
                     }
+                    ChapterList(
+                        sm,
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
+                    )
+                    if (SharedObject.popNotifierCount >= 0) PopNotice(
+                        show = sm.showPopNotice,
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    )
+                    if (sm.showUpdateStatus) UpdateStatus(sm)
+                    AddToList(sm)
+                    Warning(
+                        message = sm.warning,
+                        height = aboveBottomBar,
+                        show = sm.showWarning,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
+                    if (sm.updating) LoadingIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    ) {
+                        Text("Updating...", color = Color.White)
+                    }
+                    if (sm.showAddListPrompt) AddCustomListPrompt(
+                        value = sm.textFieldValue,
+                        visibility = sm.visibility,
+                        onValueChange = { sm.textFieldValue = it },
+                        onVisibilityChange = { sm.visibility = it },
+                        onAdd = sm::onAddNewList,
+                        onDismiss = sm::onAddListPromptDismiss
+                    )
                 }
-                ChapterList(
-                    sm,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
-                )
-                if (SharedObject.popNotifierCount >= 0) PopNotice(
-                    show = sm.showPopNotice,
-                    modifier = Modifier.align(Alignment.CenterStart)
-                )
-                if (sm.showUpdateStatus) UpdateStatus(sm)
-                AddToList(sm)
-                Warning(
-                    message = sm.warning,
-                    height = aboveBottomBar,
-                    show = sm.showWarning,
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                )
-                if (sm.updating) LoadingIndicator(
-                    modifier = Modifier.align(Alignment.Center)
-                ) {
-                    Text("Updating...", color = Color.White)
-                }
-                if (sm.showAddListPrompt) AddCustomListPrompt(
-                    value = sm.textFieldValue,
-                    visibility = sm.visibility,
-                    onValueChange = { sm.textFieldValue = it },
-                    onVisibilityChange = { sm.visibility = it },
-                    onAdd = sm::onAddNewList,
-                    onDismiss = sm::onAddListPromptDismiss
-                )
             }
         }
     }

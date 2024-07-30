@@ -54,11 +54,11 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import model.Chapter
 import model.session.SessionState
+import shared.adjustStatusBarColor
 import util.APP_BAR_HEIGHT
 import util.ASCENDING
 import util.DESCENDING
 import util.appGray
-import util.edgeToEdge
 import util.isDarkMode
 import util.mapLanguage
 import util.session_handler.ChapterSessionHandler
@@ -68,7 +68,6 @@ import view_model.ChapterScreenModel
 class ChapterScreen : Screen {
     @Composable
     override fun Content() {
-        edgeToEdge()
         val sharedViewModel = LocalSharedViewModel.current
         val sm = rememberScreenModel { ChapterScreenModel(sharedViewModel) }
         val nav = LocalNavigator.currentOrThrow
@@ -82,6 +81,7 @@ class ChapterScreen : Screen {
                 .padding(bottom = navBarsHeight)
                 .swipeToPop(nav)
         ) {
+            adjustStatusBarColor(MaterialTheme.colors.onBackground)
             Box(modifier = Modifier.fillMaxSize()) {
                 ChapterList(
                     sm = sm,
