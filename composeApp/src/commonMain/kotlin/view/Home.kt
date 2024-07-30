@@ -140,7 +140,11 @@ fun Home(
     modifier: Modifier = Modifier
 ) {
     val screenSize = LocalScreenSize.current
-    val latestBarHeight = (screenSize.height.value / 4.2).dp
+    val screenWidth = screenSize.width
+    val screenHeight = screenSize.height
+    val latestBarHeight = (
+        (if (screenHeight >= screenWidth) screenHeight else screenWidth) / 4f
+    )
     val pagerState = rememberPagerState { 2 }
     val session = vm.homeState.session
     val sessionState by remember {
