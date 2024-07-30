@@ -91,6 +91,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.times
 import api.mangadex.model.request.Visibility
 import api.mangadex.model.response.ListResponse
 import api.mangadex.model.response.attribute.MangaAttributes
@@ -577,8 +578,8 @@ fun MangaDisplay(
     ) {
         Box(
             modifier = Modifier
-                .weight(0.3f)
-                .fillMaxSize()
+                .height(height)
+                .width((2f / 3f) * height)
                 .clip(RoundedCornerShape(8.dp))
         ) {
             ImageLoader(
@@ -601,7 +602,6 @@ fun MangaDisplay(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier
-                .weight(0.7f)
                 .padding(top = 4.dp)
         ) {
             val attributes = manga.data.attributes
@@ -671,17 +671,19 @@ fun DynamicMangaDisplay(
     val titleSize by transition.animateFloat { 16 * ratio }
     val informationSpacing by transition.animateDp { 2.dp * ratio }
     val descSize by transition.animateFloat { 12 * ratio }
+    val height = parentHeight / 5f
+    val imageWidth = (2f / 3f) * height
     Row(
         horizontalArrangement = Arrangement.spacedBy(horizontalSpacing),
         modifier = modifier
             .fillMaxWidth()
-            .height(parentHeight / 5f)
+            .height(height)
             .clickable(onClick = onClick)
     ) {
         Box(
             modifier = Modifier
-                .weight(0.3f)
-                .fillMaxSize()
+                .height(height)
+                .width(imageWidth)
                 .clip(RoundedCornerShape(8.dp))
         ) {
             ImageLoader(
@@ -704,7 +706,6 @@ fun DynamicMangaDisplay(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(verticalSpacing),
             modifier = Modifier
-                .weight(0.7f)
                 .padding(top = informationTopPadding)
         ) {
             val attributes = manga.data.attributes

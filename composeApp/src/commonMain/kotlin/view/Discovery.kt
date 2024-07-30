@@ -215,7 +215,7 @@ private fun TopBar(
                         tint = MaterialTheme.typography.body1.color,
                         modifier = Modifier
                             .weight(0.1f)
-                            .clickable { if (!showPlaceholder) onClear() }
+                            .clickable(enabled = !showPlaceholder) { onClear() }
                     )
                 }
             }
