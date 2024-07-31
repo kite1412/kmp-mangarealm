@@ -114,6 +114,7 @@ import model.session.SessionState
 import theme.lightBeige
 import util.LATEST_UPDATE_SLIDE_TIME
 import util.edgeToEdge
+import util.getMaxDimension
 import util.session_handler.MangaSessionHandler
 import util.swipeToPop
 import util.undoEdgeToEdge
@@ -140,12 +141,7 @@ fun Home(
     nav: Navigator,
     modifier: Modifier = Modifier
 ) {
-    val screenSize = LocalScreenSize.current
-    val screenWidth = screenSize.width
-    val screenHeight = screenSize.height
-    val latestBarHeight = (
-        (if (screenHeight >= screenWidth) screenHeight else screenWidth) / 4f
-    )
+    val latestBarHeight = getMaxDimension() / 4f
     val pagerState = rememberPagerState { 2 }
     val session = vm.homeState.session
     val sessionState by remember {

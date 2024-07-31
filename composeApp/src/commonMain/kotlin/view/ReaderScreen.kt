@@ -99,7 +99,6 @@ class ReaderScreen : Screen {
 
     @Composable
     override fun Content() {
-        adjustStatusBar()
         val nav = LocalNavigator.currentOrThrow
         val sharedViewModel = LocalSharedViewModel.current
         val sm = rememberScreenModel { ReaderScreenModel(sharedViewModel) }
@@ -108,6 +107,7 @@ class ReaderScreen : Screen {
                 .fillMaxSize()
                 .swipeToPop(nav)
         ) {
+            adjustStatusBar()
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -422,10 +422,13 @@ class ReaderScreen : Screen {
         val pagerState = rememberPagerState(initialPage = currentIndex) { sm.images.size }
         val state = rememberLazyListState(initialFirstVisibleItemIndex = currentIndex)
         LaunchedEffect(sm.pageNavigatorIndex) {
-            delay(500)
-            sm.currentPage = sm.pageNavigatorIndex + 1
-            if (sm.zoomIn) pagerState.scrollToPage(sm.pageNavigatorIndex)
-                else state.scrollToItem(sm.pageNavigatorIndex)
+            if (sm.updateFromNavigator) {
+                delay(500)
+                sm.currentPage = sm.pageNavigatorIndex + 1
+                sm.updateFromNavigator = false
+                if (sm.zoomIn) pagerState.scrollToPage(sm.pageNavigatorIndex)
+                    else state.scrollToItem(sm.pageNavigatorIndex)
+            }
         }
         LaunchedEffect(sm.zoomIn, sm.index) {
             if (sm.zoomIn) pagerState.scrollToPage(currentIndex)
@@ -615,10 +618,7 @@ class ReaderScreen : Screen {
                     modifier = Modifier
                         .weight(0.3f)
                         .clickable {
-                            sm.handlePageNavigator(
-                                showNavigator = true,
-                                layoutBarDismissible = false
-                            )
+                            sm.handlePageNavigator(showNavigator = true)
                         }
                 )
             }
@@ -742,6 +742,7 @@ class ReaderScreen : Screen {
                 ) {
                     scope.launch {
                         pagerState.animateScrollToPage(it)
+                        sm.updateFromNavigator = true
                         sm.pageNavigatorIndex = it
                     }
                 }

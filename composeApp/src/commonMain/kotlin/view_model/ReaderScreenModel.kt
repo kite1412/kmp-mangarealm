@@ -44,6 +44,7 @@ class ReaderScreenModel(
     var index by mutableStateOf("")
     var showChapterList by mutableStateOf(false)
     var showWarning by mutableStateOf(false)
+    var updateFromNavigator = false
     private var enableChapterNavigation = false
     private val manga = SharedObject.detailManga
 
@@ -155,7 +156,7 @@ class ReaderScreenModel(
                 }
             } else {
                 if (showPageNavigator) {
-                    handlePageNavigator(showNavigator = false, layoutBarDismissible = true)
+                    handlePageNavigator(showNavigator = false)
                     showLayoutBar = LayoutBarStatus.HIDE
                 }
             }
@@ -164,9 +165,9 @@ class ReaderScreenModel(
         }
     }
 
-    fun handlePageNavigator(showNavigator: Boolean, layoutBarDismissible: Boolean) {
+    fun handlePageNavigator(showNavigator: Boolean) {
         showPageNavigator = showNavigator
-        this.layoutBarDismissible = layoutBarDismissible
+        this.layoutBarDismissible = !showNavigator
     }
 
     fun updatePainter(index: Int, p: Painter?) {
