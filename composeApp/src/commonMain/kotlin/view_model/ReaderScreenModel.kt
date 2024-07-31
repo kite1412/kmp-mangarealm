@@ -44,7 +44,7 @@ class ReaderScreenModel(
     var index by mutableStateOf("")
     var showChapterList by mutableStateOf(false)
     var showWarning by mutableStateOf(false)
-    var updateFromNavigator = false
+    var updateFromNavigator by mutableStateOf(false)
     private var enableChapterNavigation = false
     private val manga = SharedObject.detailManga
 

@@ -423,9 +423,9 @@ class ReaderScreen : Screen {
         val state = rememberLazyListState(initialFirstVisibleItemIndex = currentIndex)
         LaunchedEffect(sm.pageNavigatorIndex) {
             if (sm.updateFromNavigator) {
+                sm.updateFromNavigator = false
                 delay(500)
                 sm.currentPage = sm.pageNavigatorIndex + 1
-                sm.updateFromNavigator = false
                 if (sm.zoomIn) pagerState.scrollToPage(sm.pageNavigatorIndex)
                     else state.scrollToItem(sm.pageNavigatorIndex)
             }
@@ -720,7 +720,10 @@ class ReaderScreen : Screen {
             val pagerState = rememberPagerState(initialPage = sm.currentPage - 1) { sm.totalPages }
             val scope = rememberCoroutineScope()
             LaunchedEffect(pagerState.currentPage) {
-                sm.pageNavigatorIndex = pagerState.currentPage
+                if (sm.pageNavigatorIndex != pagerState.currentPage) {
+                    sm.updateFromNavigator = true
+                    sm.pageNavigatorIndex = pagerState.currentPage
+                }
             }
             LaunchedEffect(sm.currentPage) {
                 pagerState.animateScrollToPage(sm.currentPage - 1)
@@ -741,7 +744,7 @@ class ReaderScreen : Screen {
                     selected = (sm.pageNavigatorIndex + 1) == it + 1
                 ) {
                     scope.launch {
-                        pagerState.animateScrollToPage(it)
+                        launch { pagerState.animateScrollToPage(it) }
                         sm.updateFromNavigator = true
                         sm.pageNavigatorIndex = it
                     }
