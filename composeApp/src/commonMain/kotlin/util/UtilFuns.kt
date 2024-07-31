@@ -123,3 +123,8 @@ fun resolveCharacterPicture(character: Character): String =
 fun getMaxDimension(): Dp = with(LocalScreenSize.current) {
     if (height >= width) height else width
 }
+
+@Composable
+fun getMinDimension(modifier: Modifier = Modifier): Dp = with(LocalScreenSize.current) {
+    if (height >= width) width else height
+}
