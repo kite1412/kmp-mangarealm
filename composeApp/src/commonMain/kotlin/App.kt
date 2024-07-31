@@ -85,6 +85,7 @@ fun App() {
         mutableStateOf(true)
     }
     var executeOnce by rememberSaveable { mutableStateOf(false) }
+    var loginCompleted by rememberSaveable { mutableStateOf(false) }
     val sharedViewModel = viewModel { SharedViewModel() }
     val mainViewModel = viewModel { MainViewModel(sharedViewModel) }
     // check for login info
@@ -96,14 +97,15 @@ fun App() {
             }
             delay(util.SPLASH_TIME.toLong())
             isShowingSplash = false
+            executeOnce = true
             mainViewModel.undoEdgeToEdge = true
         }
     }
     // perform actions after logged in
     LaunchedEffect(isLoggedIn) {
-        if (isLoggedIn && !executeOnce) {
+        if (isLoggedIn && !loginCompleted) {
             mainViewModel.homeState.updateUsername()
-            executeOnce = true
+            loginCompleted = true
         }
     }
     CompositionLocalProvider(LocalSharedViewModel provides sharedViewModel) {

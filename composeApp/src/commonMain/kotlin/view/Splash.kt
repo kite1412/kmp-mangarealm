@@ -1,6 +1,7 @@
 package view
 
 import Assets
+import LocalScreenSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -14,8 +15,10 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,15 +35,20 @@ import theme.lightBeige
 
 @Composable
 fun SplashScreen() {
+    val screenSize = LocalScreenSize.current
+    val xStart = with(LocalDensity.current) {
+        screenSize.width.toPx() / 2 - 50.dp.toPx()
+    }
     Box(
         Modifier
             .fillMaxSize()
             .background(
                 brush = Brush.linearGradient(
                     colorStops = arrayOf(
-                        0.8f to darkBeige,
+                        0.5f to darkBeige,
                         1f to lightBeige,
-                    )
+                    ),
+                    start = Offset(xStart, 0f)
                 )
             ),
     ) {

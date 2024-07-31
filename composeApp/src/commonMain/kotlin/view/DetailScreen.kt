@@ -365,6 +365,7 @@ class DetailScreen : Screen {
                             else Assets.`Bookmark-alt-fill`,
                         contentDescription = "update status",
                         maxHeight = this@BoxWithConstraints.maxHeight,
+                        fill = sm.manga.status == MangaStatus.None,
                         modifier = applyWeight
                     ) { sm.onStatus() }
                 }
@@ -377,19 +378,20 @@ class DetailScreen : Screen {
         icon: ImageVector,
         contentDescription: String,
         maxHeight: Dp,
+        fill: Boolean = false,
         modifier: Modifier = Modifier,
         onClick: () -> Unit
     ) {
         Action(
             onClick = onClick,
-            fill = false,
+            fill = fill,
             verticalPadding = 0.dp,
             modifier = modifier.size(maxHeight)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = contentDescription,
-                tint = actionIconColor(false),
+                tint = actionIconColor(fill),
                 modifier = Modifier
                     .align(Alignment.Center)
                     .size(maxHeight / 2)
