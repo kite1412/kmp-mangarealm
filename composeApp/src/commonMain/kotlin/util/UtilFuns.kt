@@ -125,6 +125,6 @@ fun getMaxDimension(): Dp = with(LocalScreenSize.current) {
 }
 
 @Composable
-fun getMinDimension(modifier: Modifier = Modifier): Dp = with(LocalScreenSize.current) {
+fun getMinDimension(): Dp = with(LocalScreenSize.current) {
     if (height >= width) width else height
 }

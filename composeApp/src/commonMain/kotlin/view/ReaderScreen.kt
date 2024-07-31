@@ -617,7 +617,10 @@ class ReaderScreen : Screen {
                     sm = sm,
                     modifier = Modifier
                         .weight(0.3f)
-                        .clickable {
+                        .clickable(
+                            indication = null,
+                            interactionSource = MutableInteractionSource()
+                        ) {
                             sm.handlePageNavigator(showNavigator = true)
                         }
                 )
