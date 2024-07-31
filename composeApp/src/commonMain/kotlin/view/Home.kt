@@ -9,6 +9,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -34,6 +36,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
@@ -51,6 +54,7 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -107,6 +111,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.Manga
 import model.MangaStatus
+import model.ScreenSize
 import model.WidthClass
 import model.session.MangaSession
 import model.session.Session
@@ -115,6 +120,7 @@ import theme.lightBeige
 import util.LATEST_UPDATE_SLIDE_TIME
 import util.edgeToEdge
 import util.getMaxDimension
+import util.getMinDimension
 import util.session_handler.MangaSessionHandler
 import util.swipeToPop
 import util.undoEdgeToEdge
@@ -160,7 +166,6 @@ fun Home(
         derivedStateOf { pagerState.settledPage }
     }
     if (vm.undoEdgeToEdge && settledPage == 0) undoEdgeToEdge()
-    val mangaPageState = rememberPagerState { session.data.size }
     HorizontalPager(
         state = pagerState,
         userScrollEnabled = false
@@ -250,17 +255,18 @@ fun Home(
             }
             else -> {
                 val scope = rememberCoroutineScope()
+                val mangaPagerState = rememberPagerState { session.data.size }
                 MangaPage(
                     session = state.session,
                     onSessionLoaded = state::onSessionLoaded,
                     pop = {
-                        scope.launch { mangaPageState.scrollToPage(0) }
+                        scope.launch { mangaPagerState.scrollToPage(0) }
                         state.clearSession()
                         vm.hideBottomBar = false
                     },
                     onChapterListClick = { m -> vm.navigateToChapter(nav, m) },
                     onStatusUpdate = state::onStatusUpdate,
-                    pagerState = mangaPageState,
+                    pagerState = mangaPagerState,
                     onPainterLoaded = state::onPainterLoaded
                 )
             }
@@ -1092,7 +1098,6 @@ private fun MangaPage(
 ) {
     edgeToEdge()
     val sessionState by session.state
-    val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     BackHandler(
         enabled = sessionState != SessionState.FETCHING,
         onBack = pop
@@ -1100,50 +1105,53 @@ private fun MangaPage(
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
-            .padding(bottom = navBarHeight)
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .consumeWindowInsets(WindowInsets.navigationBars)
             .background(lightBeige)
             .swipeToPop(action = pop, enabled = sessionState != SessionState.FETCHING)
     ) {
-        when(sessionState) {
-            SessionState.FETCHING -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.8f))
-                ) {
-                    LoadingIndicator(Modifier.align(Alignment.Center))
+        CompositionLocalProvider(LocalScreenSize provides ScreenSize(maxHeight, maxWidth)) {
+            when(sessionState) {
+                SessionState.FETCHING -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.8f))
+                    ) {
+                        LoadingIndicator(Modifier.align(Alignment.Center))
+                    }
                 }
-            }
-            SessionState.ACTIVE -> {
-                var chapterListBotPadding by remember { mutableStateOf(0.dp) }
-                val scope = rememberCoroutineScope()
-                SessionPagerVerticalPager(
-                    session = session,
-                    state = pagerState,
-                    handler = MangaSessionHandler(session),
-                    pageSize = PageSize.Fixed(maxHeight - (chapterListBotPadding / 2)),
-                    onSessionLoaded = onSessionLoaded,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    val manga = session.data[it]
-                    MangaPageDisplay(
-                        manga = manga,
-                        onChapterListClick = { onChapterListClick(manga) },
-                        onStatusUpdate = { r -> onStatusUpdate(r, it) },
-                        onOverscrollDesc = { forward ->
-                            scope.launch {
-                                if (forward) {
-                                    val next = it + 1
-                                    if ((session.data.size - 1) > next) pagerState.animateScrollToPage(next)
-                                } else if (it > 0) pagerState.animateScrollToPage(it - 1)
-                            }
-                        },
-                        onPainterLoaded = { p -> onPainterLoaded(it, p) },
-                        chapterHeight = { h -> chapterListBotPadding = h }
-                    )
+                SessionState.ACTIVE -> {
+                    var chapterListBotPadding by remember { mutableStateOf(0.dp) }
+                    val scope = rememberCoroutineScope()
+                    SessionPagerVerticalPager(
+                        session = session,
+                        state = pagerState,
+                        handler = MangaSessionHandler(session),
+                        pageSize = PageSize.Fixed(maxHeight - (chapterListBotPadding / 2)),
+                        onSessionLoaded = onSessionLoaded,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        val manga = session.data[it]
+                        MangaPageDisplay(
+                            manga = manga,
+                            onChapterListClick = { onChapterListClick(manga) },
+                            onStatusUpdate = { r -> onStatusUpdate(r, it) },
+                            onOverscrollDesc = { forward ->
+                                scope.launch {
+                                    if (forward) {
+                                        val next = it + 1
+                                        if ((session.data.size - 1) > next) pagerState.animateScrollToPage(next)
+                                    } else if (it > 0) pagerState.animateScrollToPage(it - 1)
+                                }
+                            },
+                            onPainterLoaded = { p -> onPainterLoaded(it, p) },
+                            chapterHeight = { h -> chapterListBotPadding = h }
+                        )
+                    }
                 }
+                else -> {}
             }
-            else -> {}
         }
     }
 }
@@ -1162,10 +1170,11 @@ private fun MangaPageDisplay(
     LaunchedEffect(true) {
         descState.scrollBy(0f)
     }
-    BoxWithConstraints(
+    Box(
         modifier = modifier
             .fillMaxSize()
     ) {
+        val minDimension = getMinDimension()
         ImageLoader(
             url = getCoverUrl(manga.data),
             painter = manga.painter,
@@ -1186,11 +1195,16 @@ private fun MangaPageDisplay(
                 )
         ) {
             var chapterListHeight by remember { mutableStateOf(0.dp) }
-            val coverWidth = this@BoxWithConstraints.maxWidth / 2.2f
+            val coverWidth = minDimension / 2.2f
+            val coverHeight = coverWidth * (3f / 2f)
+            val screenHeight = LocalScreenSize.current.height
+            val rowInfo = coverHeight >= screenHeight / 2
             if (manga.painter != null) Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxSize().padding(bottom = chapterListHeight)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = chapterListHeight)
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1198,85 +1212,59 @@ private fun MangaPageDisplay(
                 ) {
                     var read by remember { mutableStateOf(manga.status == MangaStatus.Reading) }
                     val icon  = if (read) Assets.`Bxs-book-bookmark` else Assets.`Book-bookmark`
-                    AnimatedContent(
-                        targetState = read,
-                        modifier = Modifier.align(Alignment.Bottom)
-                    ) {
-                        Action(
-                            onClick = {
-                                read = !read
-                                onStatusUpdate(read)
-                            },
-                            fill = !read,
-                            verticalPadding = 16.dp,
-                            horizontalPadding = 16.dp
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                if (it) Text(
-                                    "Reading",
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colors.secondary,
-                                )
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = if (it) "remove from reading list" else "add to reading list",
-                                    tint = if (it) MaterialTheme.colors.secondary else Color.White
-                                )
-                            }
-                        }
-                    }
-                    BrowseImageNullable(
-                        painter = manga.painter,
-                        contentScale = ContentScale.FillBounds,
-                        modifier = Modifier
-                            .width(coverWidth)
-                            .height(coverWidth * (3f / 2f))
-                            .clip(RoundedCornerShape(16.dp))
+                    if (rowInfo) MangaPageInfo(
+                        manga = manga,
+                        descState = descState,
+                        onOverscrollDesc = onOverscrollDesc,
+                        modifier = Modifier.weight(0.5f)
                     )
-                }
-                Title(
-                    manga = manga.data.attributes,
-                    textAlign = TextAlign.Center
-                )
-                Tags(
-                    data = manga.data.attributes,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    fontColor = Color.White,
-                    fontSize = 12.sp,
-                    horizontalPadding = 4.dp,
-                    cornerRadius = 6.dp,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                )
-                val scope = rememberCoroutineScope()
-                Text(
-                    getDesc(manga.data.attributes.description),
-                    color = Color.White,
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .verticalScroll(descState, false)
-                        .pointerInput(true) {
-                            detectVerticalDragGestures { _, dragAmount ->
-                                var forward = false
-                                val scrollText = if (dragAmount > 0.0f)
-                                    if (dragAmount >= 40) false else true
-                                else if (dragAmount <= -40) false.also {
-                                    forward = true
-                                } else true
-                                scope.launch {
-                                    if (scrollText) {
-                                        descState.scrollBy(-(dragAmount))
-                                    } else {
-                                        onOverscrollDesc(forward)
-                                        descState.scrollTo(0)
-                                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        AnimatedContent(
+                            targetState = read,
+                            modifier = Modifier.align(Alignment.Bottom)
+                        ) {
+                            Action(
+                                onClick = {
+                                    read = !read
+                                    onStatusUpdate(read)
+                                },
+                                fill = !read,
+                                verticalPadding = 16.dp,
+                                horizontalPadding = 16.dp
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    if (it) Text(
+                                        "Reading",
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colors.secondary,
+                                    )
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = if (it) "remove from reading list" else "add to reading list",
+                                        tint = if (it) MaterialTheme.colors.secondary else Color.White
+                                    )
                                 }
                             }
                         }
+                        BrowseImageNullable(
+                            painter = manga.painter,
+                            contentScale = ContentScale.FillBounds,
+                            modifier = Modifier
+                                .width(coverWidth)
+                                .height(coverHeight)
+                                .clip(RoundedCornerShape(16.dp))
+                        )
+                    }
+                }
+                if (!rowInfo) MangaPageInfo(
+                    manga = manga,
+                    descState = descState,
+                    onOverscrollDesc = onOverscrollDesc
                 )
             } else LoadingIndicator(Modifier.align(Alignment.Center))
             val density = LocalDensity.current
@@ -1285,7 +1273,7 @@ private fun MangaPageDisplay(
                 verticalPadding = 16.dp,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .width(this@BoxWithConstraints.maxWidth / 2)
+                    .width(minDimension / 2)
                     .padding(bottom = 8.dp)
                     .onGloballyPositioned {
                         with(density) {
@@ -1303,5 +1291,61 @@ private fun MangaPageDisplay(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun MangaPageInfo(
+    manga: Manga,
+    descState: ScrollState,
+    onOverscrollDesc: (forward: Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier  = modifier
+    ) {
+        Title(
+            manga = manga.data.attributes,
+            textAlign = TextAlign.Center
+        )
+        Tags(
+            data = manga.data.attributes,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            fontColor = Color.White,
+            fontSize = 12.sp,
+            horizontalPadding = 4.dp,
+            cornerRadius = 6.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        )
+        val scope = rememberCoroutineScope()
+        Text(
+            getDesc(manga.data.attributes.description),
+            color = Color.White,
+            modifier = Modifier
+                .padding(16.dp)
+                .verticalScroll(descState, false)
+                .pointerInput(true) {
+                    detectVerticalDragGestures { _, dragAmount ->
+                        var forward = false
+                        val scrollText = if (dragAmount > 0.0f)
+                            if (dragAmount >= 40) false else true
+                        else if (dragAmount <= -40) false.also {
+                            forward = true
+                        } else true
+                        scope.launch {
+                            if (scrollText) {
+                                descState.scrollBy(-(dragAmount))
+                            } else {
+                                onOverscrollDesc(forward)
+                                descState.scrollTo(0)
+                            }
+                        }
+                    }
+                }
+        )
     }
 }

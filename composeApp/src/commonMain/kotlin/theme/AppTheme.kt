@@ -16,7 +16,9 @@ fun AppTheme(content: @Composable () -> Unit) {
         content = content,
         typography = Typography(
             defaultFontFamily = ralewayFamily(),
-            body1 = TextStyle(color = if (!isDarkTheme) Color.Black else Color.White)
+            body1 = TextStyle(
+                color = if (!isDarkTheme) Color.Black else Color.White
+            )
         )
     )
 }
