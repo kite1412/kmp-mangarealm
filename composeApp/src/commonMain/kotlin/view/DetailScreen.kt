@@ -108,6 +108,7 @@ import util.APP_BAR_HEIGHT
 import util.appGray
 import util.edgeToEdge
 import util.getMaxDimension
+import util.getMinDimension
 import util.popNoticeDuration
 import util.publicationStatus
 import util.publicationStatusColor
@@ -156,8 +157,7 @@ class DetailScreen : Screen {
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                         modifier = Modifier.fillMaxSize().padding(
-                            top = fixedDisplayHeight + 16.dp,
-                            bottom = sm.chapterListHeight.dp
+                            top = fixedDisplayHeight + 16.dp
                         )
                     ) {
                         item {
@@ -848,10 +848,11 @@ private fun Characters(
     sm: DetailScreenModel,
     modifier: Modifier = Modifier
 ) {
-    val screenSize = LocalScreenSize.current
+    val imageWidth = getMinDimension() / 5f
+    val imageHeight = (3f / 2f) * imageWidth
     val size = Modifier
         .fillMaxWidth()
-        .height(screenSize.height / 3.5f)
+        .height(imageHeight + 150.dp)
     Box(
         modifier = modifier
     ) {
@@ -881,7 +882,11 @@ private fun Characters(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 items(sm.manga.characters.data.size) {
-                    Character(sm.manga.characters.data[it])
+                    Character(
+                        character = sm.manga.characters.data[it],
+                        imageWidth = imageWidth,
+                        imageHeight = imageHeight
+                    )
                 }
             }
         }
@@ -891,12 +896,11 @@ private fun Characters(
 @Composable
 private fun Character(
     character: Character,
+    imageWidth: Dp,
+    imageHeight: Dp,
     modifier: Modifier = Modifier
 ) {
-    val screenSize = LocalScreenSize.current
-    val maxWidth = screenSize.width / 4f
     val imageUrl = resolveCharacterPicture(character)
-    val maxHeight = (3f / 2f) * maxWidth
     var painter: Painter? by remember { mutableStateOf(null) }
     if (imageUrl.isNotEmpty()) Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -909,8 +913,8 @@ private fun Character(
             contentScale = ContentScale.FillBounds,
             modifier = Modifier
                 .fillMaxWidth()
-                .width(maxWidth)
-                .height(maxHeight)
+                .width(imageWidth)
+                .height(imageHeight)
         ) { p -> painter = p }
         Text(
             character.character.name,
@@ -919,7 +923,7 @@ private fun Character(
             fontSize = 12.sp,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.width(maxWidth)
+            modifier = Modifier.width(imageWidth)
         )
     }
 }
