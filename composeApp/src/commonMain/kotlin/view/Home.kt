@@ -54,7 +54,6 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -111,7 +110,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import model.Manga
 import model.MangaStatus
-import model.ScreenSize
 import model.WidthClass
 import model.session.MangaSession
 import model.session.Session
@@ -166,6 +164,7 @@ fun Home(
         derivedStateOf { pagerState.settledPage }
     }
     if (vm.undoEdgeToEdge && settledPage == 0) undoEdgeToEdge()
+    val mangaPagerState = rememberPagerState { session.data.size }
     HorizontalPager(
         state = pagerState,
         userScrollEnabled = false
@@ -255,7 +254,6 @@ fun Home(
             }
             else -> {
                 val scope = rememberCoroutineScope()
-                val mangaPagerState = rememberPagerState { session.data.size }
                 MangaPage(
                     session = state.session,
                     onSessionLoaded = state::onSessionLoaded,
@@ -460,6 +458,8 @@ fun LatestUpdatesBar(
                     painter = manga.painter,
                     contentScale = ContentScale.FillWidth,
                     loading = {},
+                    // TODO change later
+                    visibilityThresholdSize = false,
                     modifier = Modifier.fillMaxSize()
                 ) { p ->
                     state.latestUpdates[it] = state.latestUpdates[it].copy(painter = p)
@@ -996,7 +996,7 @@ private fun AdvComTag(
 }
 
 @Composable
-fun PsyMysTag(
+private fun PsyMysTag(
     state: HomeState,
     modifier: Modifier = Modifier
 ) {
@@ -1092,7 +1092,7 @@ private fun MangaPage(
     pop: () -> Unit,
     onChapterListClick: (Manga) -> Unit,
     onStatusUpdate: (Boolean, Int) -> Unit,
-    pagerState: PagerState = rememberPagerState { session.data.size },
+    pagerState: PagerState,
     onPainterLoaded: (Int, Painter) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier
 ) {
@@ -1110,48 +1110,46 @@ private fun MangaPage(
             .background(lightBeige)
             .swipeToPop(action = pop, enabled = sessionState != SessionState.FETCHING)
     ) {
-        CompositionLocalProvider(LocalScreenSize provides ScreenSize(maxHeight, maxWidth)) {
-            when(sessionState) {
-                SessionState.FETCHING -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.8f))
-                    ) {
-                        LoadingIndicator(Modifier.align(Alignment.Center))
-                    }
+        when(sessionState) {
+            SessionState.FETCHING -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.8f))
+                ) {
+                    LoadingIndicator(Modifier.align(Alignment.Center))
                 }
-                SessionState.ACTIVE -> {
-                    var chapterListBotPadding by remember { mutableStateOf(0.dp) }
-                    val scope = rememberCoroutineScope()
-                    SessionPagerVerticalPager(
-                        session = session,
-                        state = pagerState,
-                        handler = MangaSessionHandler(session),
-                        pageSize = PageSize.Fixed(maxHeight - (chapterListBotPadding / 2)),
-                        onSessionLoaded = onSessionLoaded,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        val manga = session.data[it]
-                        MangaPageDisplay(
-                            manga = manga,
-                            onChapterListClick = { onChapterListClick(manga) },
-                            onStatusUpdate = { r -> onStatusUpdate(r, it) },
-                            onOverscrollDesc = { forward ->
-                                scope.launch {
-                                    if (forward) {
-                                        val next = it + 1
-                                        if ((session.data.size - 1) > next) pagerState.animateScrollToPage(next)
-                                    } else if (it > 0) pagerState.animateScrollToPage(it - 1)
-                                }
-                            },
-                            onPainterLoaded = { p -> onPainterLoaded(it, p) },
-                            chapterHeight = { h -> chapterListBotPadding = h }
-                        )
-                    }
-                }
-                else -> {}
             }
+            SessionState.ACTIVE -> {
+                var chapterListBotPadding by remember { mutableStateOf(0.dp) }
+                val scope = rememberCoroutineScope()
+                SessionPagerVerticalPager(
+                    session = session,
+                    state = pagerState,
+                    handler = MangaSessionHandler(session),
+                    pageSize = PageSize.Fixed(maxHeight - (chapterListBotPadding / 2)),
+                    onSessionLoaded = onSessionLoaded,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    val manga = session.data[it]
+                    MangaPageDisplay(
+                        manga = manga,
+                        onChapterListClick = { onChapterListClick(manga) },
+                        onStatusUpdate = { r -> onStatusUpdate(r, it) },
+                        onOverscrollDesc = { forward ->
+                            scope.launch {
+                                if (forward) {
+                                    val next = it + 1
+                                    if ((session.data.size - 1) > next) pagerState.animateScrollToPage(next)
+                                } else if (it > 0) pagerState.animateScrollToPage(it - 1)
+                            }
+                        },
+                        onPainterLoaded = { p -> onPainterLoaded(it, p) },
+                        chapterHeight = { h -> chapterListBotPadding = h }
+                    )
+                }
+            }
+            else -> {}
         }
     }
 }

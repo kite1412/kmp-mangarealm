@@ -230,12 +230,13 @@ fun Action(
 @Composable
 fun PainterLoader(
     url: String,
+    visibilityThresholdSize: Boolean = true,
     modifier: Modifier = Modifier,
     onPainterLoaded: (Painter) -> Unit
 ) {
     AutoSizeBox(ImageRequest {
         data(url)
-        this.size(SizeResolver(Size.VisibilityThreshold))
+        if (visibilityThresholdSize) this.size(SizeResolver(Size.VisibilityThreshold))
     }) { action ->
         when (action) {
             is ImageAction.Success -> {
@@ -252,13 +253,15 @@ fun ImageLoader(
     painter: Painter? = null,
     contentDescription: String = "image",
     contentScale: ContentScale = ContentScale.Fit,
+    visibilityThresholdSize: Boolean = true,
     loading: (@Composable BoxScope.() -> Unit)? = null,
     modifier: Modifier = Modifier,
     onPainterLoaded: (Painter) -> Unit
 ) {
     if (painter == null) PainterLoader(
         url = url,
-        onPainterLoaded = onPainterLoaded
+        onPainterLoaded = onPainterLoaded,
+        visibilityThresholdSize = visibilityThresholdSize
     )
     BrowseImageNullable(
         painter = painter,

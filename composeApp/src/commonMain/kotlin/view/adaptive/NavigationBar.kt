@@ -62,24 +62,25 @@ fun AdaptiveNavigationBar(
     modifier: Modifier = Modifier,
     content: @Composable BoxWithConstraintsScope.() -> Unit
 ) {
-    when (val widthClass = LocalWidthClass.current) {
-        WidthClass.Compact -> AppBottomNavigationBar(
-            selected = selectedRoute,
-            routes = routes,
-            onRouteClick = onRouteSelected,
-            showNavigationBar = showNavigationBar,
-            modifier = modifier,
-            content = content
-        )
-        else -> AppNavigationRail(
+    Row(modifier = modifier.fillMaxSize()) {
+        val widthClass = LocalWidthClass.current
+        if (widthClass != WidthClass.Compact) AppNavigationRail(
             selected = selectedRoute,
             routes = routes,
             onRouteClick = onRouteSelected,
             isDrawer = widthClass == WidthClass.Expanded,
             showNavigationBar = showNavigationBar,
-            modifier = modifier,
-            content = content
         )
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            content()
+            if (widthClass == WidthClass.Compact) AppBottomNavigationBar(
+                selected = selectedRoute,
+                routes = routes,
+                onRouteClick = onRouteSelected,
+                showNavigationBar = showNavigationBar,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
     }
 }
 
@@ -104,69 +105,59 @@ private fun AppNavigationRail(
     isDrawer: Boolean,
     onRouteClick: (Route) -> Unit,
     showNavigationBar: Boolean = true,
-    modifier: Modifier = Modifier,
-    content: @Composable BoxWithConstraintsScope.() -> Unit
+    modifier: Modifier = Modifier
 ) {
-    Row(
+    AnimatedVisibility(
+        visible = showNavigationBar,
         modifier = modifier
-            .fillMaxSize()
+            .width(
+                if (isDrawer) NAVIGATION_DRAWER_WIDTH else NAVIGATION_RAIL_WIDTH
+            )
+            .fillMaxHeight()
     ) {
-        AnimatedVisibility(
-            visible = showNavigationBar,
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .width(
-                    if (isDrawer) NAVIGATION_DRAWER_WIDTH else NAVIGATION_RAIL_WIDTH
-                )
-                .fillMaxHeight()
+                .fillMaxSize()
+                .background(navigationBarBackgroundColor())
+                .padding(8.dp)
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(navigationBarBackgroundColor())
-                    .padding(8.dp)
-            ) {
-                val contentWidth = Modifier.composed {
-                    if (isDrawer) fillMaxWidth() else Modifier
-                }
-                routes.forEach {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(
-                            if (isDrawer) 16.dp else 0.dp
-                        ),
-                        modifier = Modifier
-                            .then(contentWidth)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(
-                                if (selected == it) if (isDarkMode()) selectedRouteBackgroundDark else selectedRouteBackgroundLight
-                                    else navigationBarBackgroundColor()
-                            )
-                            .clickable(
-                                indication = null,
-                                interactionSource = MutableInteractionSource()
-                            ) { onRouteClick(it) }
-                            .padding(8.dp)
-                    ) {
-                        RouteIcon(
-                            route = it,
-                            selected = selected == it
+            val contentWidth = Modifier.composed {
+                if (isDrawer) fillMaxWidth() else Modifier
+            }
+            routes.forEach {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(
+                        if (isDrawer) 16.dp else 0.dp
+                    ),
+                    modifier = Modifier
+                        .then(contentWidth)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (selected == it) if (isDarkMode()) selectedRouteBackgroundDark else selectedRouteBackgroundLight
+                            else navigationBarBackgroundColor()
                         )
-                        if (isDrawer) Text(
-                            it.name,
-                            color = contentColor(selected == it),
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        )
-                    }
+                        .clickable(
+                            indication = null,
+                            interactionSource = MutableInteractionSource()
+                        ) { onRouteClick(it) }
+                        .padding(8.dp)
+                ) {
+                    RouteIcon(
+                        route = it,
+                        selected = selected == it
+                    )
+                    if (isDrawer) Text(
+                        it.name,
+                        color = contentColor(selected == it),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
                 }
             }
         }
-        BoxWithConstraints(
-            modifier = Modifier.fillMaxSize(),
-            content = content
-        )
     }
 }
 
@@ -177,39 +168,34 @@ private fun AppBottomNavigationBar(
     onRouteClick: (Route) -> Unit,
     showNavigationBar: Boolean = true,
     modifier: Modifier = Modifier,
-    content: @Composable BoxWithConstraintsScope.() -> Unit,
 ) {
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        content()
-        AnimatedVisibility(
-            visible = showNavigationBar,
+    AnimatedVisibility(
+        visible = showNavigationBar,
+        modifier = modifier
+            .fillMaxWidth()
+            .height(APP_BAR_HEIGHT)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(APP_BAR_HEIGHT)
+                .padding(horizontal = 8.dp)
+                .offset(y = (-8).dp)
+                .clip(RoundedCornerShape(15.dp))
+                .background(navigationBarBackgroundColor())
+                .clickable(enabled = false) {},
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier
-                    .padding(horizontal = 8.dp)
-                    .offset(y = (-8).dp)
-                    .clip(RoundedCornerShape(15.dp))
-                    .background(navigationBarBackgroundColor())
-                    .clickable(enabled = false) {},
-            ) {
-                routes.forEach {
-                    RouteIcon(
-                        route = it,
-                        selected = selected == it,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clickable(
-                                indication = null,
-                                interactionSource = MutableInteractionSource()
-                            ) { onRouteClick(it) }
-                    )
-                }
+            routes.forEach {
+                RouteIcon(
+                    route = it,
+                    selected = selected == it,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable(
+                            indication = null,
+                            interactionSource = MutableInteractionSource()
+                        ) { onRouteClick(it) }
+                )
             }
         }
     }
