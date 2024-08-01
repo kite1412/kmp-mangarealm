@@ -57,10 +57,8 @@ class ReaderScreenModel(
     }
 
     private fun adjustDescendingChapter(): List<Chapter> = mutableListOf<Chapter>().apply {
-        val start = chapters.subList(currentChapterIndex, chapters.size).reversed()
-        val end = chapters.subList(0, currentChapterIndex).reversed()
-        addAll(start + end)
-        currentChapterIndex = start.size - 1
+        addAll(chapters.reversed())
+        currentChapterIndex = (chapters.size - currentChapterIndex) - 1
     }
 
     private fun getChapterImages() {

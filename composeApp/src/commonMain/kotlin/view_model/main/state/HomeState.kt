@@ -68,6 +68,7 @@ class HomeState(
     val session = MangaSession()
     private var sessionQueries = ""
     var showOptions by mutableStateOf(false)
+    var suggestionCurrentPage by mutableStateOf(0)
 
     suspend fun updateUsername() {
         val username = kottageStorage.get<String>(KottageConst.USERNAME)
