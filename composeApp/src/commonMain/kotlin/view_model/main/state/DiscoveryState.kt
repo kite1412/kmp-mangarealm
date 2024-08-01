@@ -253,7 +253,7 @@ class DiscoveryState(
 
     suspend fun updateSuggestionSession() {
         currentSuggestion = searchBarValue
-        if (currentSuggestion != session.queries["title"]) {
+        if (currentSuggestion != currentSessionSearch) {
             val q = defaultQuery().apply {
                 set("limit", 20)
             }

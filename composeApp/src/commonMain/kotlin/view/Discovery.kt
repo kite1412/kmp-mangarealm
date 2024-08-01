@@ -81,6 +81,7 @@ import model.session.SessionState
 import model.session.isNotEmpty
 import shared.adjustStatusBarColor
 import util.APP_BAR_HEIGHT
+import util.getMaxDimension
 import util.isDarkMode
 import util.session_handler.MangaSessionHandler
 import view_model.main.MainViewModel
@@ -598,8 +599,7 @@ private fun SearchSuggestion(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val screenSize = LocalScreenSize.current
-    val height = screenSize.height / 7
+    val height = getMaxDimension() / 7
     val imageWidth = (2f / 3f) * height
     Row(
         horizontalArrangement = Arrangement.spacedBy(6.dp),
