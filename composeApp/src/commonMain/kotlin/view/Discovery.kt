@@ -126,10 +126,23 @@ fun Discovery(
                 },
                 onValueChange = vm.discoveryState::searchBarValueChange
             )
-            SearchSuggestions(
-                state = state,
+            val searchBarValue = state.searchBarValue
+            LaunchedEffect(searchBarValue) {
+                if (searchBarValue.isEmpty()) {
+                    state.suggestionSession.clear()
+                    state.currentSuggestion = ""
+                }
+                else if (searchBarValue.length >= 2 && state.currentSuggestion != searchBarValue) {
+                    delay(1000)
+                    state.updateSuggestionSession()
+                }
+            }
+            AnimatedVisibility(
+                visible = state.currentSessionSearch != state.currentSuggestion,
                 modifier = Modifier.padding(horizontal = 8.dp)
-            )
+            ) {
+                SearchSuggestions(state)
+            }
         }
     }
 }
@@ -535,14 +548,6 @@ private fun SearchSuggestions(
     val screenSize = LocalScreenSize.current
     val session = state.suggestionSession
     val sessionState by session.state
-    val searchBarValue = state.searchBarValue
-    LaunchedEffect(searchBarValue) {
-        if (searchBarValue.isEmpty()) state.suggestionSession.clear()
-        else if (searchBarValue.length >= 2) {
-            delay(1000)
-            state.updateSuggestionSession()
-        }
-    }
     if (sessionState != SessionState.IDLE) Box(
         modifier = modifier
             .fillMaxWidth()

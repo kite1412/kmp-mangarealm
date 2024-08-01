@@ -54,10 +54,10 @@ class DiscoveryState(
     var deletionAction = {}
     var deletionLabel = ""
     val suggestionSession = MangaSession()
-    private var suggestionCancellation = false
+    var currentSuggestion by mutableStateOf("")
+    var currentSessionSearch by mutableStateOf("")
     private var q: String = ""
     private val historyList = kottageStorage.list(KottageConst.HISTORY_LIST)
-
 
     init {
         initHistory()
@@ -97,6 +97,7 @@ class DiscoveryState(
                     data[i] = sharedViewModel.findMangaStatus(m) ?: m
                 }
             }
+            currentSessionSearch = queries["title"] as String
             listState.scrollToItem(0)
         }
     }
@@ -117,6 +118,8 @@ class DiscoveryState(
         session.clear()
         suggestionSession.clear()
         searchBarValue = ""
+        currentSessionSearch = ""
+        currentSuggestion = ""
     }
 
     private fun initHistory() {
@@ -162,7 +165,6 @@ class DiscoveryState(
         search: String = ""
     ) {
         if (search.isNotEmpty()) searchBarValue = search
-        suggestionCancellation = true
         suggestionSession.clear()
         if (searchBarValue.isNotEmpty()) {
             keyboardController?.hide()
@@ -250,28 +252,20 @@ class DiscoveryState(
     }
 
     suspend fun updateSuggestionSession() {
-        if (!suggestionCancellation) {
+        currentSuggestion = searchBarValue
+        if (currentSuggestion != session.queries["title"]) {
             val q = defaultQuery().apply {
                 set("limit", 20)
             }
             suggestionSession.data.clear()
             suggestionSession.init(q)
             mangaDex.getManga(generateQuery(q))?.let {
-                // prevention to show the suggestions if by any chance the search session
-                // started before suggestion session not finished.
-                if (!suggestionCancellation) suggestionSession.setActive(it, it.toMangaList())
-                    else {
-                        suggestionCancellation = false
-                        suggestionSession.clear()
-                    }
+                suggestionSession.setActive(it, it.toMangaList())
             }
-        } else {
-            suggestionCancellation = false
         }
     }
 
     fun navigateToDetailScreen(nav: Navigator, manga: Manga) {
-        suggestionCancellation = true
         vm.navigateToDetail(nav, manga)
     }
 }
