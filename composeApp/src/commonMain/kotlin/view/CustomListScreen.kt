@@ -355,7 +355,6 @@ class CustomListScreen : Screen {
                         ) { m ->
                             MangaDisplay(
                                 manga = manga,
-                                parentHeight = this@BoxWithConstraints.maxHeight,
                                 onPainterLoaded = {
                                     p -> sm.sharedViewModel.updateCustomListMangaPainter(customList, it, p)
                                 },

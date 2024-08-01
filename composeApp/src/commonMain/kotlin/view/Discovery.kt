@@ -269,7 +269,6 @@ private fun Content(
                     onPainterLoaded = { p ->
                         vm.discoveryState.updateMangaPainter(it, manga, p)
                     },
-                    parentHeight = maxHeight
                 ) { state.navigateToDetailScreen(nav, manga) }
             } else Text(
                 "No results found",
