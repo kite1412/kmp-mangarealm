@@ -1,7 +1,6 @@
 package view.adaptive
 
 import LocalWidthClass
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -107,55 +106,49 @@ private fun AppNavigationRail(
     showNavigationBar: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    AnimatedVisibility(
-        visible = showNavigationBar,
+    if (showNavigationBar) Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .width(
                 if (isDrawer) NAVIGATION_DRAWER_WIDTH else NAVIGATION_RAIL_WIDTH
             )
             .fillMaxHeight()
+            .background(navigationBarBackgroundColor())
+            .padding(8.dp)
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier
-                .fillMaxSize()
-                .background(navigationBarBackgroundColor())
-                .padding(8.dp)
-        ) {
-            val contentWidth = Modifier.composed {
-                if (isDrawer) fillMaxWidth() else Modifier
-            }
-            routes.forEach {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(
-                        if (isDrawer) 16.dp else 0.dp
-                    ),
-                    modifier = Modifier
-                        .then(contentWidth)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            if (selected == it) if (isDarkMode()) selectedRouteBackgroundDark else selectedRouteBackgroundLight
-                            else navigationBarBackgroundColor()
-                        )
-                        .clickable(
-                            indication = null,
-                            interactionSource = MutableInteractionSource()
-                        ) { onRouteClick(it) }
-                        .padding(8.dp)
-                ) {
-                    RouteIcon(
-                        route = it,
-                        selected = selected == it
+        val contentWidth = Modifier.composed {
+            if (isDrawer) fillMaxWidth() else Modifier
+        }
+        routes.forEach {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(
+                    if (isDrawer) 16.dp else 0.dp
+                ),
+                modifier = Modifier
+                    .then(contentWidth)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(
+                        if (selected == it) if (isDarkMode()) selectedRouteBackgroundDark else selectedRouteBackgroundLight
+                        else navigationBarBackgroundColor()
                     )
-                    if (isDrawer) Text(
-                        it.name,
-                        color = contentColor(selected == it),
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
-                    )
-                }
+                    .clickable(
+                        indication = null,
+                        interactionSource = MutableInteractionSource()
+                    ) { onRouteClick(it) }
+                    .padding(8.dp)
+            ) {
+                RouteIcon(
+                    route = it,
+                    selected = selected == it
+                )
+                if (isDrawer) Text(
+                    it.name,
+                    color = contentColor(selected == it),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
             }
         }
     }
@@ -169,34 +162,29 @@ private fun AppBottomNavigationBar(
     showNavigationBar: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
-    AnimatedVisibility(
-        visible = showNavigationBar,
+    if (showNavigationBar) Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceEvenly,
         modifier = modifier
             .fillMaxWidth()
             .height(APP_BAR_HEIGHT)
+            .padding(horizontal = 8.dp)
+            .offset(y = (-8).dp)
+            .clip(RoundedCornerShape(15.dp))
+            .background(navigationBarBackgroundColor())
+            .clickable(enabled = false) {},
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .offset(y = (-8).dp)
-                .clip(RoundedCornerShape(15.dp))
-                .background(navigationBarBackgroundColor())
-                .clickable(enabled = false) {},
-        ) {
-            routes.forEach {
-                RouteIcon(
-                    route = it,
-                    selected = selected == it,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clickable(
-                            indication = null,
-                            interactionSource = MutableInteractionSource()
-                        ) { onRouteClick(it) }
-                )
-            }
+        routes.forEach {
+            RouteIcon(
+                route = it,
+                selected = selected == it,
+                modifier = Modifier
+                    .size(32.dp)
+                    .clickable(
+                        indication = null,
+                        interactionSource = MutableInteractionSource()
+                    ) { onRouteClick(it) }
+            )
         }
     }
 }

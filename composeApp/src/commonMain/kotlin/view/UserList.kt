@@ -82,7 +82,7 @@ fun UserList(
 }
 
 @Composable
-fun List(
+private fun List(
     state: UserListState,
     modifier: Modifier = Modifier
 ) {
@@ -171,7 +171,10 @@ private fun TopBar(
                 .align(Alignment.CenterStart)
                 .padding(start = startPadding)
                 .size(iconSize)
-                .clickable { state.showOptions() }
+                .clickable(
+                    indication = null,
+                    interactionSource = MutableInteractionSource()
+                ) { state.showOptions() }
         )
         Text(
             state.selectedStatus.status,

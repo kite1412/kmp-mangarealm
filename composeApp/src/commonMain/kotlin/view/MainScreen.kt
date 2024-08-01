@@ -40,7 +40,7 @@ class MainScreen : Screen {
                 onRouteSelected = {
                     vm.pushMenu(it)
                 },
-                showNavigationBar = !vm.hideBottomBar
+                showNavigationBar = !vm.hideNavigationBar
             ) {
                 BackHandler(enabled = vm.menuStack.size > 1) { vm.popMenu() }
                 CompositionLocalProvider(LocalScreenSize provides ScreenSize(maxHeight, maxWidth)) {
