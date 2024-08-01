@@ -59,7 +59,7 @@ class MainViewModel(
     val menuStack = mutableStateStackOf(routes[Menu.HOME])
     val currentPage by derivedStateOf { menuStack.lastItemOrNull ?: routes[Menu.HOME]!! }
     var undoEdgeToEdge by mutableStateOf(false)
-    var hideBottomBar by mutableStateOf(false)
+    var hideNavigationBar by mutableStateOf(false)
 
     val discoveryState = DiscoveryState(
         vm = this,

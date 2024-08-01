@@ -55,7 +55,6 @@ import model.session.SessionState
 import util.APP_BAR_HEIGHT
 import util.ASCENDING
 import util.DESCENDING
-import util.appGray
 import util.isDarkMode
 import util.mapLanguage
 import util.session_handler.ChapterSessionHandler
@@ -353,7 +352,7 @@ class ChapterScreen : Screen {
         onClick: () -> Unit
     ) {
         val clip = RoundedCornerShape(6.dp)
-        val gray = appGray()
+        val gray = Color.DarkGray
         val outer = if (!selected) Modifier.border(
             width = 1.dp,
             color = gray,

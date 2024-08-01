@@ -5,9 +5,14 @@ import LocalScreenSize
 import LocalWidthClass
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -146,129 +151,123 @@ fun Home(
     modifier: Modifier = Modifier
 ) {
     val latestBarHeight = getMaxDimension() / 4f
-    val pagerState = rememberPagerState { 2 }
-    val session = vm.homeState.session
-    val sessionState by remember {
-        derivedStateOf { session.state.value }
-    }
     val state = vm.homeState
-    LaunchedEffect(sessionState) {
-        when(sessionState) {
-            SessionState.IDLE -> {
-                pagerState.animateScrollToPage(0)
-            }
-            else -> pagerState.animateScrollToPage(1)
-        }
-    }
-    val settledPage by remember {
-        derivedStateOf { pagerState.settledPage }
-    }
-    if (vm.undoEdgeToEdge && settledPage == 0) undoEdgeToEdge()
+    val session = vm.homeState.session
+    val scope = rememberCoroutineScope()
+    val showSuggestion = state.showSuggestion
+    if (vm.undoEdgeToEdge && !showSuggestion) undoEdgeToEdge()
     val mangaPagerState = rememberPagerState { session.data.size }
-    HorizontalPager(
-        state = pagerState,
-        userScrollEnabled = false
+    val scrollState = rememberScrollState()
+    AnimatedContent(
+        targetState = showSuggestion,
+        transitionSpec = {
+            ContentTransform(
+                targetContentEnter = slideInHorizontally {
+                    if (showSuggestion) it else -it
+                } + fadeIn(),
+                initialContentExit = slideOutHorizontally {
+                    if (showSuggestion) -it else it
+                } + fadeOut()
+            )
+        }
     ) {
-        when(it) {
-            0 -> {
-                var headerHeight by remember { mutableStateOf(0.dp) }
-                val density = LocalDensity.current
-                Box(
+        if (!it) {
+            var headerHeight by remember { mutableStateOf(0.dp) }
+            val density = LocalDensity.current
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
+                    .padding(horizontal = parentHorizontalPadding)
+            ) {
+                Header(
+                    username = state.username.value,
+                    state = state,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = parentHorizontalPadding)
-                ) {
-                    Header(
-                        username = state.username.value,
-                        state = state,
-                        modifier = Modifier
-                            .padding(top = 24.dp)
-                            .onGloballyPositioned { coordinates ->
-                                with(density) {
-                                    headerHeight = coordinates.size.height.toDp()
-                                }
+                        .padding(top = 24.dp)
+                        .onGloballyPositioned { coordinates ->
+                            with(density) {
+                                headerHeight = coordinates.size.height.toDp()
                             }
-                    )
+                        }
+                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(top = headerHeight + 16.dp + 24.dp)
+                ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
-                        modifier = Modifier.padding(top = headerHeight + 16.dp + 24.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 8.dp)
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            Text(
-                                "Latest Updates",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                modifier = Modifier.padding(start = 10.dp)
-                            )
-                            LatestUpdatesBar(
-                                vm = vm,
-                                state = state,
-                                height = latestBarHeight,
-                                nav = nav,
-                            )
-                        }
-                        ContinueReading(
+                        Text(
+                            "Latest Updates",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            modifier = Modifier.padding(start = 10.dp)
+                        )
+                        LatestUpdatesBar(
+                            vm = vm,
                             state = state,
+                            height = latestBarHeight,
                             nav = nav,
-                            height = latestBarHeight
-                        ) { m -> vm.navigateToDetail(nav, m) }
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            Text(
-                                "Suggestions",
-                                fontSize = 24.sp,
-                                fontStyle = FontStyle.Italic,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Suggestions(
-                                state = state,
-                                modifier = Modifier.fillMaxWidth(),
-                                items = listOf(
-                                    { RomComTag(state) },
-                                    { AdvComTag(state) },
-                                    { PsyMysTag(state) },
-                                    { IsekaiTag(state) },
-                                    { SciFiTag(state) },
-                                )
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(bottomBarTotalHeight - 8.dp))
-                    }
-                    AnimatedVisibility(
-                        visible = state.showOptions,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(top = headerHeight + 16.dp)
-                    ) {
-                        Options(
-                            onMyListClick = { state.navigateToCustomListScreen(nav) },
-                            onSettingsClick = { state.navigateToSettingsScreen(nav) }
                         )
                     }
+                    ContinueReading(
+                        state = state,
+                        nav = nav,
+                        height = latestBarHeight
+                    ) { m -> vm.navigateToDetail(nav, m) }
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Text(
+                            "Suggestions",
+                            fontSize = 24.sp,
+                            fontStyle = FontStyle.Italic,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Suggestions(
+                            state = state,
+                            modifier = Modifier.fillMaxWidth(),
+                            items = listOf(
+                                { RomComTag(state) },
+                                { AdvComTag(state) },
+                                { PsyMysTag(state) },
+                                { IsekaiTag(state) },
+                                { SciFiTag(state) },
+                            )
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(bottomBarTotalHeight - 8.dp))
+                }
+                AnimatedVisibility(
+                    visible = state.showOptions,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = headerHeight + 16.dp)
+                ) {
+                    Options(
+                        onMyListClick = { state.navigateToCustomListScreen(nav) },
+                        onSettingsClick = { state.navigateToSettingsScreen(nav) }
+                    )
                 }
             }
-            else -> {
-                val scope = rememberCoroutineScope()
-                MangaPage(
-                    session = state.session,
-                    onSessionLoaded = state::onSessionLoaded,
-                    pop = {
-                        scope.launch { mangaPagerState.scrollToPage(0) }
-                        state.clearSession()
-                        vm.hideBottomBar = false
-                    },
-                    onChapterListClick = { m -> vm.navigateToChapter(nav, m) },
-                    onStatusUpdate = state::onStatusUpdate,
-                    pagerState = mangaPagerState,
-                    onPainterLoaded = state::onPainterLoaded
-                )
-            }
-        }
+        } else MangaPage(
+            session = state.session,
+            onSessionLoaded = state::onSessionLoaded,
+            pop = {
+                scope.launch {
+                    state.clearSession()
+                    vm.hideNavigationBar = false
+                    mangaPagerState.scrollToPage(0)
+                    state.showSuggestion = false
+                }
+            },
+            onChapterListClick = { m -> vm.navigateToChapter(nav, m) },
+            onStatusUpdate = state::onStatusUpdate,
+            pagerState = mangaPagerState,
+            onPainterLoaded = state::onPainterLoaded
+        )
     }
 }
 
@@ -872,6 +871,7 @@ private fun Suggestions(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(verticalArrangement),
                 columns = GridCells.Fixed(row.toInt()),
+                userScrollEnabled = false,
                 modifier = Modifier.fillMaxWidth()
             ) { items.forEach { item { it() } } }
         }

@@ -68,7 +68,7 @@ class HomeState(
     val session = MangaSession()
     private var sessionQueries = ""
     var showOptions by mutableStateOf(false)
-    var suggestionCurrentPage by mutableStateOf(0)
+    var showSuggestion by mutableStateOf(false)
 
     suspend fun updateUsername() {
         val username = kottageStorage.get<String>(KottageConst.USERNAME)
@@ -108,10 +108,11 @@ class HomeState(
     fun beginSession(queries: Map<String, Any>) {
         scope.launch {
             if (tags.isNotEmpty()) {
+                vm.hideNavigationBar = true
+                showSuggestion = true
                 val q = generateQuery(queries)
                 val fromCache = cache.latestMangaSearch[q]
                 session.clear()
-                vm.hideBottomBar = true
                 sessionQueries = q
                 if (fromCache == null) {
                     session.init(queries)
