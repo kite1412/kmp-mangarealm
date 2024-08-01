@@ -1,4 +1,4 @@
-package view.adaptive
+package view
 
 import LocalWidthClass
 import androidx.compose.foundation.background

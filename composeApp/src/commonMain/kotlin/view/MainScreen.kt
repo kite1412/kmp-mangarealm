@@ -17,7 +17,6 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.internal.BackHandler
 import model.ScreenSize
 import util.undoEdgeToEdge
-import view.adaptive.AdaptiveNavigationBar
 import view_model.main.Menu
 
 class MainScreen : Screen {
