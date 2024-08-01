@@ -114,6 +114,8 @@ import model.SwipeAction
 import model.session.Session
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
+import util.getMaxDimension
+import util.getMinDimension
 import util.isDarkMode
 import util.publicationDemographic
 import util.publicationDemographicColor
@@ -562,12 +564,11 @@ fun LoadingIndicator(
 @Composable
 fun MangaDisplay(
     manga: Manga,
-    parentHeight: Dp,
     onPainterLoaded: (Painter) -> Unit,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val height = parentHeight / 5f
+    val height = getMaxDimension() / 5f
     Row(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier
@@ -814,13 +815,23 @@ fun Swipeable(
         val maxActions = 4
         val fixed = actions.take(maxActions)
         val actionWeight = 0.25f
+        val actionBarWidth = getMinDimension()
+        val corner = Modifier
+            .padding(horizontal = 8.dp)
+            .clip(RoundedCornerShape(8.dp))
+        Box(
+            Modifier
+                .fillMaxSize()
+                .then(corner)
+                .background(if (fixed.isNotEmpty()) fixed[0].backgroundColor else Color.Transparent)
+        )
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxHeight()
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-                .clip(RoundedCornerShape(8.dp))
+                .width(actionBarWidth)
+                .align(Alignment.CenterEnd)
+                .then(corner)
         ) {
             if (fixed.isNotEmpty()) Box(
                 modifier = Modifier
@@ -838,7 +849,6 @@ fun Swipeable(
         var offset by remember { mutableStateOf(0.dp) }
         val offsetAnimated by animateDpAsState(offset)
         val density = LocalDensity.current
-        val screenSize = LocalScreenSize.current
         var show by remember { mutableStateOf(false) }
         content(
             Modifier
@@ -851,7 +861,7 @@ fun Swipeable(
                 .pointerInput(true) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
-                            val maxOffset = -(screenSize.width * (actionWeight * fixed.size))
+                            val maxOffset = -(actionBarWidth * (actionWeight * fixed.size))
                             offset = if (offset < 0.dp && (!show || offset < maxOffset)) {
                                 show = true
                                 maxOffset

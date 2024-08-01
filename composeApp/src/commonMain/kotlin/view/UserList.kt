@@ -126,11 +126,13 @@ fun List(
             .clip(RoundedCornerShape(clip))
             .background(MaterialTheme.colors.background)
     ) {
+        val maxHeight = maxHeight
+        val maxWidth = maxWidth
         Column {
             TopBar(state)
             ListContent(
                 state = state,
-                parentHeight = this@BoxWithConstraints.maxHeight,
+                parentHeight = if (maxHeight >= maxWidth) maxHeight else maxWidth,
                 modifier = Modifier.padding(8.dp)
             )
         }
