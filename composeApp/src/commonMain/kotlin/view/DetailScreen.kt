@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -146,16 +147,15 @@ class DetailScreen : Screen {
             ) {
                 CompositionLocalProvider(LocalScreenSize provides ScreenSize(maxHeight, maxWidth)) {
                     val aboveBottomBar = APP_BAR_HEIGHT + 16.dp
-                    val screenSize = LocalScreenSize.current
-                    val screenHeight = screenSize.height
                     val statusBarsHeight = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
                     val coverDisplayHeight = (getMaxDimension() / 2.5f) - statusBarsHeight
                     val fixedDisplayHeight = if (
-                        coverDisplayHeight <= screenHeight / 2
+                        coverDisplayHeight <= maxHeight / 2
                     ) coverDisplayHeight else coverDisplayHeight / 1.5f
                     CoverArtDisplay(sm, nav, fixedDisplayHeight)
                     LazyColumn(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(bottom = sm.chapterListHeight.dp),
                         modifier = Modifier.fillMaxSize().padding(
                             top = fixedDisplayHeight + 16.dp
                         )
