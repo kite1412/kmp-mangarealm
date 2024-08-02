@@ -186,7 +186,11 @@ private fun TopBar(
                     modifier = Modifier
                         .weight(0.1f)
                         .size(40.dp)
-                        .clickable(onClick = onBackButtonClick)
+                        .clickable(
+                            indication = null,
+                            interactionSource = MutableInteractionSource(),
+                            onClick = onBackButtonClick
+                        )
                 )
             }
             Box(
@@ -229,7 +233,11 @@ private fun TopBar(
                         tint = MaterialTheme.typography.body1.color,
                         modifier = Modifier
                             .weight(0.1f)
-                            .clickable(enabled = !showPlaceholder) { onClear() }
+                            .clickable(
+                                indication = null,
+                                interactionSource = MutableInteractionSource(),
+                                enabled = !showPlaceholder
+                            ) { onClear() }
                     )
                 }
             }

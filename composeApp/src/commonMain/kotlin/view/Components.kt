@@ -502,6 +502,7 @@ fun Tags(
             space = 2.dp,
             alignment = verticalAlignment ?: Alignment.Top
         ),
+        modifier = modifier
     ) {
         getTagList(data).forEach {
             TagBar(
