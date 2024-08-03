@@ -139,7 +139,8 @@ fun Discovery(
                 }
             }
             AnimatedVisibility(
-                visible = state.currentSessionSearch != state.currentSuggestion,
+                visible = state.currentSessionSearch != state.currentSuggestion &&
+                    state.session.state.value != SessionState.FETCHING,
                 modifier = Modifier.padding(horizontal = 8.dp)
             ) {
                 SearchSuggestions(state)
