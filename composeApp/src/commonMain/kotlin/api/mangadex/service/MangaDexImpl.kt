@@ -59,25 +59,23 @@ class MangaDexImpl(
         methodName: String,
         queries: Queries = "",
         auth: Boolean = false,
-    ): R? {
-        return try {
-            client.get {
-                url("$url$queries")
-                if (auth) authHeader()
-            }.body<R>()
-                .also {
-                    if (it is EntityResponse<*>) {
-                        it.errors?.forEach { m ->
-                            Log.e("($methodName) $m")
-                        }
+    ): R? = try {
+        client.get {
+            url("$url$queries")
+            if (auth) authHeader()
+        }.body<R>()
+            .also {
+                if (it is EntityResponse<*>) {
+                    it.errors?.forEach { m ->
+                        Log.e("($methodName) $m")
                     }
                 }
-        } catch (e: Exception) {
-            e.message?.let {
-                Log.e("($methodName) $it")
             }
-            null
+    } catch (e: Exception) {
+        e.message?.let {
+            Log.e("($methodName) $it")
         }
+        null
     }
 
     private suspend inline fun <reified ATTR> getList(
@@ -85,13 +83,11 @@ class MangaDexImpl(
         methodName: String,
         queries: Queries = "",
         auth: Boolean = false,
-    ): ListResponse<ATTR>? {
-        return get<ListResponse<ATTR>>(
-            url, methodName, queries, auth
-        ).also {
-            if (it != null) {
-                Log.d("GET ($methodName$queries) list length: ${it.data.size}, total: ${it.total}")
-            }
+    ): ListResponse<ATTR>? = get<ListResponse<ATTR>>(
+        url, methodName, queries, auth
+    ).also {
+        if (it != null) {
+            Log.d("GET ($methodName$queries) list length: ${it.data.size}, total: ${it.total}")
         }
     }
 
@@ -101,24 +97,22 @@ class MangaDexImpl(
         body: Any? = null,
         auth: Boolean = true,
         headers: Map<String, String> = mapOf()
-    ): R? {
-        return try {
-            client.post(urlString = url) {
-                if (auth) authHeader()
-                contentType(type = ContentType.parse("application/json"))
-                if (headers.isNotEmpty()) headers {
-                    headers.forEach {
-                        append(it.key, it.value)
-                    }
+    ): R? = try {
+        client.post(urlString = url) {
+            if (auth) authHeader()
+            contentType(type = ContentType.parse("application/json"))
+            if (headers.isNotEmpty()) headers {
+                headers.forEach {
+                    append(it.key, it.value)
                 }
-                if (body != null) setBody(body)
-            }.body<R>()
-        } catch (e: Exception) {
-            e.message?.let {
-                Log.e("($methodName) $it")
             }
-            null
+            if (body != null) setBody(body)
+        }.body<R>()
+    } catch (e: Exception) {
+        e.message?.let {
+            Log.e("($methodName) $it")
         }
+        null
     }
 
     private suspend inline fun <reified R> delete(
@@ -155,8 +149,8 @@ class MangaDexImpl(
         null
     }
 
-    override suspend fun login(request: TokenRequest): Token? {
-        return try {
+    override suspend fun login(request: TokenRequest): Token? =
+        try {
             client.submitForm(
                 url = ApiConstant.AUTH_ENDPOINT,
                 formParameters = parameters {
@@ -175,7 +169,6 @@ class MangaDexImpl(
             }
             null
         }
-    }
 
     override suspend fun getManga(queries: Queries): ListResponse<MangaAttributes>? =
         getList(

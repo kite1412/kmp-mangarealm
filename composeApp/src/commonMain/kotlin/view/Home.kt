@@ -1315,16 +1315,14 @@ private fun MangaPageInfo(
             fontSize = 12.sp,
             horizontalPadding = 4.dp,
             cornerRadius = 6.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            modifier = Modifier.fillMaxWidth()
         )
         val scope = rememberCoroutineScope()
         Text(
             getDesc(manga.data.attributes.description),
             color = Color.White,
             modifier = Modifier
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 4.dp)
                 .verticalScroll(descState, false)
                 .pointerInput(true) {
                     detectVerticalDragGestures { _, dragAmount ->
