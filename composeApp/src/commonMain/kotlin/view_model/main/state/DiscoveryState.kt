@@ -24,6 +24,7 @@ import kotlinx.coroutines.launch
 import model.Manga
 import model.session.MangaSession
 import model.session.Session
+import model.session.SessionState
 import model.toMangaList
 import util.DEFAULT_COLLECTION_SIZE
 import util.KottageConst
@@ -79,12 +80,13 @@ class DiscoveryState(
             val fromCache = cache.latestMangaSearch[q]
             if (fromCache == null) {
                 session.init(queries)
-                val res = retry(
+                val res = if (suggestionSession.state.value != SessionState.ACTIVE) retry(
                     count = 3,
                     predicate = { it == null || it.errors != null }
                 ) {
                     mangaDex.getManga(q)
-                }
+                } else suggestionSession.response
+                suggestionSession.clear()
                 if (res != null) {
                     val data = res.toMangaList().map {
                         sharedViewModel.findMangaStatus(it) ?: it
@@ -165,7 +167,6 @@ class DiscoveryState(
         search: String = ""
     ) {
         if (search.isNotEmpty()) searchBarValue = search
-        suggestionSession.clear()
         if (searchBarValue.isNotEmpty()) {
             keyboardController?.hide()
             focusManager.clearFocus()
@@ -254,9 +255,7 @@ class DiscoveryState(
     suspend fun updateSuggestionSession() {
         currentSuggestion = searchBarValue
         if (currentSuggestion != currentSessionSearch) {
-            val q = defaultQuery().apply {
-                set("limit", 20)
-            }
+            val q = defaultQuery()
             suggestionSession.data.clear()
             suggestionSession.init(q)
             mangaDex.getManga(generateQuery(q))?.let {
