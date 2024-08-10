@@ -128,12 +128,15 @@ fun Discovery(
                 onValueChange = vm.discoveryState::searchBarValueChange
             )
             val searchBarValue = state.searchBarValue
-            LaunchedEffect(searchBarValue) {
+            val sessionState by state.session.state
+            LaunchedEffect(searchBarValue, sessionState) {
                 if (searchBarValue.isEmpty()) {
                     state.suggestionSession.clear()
                     state.currentSuggestion = ""
                 }
-                else if (searchBarValue.length >= 2 && state.currentSuggestion != searchBarValue) {
+                else if (searchBarValue.length >= 2 &&
+                    state.currentSuggestion != searchBarValue &&
+                    sessionState != SessionState.FETCHING) {
                     delay(1000)
                     state.updateSuggestionSession()
                 }
