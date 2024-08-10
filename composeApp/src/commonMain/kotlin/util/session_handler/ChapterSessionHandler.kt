@@ -15,9 +15,7 @@ class ChapterSessionHandler(
     override val mangaDex: MangaDex = Libs.mangaDex
 ) : SessionHandler<Chapter, ChapterAttributes> {
     override suspend fun updateSession(onFinish: (Boolean, Session<Chapter, ChapterAttributes>?) -> Unit) {
-        val needUpdate = needUpdate(session.response) { newOffset, prevResponse ->
-            session.queries["offset"] = newOffset
-            session.queries["limit"] = prevResponse.limit
+        val needUpdate = needUpdate(session.response) { _, prevResponse ->
             retry<ListResponse<ChapterAttributes>?>(
                 count = 3,
                 predicate = { it == null || it.errors != null }

@@ -17,7 +17,7 @@ interface SessionHandler<T, ATTR> {
         val offset = response.offset
         val total = response.total
         val limit = response.limit
-        if (offset < total && limit < total) {
+        if (offset < total && limit < total && session.data.size < total) {
             action(offset + limit, response)
             return true
         }
