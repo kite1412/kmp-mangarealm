@@ -168,8 +168,7 @@ class SharedViewModel(
         mapOf(
             "translatedLanguage[]" to language,
             "order[chapter]" to order,
-            "limit" to 100,
-            "offset" to 0
+            "limit" to 100
         )
 
     private fun initChapterReadMarker(

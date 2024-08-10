@@ -67,6 +67,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -107,6 +108,7 @@ import com.seiko.imageloader.option.SizeResolver
 import com.seiko.imageloader.rememberImagePainter
 import com.seiko.imageloader.rememberImageSuccessPainter
 import com.seiko.imageloader.ui.AutoSizeBox
+import kotlinx.coroutines.launch
 import mangarealm.composeapp.generated.resources.Res
 import mangarealm.composeapp.generated.resources.no_image
 import model.Manga
@@ -294,6 +296,7 @@ fun <T, ATTR> SessionPagerColumn(
 ) {
     var finished by remember { mutableStateOf(false) }
     var triggerLoad by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     if (enableLoadNew && !finished) {
         val passThreshold by remember {
             derivedStateOf {
@@ -304,10 +307,12 @@ fun <T, ATTR> SessionPagerColumn(
             keys = arrayOf(passThreshold, triggerLoad)
         ) {
             if (passThreshold) {
-                handler.updateSession { done, newSession ->
-                    finished = done
-                    triggerLoad = !triggerLoad
-                    newSession?.let { onSessionLoaded(it) }
+                scope.launch {
+                    handler.updateSession { done, newSession ->
+                        finished = done
+                        triggerLoad = !triggerLoad
+                        newSession?.let { onSessionLoaded(it) }
+                    }
                 }
             }
         }
@@ -358,6 +363,7 @@ fun <T, ATTR> SessionPagerVerticalPager(
     pageContent: @Composable PagerScope.(page: Int) -> Unit
 ) {
     var finished by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     if (!finished) {
         val loadNew by remember {
             derivedStateOf {
@@ -366,10 +372,12 @@ fun <T, ATTR> SessionPagerVerticalPager(
         }
         var triggerLoad by remember { mutableStateOf(false) }
         if (loadNew) LaunchedEffect(triggerLoad) {
-            handler.updateSession { isFinished, newSession ->
-                finished = isFinished
-                triggerLoad = !triggerLoad
-                newSession?.let(onSessionLoaded)
+            scope.launch {
+                handler.updateSession { isFinished, newSession ->
+                    finished = isFinished
+                    triggerLoad = !triggerLoad
+                    newSession?.let(onSessionLoaded)
+                }
             }
         }
     }
