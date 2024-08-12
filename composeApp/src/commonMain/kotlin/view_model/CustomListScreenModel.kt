@@ -76,7 +76,7 @@ class CustomListScreenModel(
         sharedViewModel.viewModelScope.launch {
             showUpdateLoading("Deleting list...")
             val success = retry(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { false }
             ) {
                 mangaDex.deleteCustomList(customList.data.value.id)
@@ -125,7 +125,7 @@ class CustomListScreenModel(
         screenModelScope.launch {
             showUpdateLoading("Adding list...")
             val res = retry<EntityResponse<CustomListAttributes>?>(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { it == null || it.errors != null }
             ) {
                 mangaDex.createCustomList(
@@ -167,7 +167,7 @@ class CustomListScreenModel(
             if (customList.mangaIds.size > 0 &&
                 (customList.manga.isEmpty() || customList.manga.size != customList.mangaIds.size)) {
                 val res = retry(
-                    count = 3,
+                    maxAttempts = 3,
                     predicate = { it == null || it.errors != null }
                 ) {
                     val ids = generateArrayQueryParam("ids[]", customList.mangaIds)

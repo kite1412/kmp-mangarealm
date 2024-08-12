@@ -17,7 +17,7 @@ class ChapterSessionHandler(
     override suspend fun updateSession(onFinish: (Boolean, Session<Chapter, ChapterAttributes>?) -> Unit) {
         val needUpdate = needUpdate(session.response) { _, prevResponse ->
             retry<ListResponse<ChapterAttributes>?>(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { it == null || it.errors != null }
             ) {
                 mangaDex.paging.chapters(prevResponse, generateQuery(session.queries))

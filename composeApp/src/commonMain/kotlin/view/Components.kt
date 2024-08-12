@@ -294,7 +294,7 @@ fun <T, ATTR> SessionPagerColumn(
     modifier: Modifier = Modifier,
     content: @Composable (Int) -> Unit
 ) {
-    var finished by remember { mutableStateOf(false) }
+    var finished by remember(session) { mutableStateOf(false) }
     var triggerLoad by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     if (enableLoadNew && !finished) {

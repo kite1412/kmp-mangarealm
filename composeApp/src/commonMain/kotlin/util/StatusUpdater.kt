@@ -27,7 +27,7 @@ interface StatusUpdater {
         done(false, false)
         sharedViewModel.viewModelScope.launch {
             val res = retry<UpdateStatusResponse?>(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { it == null || it.errors != null }
             ) {
                 mangaDex.updateMangaStatus(manga.data.id, status.rawStatus)

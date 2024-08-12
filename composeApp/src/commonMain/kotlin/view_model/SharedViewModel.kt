@@ -82,7 +82,7 @@ class SharedViewModel(
             if (customListSession.isEmpty()) {
                 customListSession.init(customListSession.queries)
                 val res = retry(
-                    count = 3,
+                    maxAttempts = 3,
                     predicate = { it == null || it.errors != null }
                 ) {
                     mangaDex.getUserCustomLists(generateQuery(customListSession.queries))
@@ -124,7 +124,7 @@ class SharedViewModel(
             customList.manga.add(manga)
             customList.mangaIds.add(manga.data.id)
             retry(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { false }
             ) {
                 mangaDex.addMangaToCustomList(manga.data.id, customList.data.value.id)
@@ -140,7 +140,7 @@ class SharedViewModel(
             customList.manga.removeManga(manga)
             customList.mangaIds.removeAll { it == manga.data.id }
             retry(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { false }
             ) {
                 mangaDex.removeMangaFromCustomList(manga.data.id, customList.data.value.id)
@@ -153,7 +153,7 @@ class SharedViewModel(
 
     suspend fun editCustomList(customList: CustomList, data: CustomListAttributes) {
         retry<EntityResponse<CustomListAttributes>?>(
-            count = 3,
+            maxAttempts = 3,
             predicate = { it == null || it.errors != null }
         ) {
             mangaDex.editCustomList(customList.data.value.id, data)?.also {
@@ -179,7 +179,7 @@ class SharedViewModel(
         viewModelScope.launch {
             state(false)
             retry(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { r -> r == null || r.errors != null }
             ) {
                 mangaDex.getMangaReadMarkers(mangaId)
@@ -212,7 +212,7 @@ class SharedViewModel(
                 val s = chapterSessions[currentChapterSessionKey]!!
                 s.init(queries)
                 val res = retry<ListResponse<ChapterAttributes>?>(
-                    count = 3,
+                    maxAttempts = 3,
                     predicate = { it == null || it.errors != null }
                 ) {
                     mangaDex.getMangaChapters(manga.data.id, q)

@@ -19,7 +19,7 @@ class MangaSessionHandler(
             session.queries["offset"] = newOffset
             session.queries["limit"] = prevResponse.limit
             val res = retry<ListResponse<MangaAttributes>?>(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { it == null || it.errors != null}
             ) { mangaDex.getManga(generateQuery(session.queries)) }
             if (res != null) {

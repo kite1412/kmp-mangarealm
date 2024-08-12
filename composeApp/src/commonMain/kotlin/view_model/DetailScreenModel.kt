@@ -71,7 +71,7 @@ class DetailScreenModel(
                         return@let
                     }
                     retry(
-                        count = 3,
+                        maxAttempts = 3,
                         predicate = { r -> r == null }
                     ) {
                         jikan.getMangaCharacters(
@@ -193,7 +193,7 @@ class DetailScreenModel(
         screenModelScope.launch {
             showAddListPrompt = false
             retry<EntityResponse<CustomListAttributes>?>(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { it == null || it.errors != null }
             ) {
                 mangaDex.createCustomList(

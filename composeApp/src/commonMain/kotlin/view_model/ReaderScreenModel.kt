@@ -68,7 +68,7 @@ class ReaderScreenModel(
             index = chapterId + imageQuality
             val images = cache.chapterImages[index]
             val res = retry(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { it == null || it.errors != null }
             ) {
                 mangaDex.getHomeUrl(chapters[currentChapterIndex]().id)
@@ -94,7 +94,7 @@ class ReaderScreenModel(
                     this@ReaderScreenModel.images.addAll(chapterImages())
                     sharedViewModel.viewModelScope.launch {
                         retry(
-                            count = 3,
+                            maxAttempts = 3,
                             predicate = { false }
                         ) {
                             mangaDex.updateMangaReadMarkers(

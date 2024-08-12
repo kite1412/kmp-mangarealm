@@ -87,7 +87,7 @@ class HomeState(
     fun initLatestUpdatesData() {
         scope.launch {
             retry(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { latestUpdates.isEmpty() }
             ) {
                 val includes = generateArrayQueryParam(
@@ -117,7 +117,7 @@ class HomeState(
                 if (fromCache == null) {
                     session.init(queries)
                     val res = retry(
-                        count = 3,
+                        maxAttempts = 3,
                         predicate = { it == null || it.errors != null }
                     ) {
                         mangaDex.getManga(q)

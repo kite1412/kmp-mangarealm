@@ -102,7 +102,7 @@ class LoginViewModel : ViewModel() {
         _enableTap.value = false
         viewModelScope.launch {
             val token = retry<Token?>(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { it == null || it.error != null }
             ) {
                 mangaDex.login(

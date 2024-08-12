@@ -91,7 +91,7 @@ class MainViewModel(
     private fun initMangaStatus() {
         viewModelScope.launch {
             val res = retry(
-                count = 3,
+                maxAttempts = 3,
                 predicate = { it == null || it.result == "error" }
             ) {
                 mangaDex.getMangaByStatus()
@@ -107,7 +107,7 @@ class MainViewModel(
                     )
                     val queries = generateQuery(mapOf(Pair("includes[]", "cover_art")), mangaIds)
                     val mangaList = retry(
-                        count = 3,
+                        maxAttempts = 3,
                         predicate = { it == null || it.result == "error" }
                     ) {
                         mangaDex.getManga(queries)
