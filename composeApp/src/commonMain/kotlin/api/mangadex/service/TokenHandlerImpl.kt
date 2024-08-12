@@ -22,7 +22,7 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
     private val storage = Libs.kottageStorage
 
     private suspend fun refresh(request: RefreshTokenRequest, useReserved: Boolean = false): Token? = retry<Token?>(
-        count = 3,
+        maxAttempts = 3,
         predicate = { it == null || it.error != null }
     ) {
         try {

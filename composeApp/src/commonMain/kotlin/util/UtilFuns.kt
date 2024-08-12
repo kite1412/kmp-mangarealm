@@ -13,6 +13,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import api.jikan.model.Character
 import cafe.adriel.voyager.navigator.Navigator
+import kotlinx.coroutines.delay
 import shared.adjustNavBarColor
 import shared.adjustStatusBarColor
 import shared.applyEdgeToEdge
@@ -56,13 +57,19 @@ fun Modifier.swipeToPop(nav: Navigator? = null, enabled: Boolean = true, action:
 }
 
 suspend fun <R> retry(
-    count: Int,
+    maxAttempts: Int,
     predicate: (R) -> Boolean,
     block: suspend (Int) -> R
 ): R {
-    val r = block(count)
-    return if (count > 1) if (predicate(r)) retry(count - 1, predicate, block)
-        else r else r
+    var attemptCount = 1
+    val initialDelay = 500L
+    var attempt: R = block(attemptCount)
+    while (attemptCount < maxAttempts && predicate(attempt)) {
+        delay(initialDelay * attemptCount)
+        attemptCount++
+        attempt = block(attemptCount)
+    }
+    return attempt
 }
 
 fun publicationStatusColor(rawStatus: String): Color = when(rawStatus) {

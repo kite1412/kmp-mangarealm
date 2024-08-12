@@ -81,7 +81,7 @@ class DiscoveryState(
             if (fromCache == null) {
                 session.init(queries)
                 val res = if (suggestionSession.state.value != SessionState.ACTIVE) retry(
-                    count = 3,
+                    maxAttempts = 3,
                     predicate = { it == null || it.errors != null }
                 ) {
                     mangaDex.getManga(q)

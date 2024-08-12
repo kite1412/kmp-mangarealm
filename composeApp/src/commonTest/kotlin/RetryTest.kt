@@ -5,17 +5,31 @@ import util.retry
 import kotlin.test.Test
 
 class RetryTest {
-    val mockResponse = ListResponse<MangaAttributes>()
+    private val mockResponse = ListResponse<MangaAttributes>()
 
     @Test
-    fun testRetry() = runBlocking {
+    fun retrySuccess() = runBlocking {
         val res = retry<ListResponse<MangaAttributes>>(
-            count = 3,
-            predicate = { it.errors != null }
+            maxAttempts = 3,
+            predicate = { it.errors == null }
         ) {
             println("retry: $it")
-            mockResponse
+            if (it == 2) {
+                mockResponse.copy(errors = listOf())
+            } else mockResponse
         }
         println(res)
+    }
+
+    @Test
+    fun retryFail() = runBlocking {
+        val retry = retry(
+            maxAttempts = 3,
+            predicate = { true }
+        ) {
+            println("retry: $it")
+            true
+        }
+        println(retry)
     }
 }
