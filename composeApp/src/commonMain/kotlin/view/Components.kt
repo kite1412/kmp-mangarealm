@@ -65,9 +65,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -810,24 +812,80 @@ fun PopNotice(
 }
 
 @Composable
+fun SwipeableLazyColumn(
+    itemsCount: Int,
+    swipeActions: (index: Int) -> List<SwipeAction>,
+    modifier: Modifier = Modifier,
+    state: LazyListState = rememberLazyListState(),
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    reverseLayout: Boolean = false,
+    verticalArrangement: Arrangement.Vertical =
+        if (!reverseLayout) Arrangement.Top else Arrangement.Bottom,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    flingBehavior: FlingBehavior = ScrollableDefaults.flingBehavior(),
+    userScrollEnabled: Boolean = true,
+    oppositeSwipe: ((Float) -> Unit)? = null,
+    resetAll: Any? = null,
+    content: @Composable (Modifier, index: Int) -> Unit
+) {
+    var selectedItem by rememberSaveable(resetAll) {
+        mutableIntStateOf(-1)
+    }
+    LazyColumn(
+        state = state,
+        verticalArrangement = verticalArrangement,
+        horizontalAlignment = horizontalAlignment,
+        contentPadding = contentPadding,
+        reverseLayout = reverseLayout,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        modifier = modifier
+    ) {
+        items(itemsCount) {
+            Swipeable(
+                actions = swipeActions(it).map { a ->
+                    a.copy(
+                        action = {
+                            selectedItem = -1
+                            a.action()
+                        }
+                    )
+                },
+                content = { m ->
+                    content(m, it)
+                },
+                oppositeSwipe = oppositeSwipe,
+                changeState = selectedItem == it,
+                state = { showing -> if (showing) selectedItem = it }
+            )
+        }
+    }
+}
+
+@Composable
 fun Swipeable(
     actions: List<SwipeAction>,
     oppositeSwipe: ((Float) -> Unit)? = null,
     modifier: Modifier = Modifier,
+    changeState: Boolean = false,
+    state: (showing: Boolean) -> Unit = {},
     content: @Composable BoxScope.(Modifier) -> Unit
 ) {
+    val maxActions = 4
+    val fixed = actions.take(maxActions)
+    val actionWeight = 0.25f
+    val actionBarWidth = getMinDimension()
+    val corner = Modifier
+        .padding(horizontal = 8.dp)
+        .clip(RoundedCornerShape(8.dp))
+    val maxOffset = remember {
+        -(actionBarWidth * (actionWeight * fixed.size))
+    }
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Max)
     ) {
-        val maxActions = 4
-        val fixed = actions.take(maxActions)
-        val actionWeight = 0.25f
-        val actionBarWidth = getMinDimension()
-        val corner = Modifier
-            .padding(horizontal = 8.dp)
-            .clip(RoundedCornerShape(8.dp))
         Box(
             Modifier
                 .fillMaxSize()
@@ -859,6 +917,15 @@ fun Swipeable(
         val offsetAnimated by animateDpAsState(offset)
         val density = LocalDensity.current
         var show by remember { mutableStateOf(false) }
+        LaunchedEffect(changeState) {
+            offset = if (changeState) {
+                show = true
+                maxOffset
+            } else {
+                show = false
+                0.dp
+            }
+        }
         content(
             Modifier
                 .offset(x = offsetAnimated)
@@ -870,7 +937,6 @@ fun Swipeable(
                 .pointerInput(true) {
                     detectHorizontalDragGestures(
                         onDragEnd = {
-                            val maxOffset = -(actionBarWidth * (actionWeight * fixed.size))
                             offset = if (offset < 0.dp && (!show || offset < maxOffset)) {
                                 show = true
                                 maxOffset
@@ -878,6 +944,7 @@ fun Swipeable(
                                 show = false
                                 0.dp
                             }
+                            state(show)
                         }
                     ) { _, dragAmount ->
                         if (dragAmount < 0) with(density) {

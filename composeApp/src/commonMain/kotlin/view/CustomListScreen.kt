@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -36,7 +35,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -325,50 +328,59 @@ class CustomListScreen : Screen {
         val nav = LocalNavigator.currentOrThrow
         val data = customList.manga
         val scope = rememberCoroutineScope()
+        var reset by remember { mutableStateOf(false) }
+        val back = remember {
+            {
+                scope.launch {
+                    reset = !reset
+                    pagerState.animateScrollToPage(0)
+                }
+            }
+        }
         BackHandler(true) {
-            scope.launch { pagerState.animateScrollToPage(0) }
+            back()
         }
         BoxWithConstraints(
             modifier = modifier
                 .fillMaxSize()
-                .swipeToPop { scope.launch { pagerState.animateScrollToPage(0) } }
+                .swipeToPop { back() }
         ) {
             if (customList.mangaIds.isNotEmpty())
-                if (data.isNotEmpty() && customList.mangaIds.size == data.size) LazyColumn(
+                if (data.isNotEmpty() && customList.mangaIds.size == data.size) SwipeableLazyColumn(
+                    itemsCount = data.size,
+                    swipeActions = {
+                        listOf(
+                            DeleteSwipeAction {
+                                sm.deleteMangaFromList(customList, data[it])
+                            }
+                        )
+                    },
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                     contentPadding = PaddingValues(top = APP_BAR_HEIGHT + 8.dp),
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(8.dp)
-                ) {
-                    items(data.size) {
-                        val manga = data[it]
-                        Swipeable(
-                            actions = listOf(
-                                DeleteSwipeAction {
-                                    sm.deleteMangaFromList(customList, manga)
-                                }
-                            ),
-                            oppositeSwipe = { a ->
-                                if (a > 30 && sm.swipeToPopEnabled) scope.launch { pagerState.animateScrollToPage(0) }
-                            }
-                        ) { m ->
-                            MangaDisplay(
-                                manga = manga,
-                                onPainterLoaded = {
-                                    p -> sm.sharedViewModel.updateCustomListMangaPainter(customList, it, p)
-                                },
-                                modifier = m.background(MaterialTheme.colors.background)
-                            ) { sm.navigateToDetail(nav, manga) }
-                        }
+                        .padding(8.dp),
+                    resetAll = reset,
+                    oppositeSwipe = { a ->
+                        if (a > 30 && sm.swipeToPopEnabled) back()
                     }
-                } else LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
+                ) { m, i ->
+                    val manga = data[i]
+                    MangaDisplay(
+                        manga = manga,
+                        onPainterLoaded = {
+                            p -> sm.sharedViewModel.updateCustomListMangaPainter(customList, i, p)
+                        },
+                        modifier = m.background(MaterialTheme.colors.background)
+                    ) { sm.navigateToDetail(nav, manga) }
+                }
+                else LoadingIndicator(modifier = Modifier.align(Alignment.Center)) {
                     Text("Loading list...", color = Color.White)
                 } else EmptyList(message = "No manga found", modifier = Modifier.align(Alignment.Center))
             TopBar(customList.data.value.attributes.name) {
                 IconButton(
                     onClick = {
-                        scope.launch { pagerState.animateScrollToPage(0) }
+                        back()
                     },
                     modifier = Modifier
                         .align(Alignment.CenterStart)
