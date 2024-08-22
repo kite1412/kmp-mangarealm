@@ -21,6 +21,7 @@ object KottageConst {
     const val HISTORY_LIST = "local:history"
     const val THEME_MODE = "setting:theme:mode"
     const val SWIPE_TO_POP = "setting:navigation:swipe_to_pop"
+    const val SWIPE_SENSITIVITY_FACTOR = "setting:navigation:swipe_sensitivity_factor"
 }
 
 const val SPLASH_TIME = 2000

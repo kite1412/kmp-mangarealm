@@ -46,11 +46,12 @@ fun <K, V> List<Map<K, V>>.toMap(): Map<K, V> {
 }
 
 fun Modifier.swipeToPop(nav: Navigator? = null, enabled: Boolean = true, action: () -> Unit = {}): Modifier = composed {
-    val enableSwipeToPop by LocalSharedViewModel.current.appSettings.enableSwipeToPop
+    val appSettings = LocalSharedViewModel.current.appSettings
+    val enableSwipeToPop by appSettings.enableSwipeToPop
     val swipeToPop = enableSwipeToPop && enabled
     pointerInput(swipeToPop) {
         detectHorizontalDragGestures { _, dragAmount ->
-            if (dragAmount > 70 && swipeToPop)
+            if (dragAmount > 100 / appSettings.swipeSensitivityFactor.floatValue && swipeToPop)
                 if (nav == null) action() else nav.pop()
         }
     }
