@@ -19,11 +19,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
+import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.annotation.ExperimentalVoyagerApi
@@ -115,6 +118,15 @@ class SettingsScreen : Screen {
                     settings = "Swipe to pop",
                     onCheckedChange = { sm.toggleSwipeToPop(it) }
                 )
+                SliderSetting(
+                    value = sm.swipeSensitivityFactor,
+                    settings = "Swipe sensitivity",
+                    onValueChange = sm::newSwipeSensitivityFactor,
+                    steps = 3,
+                    valueRange = 1f..5f,
+                    enabled = sm.enableSwipeToPop,
+                    onValueChangeFinished = sm::saveSwipeSensitivityFactor
+                )
             }
         }
     }
@@ -155,9 +167,30 @@ class SettingsScreen : Screen {
             modifier = modifier.fillMaxWidth()
         ) {
             Header(category)
-            content()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                content = content
+            )
         }
     }
+
+    @Composable
+    private fun SettingName(
+        settings: String,
+        modifier: Modifier = Modifier,
+        color: Color = MaterialTheme.typography.body1.color,
+        fontWeight: FontWeight = FontWeight.SemiBold,
+        fontSize: TextUnit = 16.sp
+    ) = Text(
+        settings,
+        modifier = modifier,
+        fontWeight = fontWeight,
+        fontSize = fontSize,
+        color = color
+    )
 
     @Composable
     private fun ToggleSetting(
@@ -172,16 +205,42 @@ class SettingsScreen : Screen {
             modifier = modifier
                 .fillMaxWidth()
                 .clickable(indication = null, interactionSource = MutableInteractionSource()) { onCheckedChange(!checked) }
-                .padding(horizontal = 4.dp)
         ) {
-            Text(
-                settings,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-            )
+            SettingName(settings)
             Toggle(
                 checked = checked,
                 onToggle = onCheckedChange,
+            )
+        }
+    }
+
+    @Composable
+    private fun SliderSetting(
+        value: Float,
+        settings: String,
+        onValueChange: (Float) -> Unit,
+        steps: Int,
+        modifier: Modifier = Modifier,
+        enabled: Boolean = true,
+        valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+        onValueChangeFinished: (() -> Unit)? = null
+    ) {
+        Column(modifier = modifier) {
+            SettingName(
+                settings = settings,
+                color = MaterialTheme.typography.body1.color.copy(
+                    alpha = if (enabled) 1f else 0.5f
+                ),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Slider(
+                value = value,
+                onValueChange = onValueChange,
+                valueRange = valueRange,
+                steps = steps,
+                enabled = enabled,
+                onValueChangeFinished = onValueChangeFinished
             )
         }
     }

@@ -55,6 +55,7 @@ class SharedViewModel(
     private suspend fun loadAppSettings() {
         appSettings.isDarkMode.value = kottageStorage.getOrNull<Boolean>(KottageConst.THEME_MODE) ?: false
         appSettings.enableSwipeToPop.value = kottageStorage.getOrNull<Boolean>(KottageConst.SWIPE_TO_POP) ?: true
+        appSettings.swipeSensitivityFactor.value = kottageStorage.getOrNull<Float>(KottageConst.SWIPE_SENSITIVITY_FACTOR) ?: 3f
         appSettings.initialized.value = true
     }
 
