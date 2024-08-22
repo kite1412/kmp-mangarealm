@@ -856,7 +856,9 @@ fun SwipeableLazyColumn(
                 },
                 oppositeSwipe = oppositeSwipe,
                 changeState = selectedItem == it,
-                state = { showing -> if (showing) selectedItem = it }
+                state = { showing ->
+                    selectedItem = if (showing) it else -1
+                }
             )
         }
     }
@@ -950,7 +952,7 @@ fun Swipeable(
                         if (dragAmount < 0) with(density) {
                             offset += dragAmount.toDp()
                         } else if (offset < 0.dp) offset += dragAmount.toDp()
-                            else oppositeSwipe?.invoke(dragAmount)
+                            else if (!show) oppositeSwipe?.invoke(dragAmount)
                     }
                 }
         )

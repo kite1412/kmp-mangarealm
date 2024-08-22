@@ -362,7 +362,7 @@ class CustomListScreen : Screen {
                         .padding(8.dp),
                     resetAll = reset,
                     oppositeSwipe = { a ->
-                        if (a > 30 && sm.swipeToPopEnabled) back()
+                        if (a > 70 && sm.swipeToPopEnabled) back()
                     }
                 ) { m, i ->
                     val manga = data[i]

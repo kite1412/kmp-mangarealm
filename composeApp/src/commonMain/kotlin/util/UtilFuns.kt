@@ -50,7 +50,7 @@ fun Modifier.swipeToPop(nav: Navigator? = null, enabled: Boolean = true, action:
     val swipeToPop = enableSwipeToPop && enabled
     pointerInput(swipeToPop) {
         detectHorizontalDragGestures { _, dragAmount ->
-            if (dragAmount > 30 && swipeToPop)
+            if (dragAmount > 70 && swipeToPop)
                 if (nav == null) action() else nav.pop()
         }
     }

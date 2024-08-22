@@ -99,7 +99,6 @@ import api.mangadex.util.obstruct
 import assets.Atom
 import assets.`Book-bookmark`
 import assets.`Bxs-book-bookmark`
-import assets.`Chevron-right`
 import assets.`Heart-outline`
 import assets.List
 import assets.`Magic-wand`
@@ -192,7 +191,7 @@ fun Home(
                         }
                 )
                 Column(
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(32.dp),
                     modifier = Modifier.padding(top = headerHeight + 16.dp + 24.dp)
                 ) {
                     Column(
@@ -588,25 +587,11 @@ private fun ContinueReading(
     val smallDisplayHeight = height / 2
     val smallDisplayWidth = smallDisplayHeight * imageRatio + 4.dp
     if (data.isNotEmpty()) Column(modifier = modifier) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                "Continue Reading",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Icon(
-                imageVector = Assets.`Chevron-right`,
-                contentDescription = null,
-                tint = MaterialTheme.typography.body1.color,
-                modifier = Modifier
-                    .height(16.dp)
-                    .offset(y = 1.dp)
-            )
-        }
+        Text(
+            "Continue Reading",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold
+        )
         Spacer(Modifier.height(12.dp))
         LazyHorizontalGrid(
             rows = GridCells.Fixed(if (data.size > 1) 2 else 1),
