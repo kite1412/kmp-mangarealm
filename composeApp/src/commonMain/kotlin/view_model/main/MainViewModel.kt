@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import api.mangadex.service.MangaDex
+import api.mangadex.util.constructQuery
 import api.mangadex.util.generateArrayQueryParam
 import api.mangadex.util.generateQuery
 import assets.`Book-close`
@@ -88,6 +89,47 @@ class MainViewModel(
         initMangaStatus()
     }
 
+    private suspend fun loadMangaStatus(statuses: Map<String, String>) {
+        val temp = statuses.map { manga ->
+            manga.key
+        }
+        val mangaIds = generateArrayQueryParam(
+            name = "ids[]",
+            values = temp
+        )
+        val queries = constructQuery(
+            generateQuery(mapOf(Pair("includes[]", "cover_art")), mangaIds),
+            generateQuery(mapOf("limit" to 100))
+        )
+        var res = retry(
+            maxAttempts = 3,
+            predicate = { it == null || it.result == "error" }
+        ) {
+            mangaDex.getManga(queries)
+        }
+        res?.let {
+            val manga = it.toMangaList().toMutableList()
+            while (manga.size < res!!.total) {
+                res = retry(
+                    maxAttempts = 3,
+                    predicate = { r -> r == null || r.result == "error" }
+                ) { mangaDex.paging.manga(res!!, queries) }
+                res?.let { r ->
+                    manga.addAll(r.toMangaList())
+                }
+            }
+            manga.map { m ->
+                statuses[m.data.id]?.let { s ->
+                    m.status = MangaStatus.toStatus(s)
+                }
+                m
+            }.forEach { m ->
+                sharedViewModel.mangaStatus[m.status]!!.add(m)
+                sharedViewModel.mangaStatus[MangaStatus.All]!!.add(m)
+            }
+        }
+    }
+
     private fun initMangaStatus() {
         viewModelScope.launch {
             val res = retry(
@@ -96,35 +138,8 @@ class MainViewModel(
             ) {
                 mangaDex.getMangaByStatus()
             }
-            if (res?.statuses != null) {
-                if (res.statuses.isNotEmpty()) {
-                    val temp = res.statuses.map { manga ->
-                        manga.key
-                    }
-                    val mangaIds = generateArrayQueryParam(
-                        name = "ids[]",
-                        values = temp
-                    )
-                    val queries = generateQuery(mapOf(Pair("includes[]", "cover_art")), mangaIds)
-                    val mangaList = retry(
-                        maxAttempts = 3,
-                        predicate = { it == null || it.result == "error" }
-                    ) {
-                        mangaDex.getManga(queries)
-                    }
-                    mangaList?.let {
-                        it.toMangaList().map { m ->
-                            res.statuses[m.data.id]?.let { s ->
-                                m.status = MangaStatus.toStatus(s)
-                            }
-                            m
-                        }.forEach { m ->
-                            sharedViewModel.mangaStatus[m.status]!!.add(m)
-                            sharedViewModel.mangaStatus[MangaStatus.All]!!.add(m)
-                        }
-                    }
-                }
-            }
+            if (res?.statuses != null)
+                if (res.statuses.isNotEmpty()) loadMangaStatus(res.statuses)
         }
     }
 }

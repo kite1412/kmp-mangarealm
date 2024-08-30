@@ -179,7 +179,7 @@ class MangaDexImpl(
 
     override suspend fun getMangaByStatus(status: Status): MangaStatus? {
         var q = ""
-        if (status.isNotEmpty()) q = "?status=$status"
+        if (status != api.mangadex.util.Status.NONE) q = "?status=$status"
         return get<MangaStatus?>(
             url = ApiConstant.MANGA_STATUS,
             methodName = "getMangaByStatus",
