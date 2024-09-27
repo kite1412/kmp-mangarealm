@@ -5,7 +5,6 @@ import api.mangadex.model.request.RefreshTokenRequest
 import api.mangadex.model.response.Token
 import api.mangadex.util.ApiConstant
 import error.UnableRefreshTokenException
-import io.github.irgaly.kottage.get
 import io.github.irgaly.kottage.getOrNull
 import io.github.irgaly.kottage.put
 import io.ktor.client.HttpClient
@@ -49,7 +48,7 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
             var useReserve = false
             var res = refresh(request)
             // TODO handle if reserved refresh token also not works, typically prompting user to re-login
-            if (res == null ||res.error != null) {
+            if (res == null || res.error != null) {
                 Log.w("(refreshToken) ${res?.error}")
                 useReserve = true
                 Log.w("(refreshToken) using reserved refresh token")
@@ -71,12 +70,11 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
         }
     }
 
-    private suspend fun saveTokenToLocal(token: Token, refreshToken: String? = null) {
-        val refresh = refreshToken ?: storage.get<String>(KottageConst.REFRESH_TOKEN)
-        val refreshExpiresIn = TokenHandler.expiration(refresh)
+    private suspend fun saveTokenToLocal(token: Token, refreshToken: String) {
+        val refreshExpiresIn = TokenHandler.expiration(refreshToken)
         storage.put(KottageConst.TOKEN, token.accessToken)
         storage.put(KottageConst.RESERVE_REFRESH_TOKEN, token.refreshToken)
-        if (refreshExpiresIn < (currentTimeMillis + 30.days.inWholeMilliseconds))
+        if (refreshExpiresIn < adjustLength(refreshExpiresIn.toString().length, currentTimeMillis + 1.days.inWholeMilliseconds))
             storage.put<String>(KottageConst.REFRESH_TOKEN, token.refreshToken)
     }
 

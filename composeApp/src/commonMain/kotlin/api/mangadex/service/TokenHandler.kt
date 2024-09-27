@@ -1,6 +1,5 @@
 package api.mangadex.service
 
-import api.mangadex.model.response.Token
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
@@ -8,16 +7,9 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 interface TokenHandler {
     companion object {
         @OptIn(ExperimentalEncodingApi::class)
-        fun expiration(token: Token): Long {
-            val splitted = token.accessToken.split(".")
-            val payload = Base64.decode(splitted[1]).decodeToString()
-            return payload.substringBefore(',').substringAfter(':').toLong()
-        }
-
-        @OptIn(ExperimentalEncodingApi::class)
         fun expiration(token: String): Long {
-            val splitted = token.split(".")
-            val payload = Base64.decode(splitted[1]).decodeToString()
+            val split = token.split(".")
+            val payload = Base64.decode(split[1]).decodeToString()
             return payload.substringBefore(',').substringAfter(':').toLong()
         }
     }
