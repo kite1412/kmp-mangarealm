@@ -52,6 +52,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.internal.BackHandler
 import model.Chapter
 import model.session.SessionState
+import theme.darkerBeige
 import util.APP_BAR_HEIGHT
 import util.ASCENDING
 import util.DESCENDING
@@ -199,6 +200,7 @@ class ChapterScreen : Screen {
                     .padding(start = 8.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(MaterialTheme.colors.onBackground)
+                    .clickable(enabled = false) {}
             ) {
                 Box {
                     Column(modifier = Modifier.fillMaxSize()) {
@@ -352,7 +354,8 @@ class ChapterScreen : Screen {
         onClick: () -> Unit
     ) {
         val clip = RoundedCornerShape(6.dp)
-        val gray = Color.DarkGray
+        val isDarkMode = isDarkMode()
+        val gray = if (isDarkMode) Color.White else Color.DarkGray
         val outer = if (!selected) Modifier.border(
             width = 1.dp,
             color = gray,
@@ -368,7 +371,8 @@ class ChapterScreen : Screen {
         ) {
             Text(
                 label,
-                color = if (selected) Color.White else gray,
+                color = if (selected) if (isDarkMode) darkerBeige else Color.White else
+                    if (isDarkMode) Color.White else Color.DarkGray,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
             )
