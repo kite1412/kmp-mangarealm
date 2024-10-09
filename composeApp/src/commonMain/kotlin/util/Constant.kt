@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.dp
 object KottageConst {
     const val TOKEN = "token:accessToken"
     const val USERNAME = "profile:username"
+    const val PASSWORD = "profile:password"
     const val REFRESH_TOKEN = "token:refreshToken"
     const val RESERVE_REFRESH_TOKEN = "token:resRefreshToken"
     const val CLIENT_ID = "api:clientId"

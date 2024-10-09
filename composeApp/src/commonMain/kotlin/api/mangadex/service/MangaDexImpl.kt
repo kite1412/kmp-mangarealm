@@ -1,5 +1,6 @@
 package api.mangadex.service
 
+import Libs
 import api.mangadex.model.request.CreateCustomList
 import api.mangadex.model.request.Queries
 import api.mangadex.model.request.Status
@@ -19,6 +20,7 @@ import api.mangadex.model.response.attribute.UserAttributes
 import api.mangadex.util.ApiConstant
 import api.mangadex.util.DataType
 import api.mangadex.util.generateQuery
+import io.github.irgaly.kottage.KottageStorage
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -45,13 +47,16 @@ class MangaDexImpl(
             json()
         }
     },
-    private val token: TokenHandler = TokenHandlerImpl(client)
+    private val token: TokenHandler = TokenHandlerImpl(client),
+    private val storage: KottageStorage = Libs.kottageStorage
 ) : MangaDex {
     override val paging: MangaDex.Paging
         get() = Paging()
 
     private suspend fun HttpRequestBuilder.authHeader() {
-        header("Authorization", "Bearer ${token()}")
+        header("Authorization", "Bearer ${token {
+            login(TokenRequest.fromLocal(storage))
+        }}")
     }
 
     private suspend inline fun <reified R> get(
