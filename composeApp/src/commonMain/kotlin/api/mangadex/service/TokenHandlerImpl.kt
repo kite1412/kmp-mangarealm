@@ -17,7 +17,9 @@ import util.Log
 import util.retry
 import kotlin.time.Duration.Companion.days
 
-class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
+class TokenHandlerImpl(
+    private val client: HttpClient
+) : TokenHandler {
     private val storage = Libs.kottageStorage
 
     private suspend fun refresh(request: RefreshTokenRequest, useReserved: Boolean = false): Token? = retry<Token?>(
@@ -34,7 +36,7 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
                     append("client_id", request.clientId)
                     append("client_secret", request.clientSecret)
                 }
-            ).body<Token>()
+            ).body<Token?>()
         } catch (e: Exception) {
             e.message?.let {
                 Log.e("(refresh) $it")
@@ -47,7 +49,6 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
         return try {
             var useReserve = false
             var res = refresh(request)
-            // TODO handle if reserved refresh token also not works, typically prompting user to re-login
             if (res == null || res.error != null) {
                 Log.w("(refreshToken) ${res?.error}")
                 useReserve = true
@@ -90,7 +91,7 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
 
     // return null only if token is not exist in local storage (the least possibility to happen)
     // or unable to refresh the token (problems either with connection or server).
-    override suspend fun invoke(): String? {
+    suspend fun invoke(): String? {
         val token = storage.getOrNull<String>(KottageConst.TOKEN)
         if (token != null) {
             try {
@@ -110,4 +111,10 @@ class TokenHandlerImpl(private val client: HttpClient) : TokenHandler {
         }
         return null
     }
+
+    override suspend fun invoke(failCallback: suspend () -> Token?): String? =
+        invoke() ?: failCallback()?.run {
+            saveTokenToLocal(this, this.refreshToken)
+            accessToken
+        }
 }

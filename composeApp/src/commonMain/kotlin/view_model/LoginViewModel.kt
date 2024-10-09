@@ -91,6 +91,7 @@ class LoginViewModel : ViewModel() {
 
     private suspend fun store(token: Token) {
         storage.put(KottageConst.USERNAME, _username.value)
+        storage.put(KottageConst.PASSWORD, _password.value)
         storage.put(KottageConst.TOKEN, token.accessToken)
         storage.put(KottageConst.REFRESH_TOKEN, token.refreshToken)
         storage.put(KottageConst.CLIENT_ID, _clientId.value)
