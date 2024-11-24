@@ -21,6 +21,7 @@ MangaDex Client application for Android built using Kotlin Multiplatform. Read, 
 
 ## Application Requirements
 - MangaDex personal API client, refer to https://api.mangadex.org/docs/02-authentication/personal-clients/
+- You might need to change your device's default DNS provider or use a VPN should MangaDex service is unavailable/blocked in your country 
 
 ## License
 This project is personal and not for distribution.
