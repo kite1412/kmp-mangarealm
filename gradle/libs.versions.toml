@@ -10,12 +10,12 @@ androidx-core-ktx = "1.13.0"
 androidx-espresso-core = "3.5.1"
 androidx-material = "1.11.0"
 androidx-test-junit = "1.1.5"
-compose = "1.6.6"
-compose-plugin = "1.6.2"
+compose = "1.7.6"
+compose-plugin = "1.7.3"
 coreSplashscreen = "1.0.1"
 imageLoader = "1.8.1"
 junit = "4.13.2"
-kotlin = "1.9.23"
+kotlin = "2.0.0"
 kotlinTest = "2.0.0"
 kottage = "1.6.0"
 ktor = "2.3.11"
@@ -59,3 +59,4 @@ androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

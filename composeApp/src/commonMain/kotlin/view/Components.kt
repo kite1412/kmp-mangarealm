@@ -17,9 +17,9 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.FlingBehavior
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
+import androidx.compose.foundation.gestures.TargetedFlingBehavior
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.snapping.SnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -341,7 +341,6 @@ fun <T, ATTR> SessionPagerColumn(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun <T, ATTR> SessionPagerVerticalPager(
     session: Session<T, ATTR>,
@@ -350,16 +349,15 @@ fun <T, ATTR> SessionPagerVerticalPager(
     subtrahend: Int = if (session.data.size / 2 >= 10) 5 else 2,
     contentPadding: PaddingValues = PaddingValues(0.dp),
     pageSize: PageSize = PageSize.Fill,
-    beyondBoundsPageCount: Int = PagerDefaults.BeyondBoundsPageCount,
+    beyondBoundsPageCount: Int = PagerDefaults.BeyondViewportPageCount,
     pageSpacing: Dp = 0.dp,
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    flingBehavior: SnapFlingBehavior = PagerDefaults.flingBehavior(state = state),
+    flingBehavior: TargetedFlingBehavior = PagerDefaults.flingBehavior(state),
     userScrollEnabled: Boolean = true,
     reverseLayout: Boolean = false,
     key: ((index: Int) -> Any)? = null,
-    pageNestedScrollConnection: NestedScrollConnection = remember(state) {
-        PagerDefaults.pageNestedScrollConnection(state, Orientation.Vertical)
-    },
+    pageNestedScrollConnection: NestedScrollConnection = PagerDefaults
+        .pageNestedScrollConnection(state, Orientation.Vertical),
     onSessionLoaded: (Session<T, ATTR>) -> Unit,
     modifier: Modifier = Modifier,
     pageContent: @Composable PagerScope.(page: Int) -> Unit
@@ -387,7 +385,7 @@ fun <T, ATTR> SessionPagerVerticalPager(
         state = state,
         contentPadding = contentPadding,
         pageSize = pageSize,
-        beyondBoundsPageCount = beyondBoundsPageCount,
+        beyondViewportPageCount = beyondBoundsPageCount,
         pageSpacing = pageSpacing,
         horizontalAlignment = horizontalAlignment,
         flingBehavior = flingBehavior,
