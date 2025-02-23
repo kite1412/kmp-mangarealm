@@ -3,7 +3,6 @@ package util
 import Cache
 import SharedObject
 import androidx.lifecycle.viewModelScope
-import api.mangadex.model.response.UpdateStatusResponse
 import api.mangadex.service.MangaDex
 import kotlinx.coroutines.launch
 import model.Manga
@@ -26,7 +25,7 @@ interface StatusUpdater {
         SharedObject.detailManga = new
         done(false, false)
         sharedViewModel.viewModelScope.launch {
-            val res = retry<UpdateStatusResponse?>(
+            val res = retry(
                 maxAttempts = 3,
                 predicate = { it == null || it.errors != null }
             ) {

@@ -142,22 +142,22 @@ class DiscoveryState(
     }
 
     private fun saveHistory(history: String) {
-        scope.launch { val temp = mutableListOf<String>().apply {
-            add(history)
+        scope.launch {
             val temp = mutableListOf<String>().apply {
-                addAll(histories)
-                remove(history)
+                add(history)
+                val temp = mutableListOf<String>().apply {
+                    addAll(histories)
+                    remove(history)
+                }
+                addAll(temp)
+                if (size > maxHistory) removeLast()
             }
-            addAll(temp)
-            if (size > maxHistory) removeLast()
-        }
             historyList.removeAll(true)
             histories.clear()
             for (i in 0 until temp.size) {
                 historyList.add(temp[i], temp[i])
                 histories.add(temp[i])
             }
-
         }
     }
 

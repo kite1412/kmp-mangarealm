@@ -229,12 +229,5 @@ class SharedViewModel(
 }
 
 fun SnapshotStateList<Manga>.removeManga(manga: Manga) {
-    for ((i, m) in this.withIndex()) {
-        if (m.data.id == manga.data.id) {
-            this.removeAt(i)
-            return
-        }
-    }
+    removeAll { it.data.id == manga.data.id }
 }
-
-fun SnapshotStateList<Manga>.containsManga(manga: Manga): Boolean = any { it.data.id == manga.data.id }
